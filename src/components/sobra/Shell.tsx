@@ -7,6 +7,10 @@ import { storeBrand, stores, type StoreName } from "@/data/stores";
 import { SobraLogo, StoreDot } from "./Brand";
 import { ChevronDown, ShoppingBag } from "lucide-react";
 import { SavingsCounter } from "./Savings";
+import { useExp } from "@/lib/experiment";
+import { PreSurvey } from "./PreSurvey";
+import { MissionBar } from "./MissionBar";
+import { Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -52,11 +56,35 @@ export function Shell({ children }: { children: ReactNode }) {
   const hydrated = useApp((s) => s.hydrated);
   const setupDone = useApp((s) => s.setupDone);
   const isSetup = pathname.startsWith("/setup");
+  const isInsights = pathname.startsWith("/insights");
+  const expHydrated = useExp((s) => s.hydrated);
+  const session = useExp((s) => s.session);
+  const skipped = useExp((s) => s.skipped);
+  const showSurvey = !isInsights && expHydrated && !!session && !session.survey_pre_completed && !skipped;
+  const showMission = !isInsights && !isSetup && !!session && (session.survey_pre_completed || skipped);
 
-  useEffect(() => { useApp.persist.rehydrate(); }, []);
+  useEffect(() => { useApp.persist.rehydrate(); useExp.persist.rehydrate(); }, []);
+  // Assign the A/B variants once per visitor, and open /plan on the assigned tab.
   useEffect(() => {
-    if (hydrated && !setupDone && !isSetup) navigate({ to: "/setup" });
-  }, [hydrated, setupDone, isSetup, navigate]);
+    if (!hydrated || !expHydrated || isInsights || useExp.getState().session) return;
+    const s = useExp.getState().ensure();
+    useApp.getState().set({ mode: s.ab_plan_variant === "A_weekly_prep" ? "prep" : "daily" });
+  }, [hydrated, expHydrated, isInsights, session]);
+  useEffect(() => {
+    if (hydrated && expHydrated && !setupDone && !isSetup && !isInsights && !showSurvey) navigate({ to: "/setup" });
+  }, [hydrated, expHydrated, setupDone, isSetup, isInsights, showSurvey, navigate]);
+  useEffect(() => {
+    if (pathname.startsWith("/deals")) useExp.getState().track("deals_tab_visited");
+    if (pathname.startsWith("/cook")) useExp.getState().track("cook_tab_visited");
+  }, [pathname, session?.session_id]);
+  useEffect(() => {
+    if (isInsights || !session) return;
+    const id = setInterval(() => {
+      const cur = useExp.getState().session;
+      if (cur && document.visibilityState === "visible") useExp.getState().update({ time_spent_seconds: cur.time_spent_seconds + 15 });
+    }, 15000);
+    return () => clearInterval(id);
+  }, [isInsights, session?.session_id]);
 
   return (
     <div className="min-h-screen md:flex">
@@ -74,6 +102,7 @@ export function Shell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <p className="mt-auto text-[12.5px] leading-snug text-muted-foreground">Prototype. Prices and deals are sample data entered by hand.</p>
+        <Link to="/insights" className="mt-3 flex min-h-9 items-center gap-1.5 text-[12.5px] font-medium text-muted-foreground hover:text-ink"><Lock className="size-3.5" aria-hidden />Founder insights</Link>
       </aside>
 
       <div className="min-w-0 flex-1 px-2 pb-28 pt-2 md:px-6 md:py-6">
@@ -82,10 +111,15 @@ export function Shell({ children }: { children: ReactNode }) {
           <Link to="/setup" className="flex min-h-11 items-center text-[13px] font-medium text-muted-foreground">Your meals</Link>
         </div>
         <main className="mx-auto max-w-[1040px] px-2 py-3 md:px-4 md:py-2">
-          {!isSetup && <TopBar />}
-          <div key={pathname} className={cn("fade-route", !isSetup && "pt-7")}>{children}</div>
+          {showSurvey ? <PreSurvey /> : (
+            <>
+              {!isSetup && !isInsights && <TopBar />}
+              <div key={pathname} className={cn("fade-route", !isSetup && !isInsights && "pt-7", showMission && "pb-24")}>{children}</div>
+            </>
+          )}
         </main>
       </div>
+      {showMission && !showSurvey && <MissionBar />}
 
       <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-rule bg-sheet pb-[env(safe-area-inset-bottom)] md:hidden">
         {nav.map(({ to, label, icon: Icon }) => {

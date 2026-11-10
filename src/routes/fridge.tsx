@@ -8,6 +8,7 @@ import { receiptRaw, receiptRead } from "@/data/fridge";
 import { Button, Chip, PageHeader, TwoCol } from "@/components/sobra/ui";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useExp } from "@/lib/experiment";
 
 export const Route = createFileRoute("/fridge")({
   head: pageHead("Fridge", "Your fridge inventory, filled from your supermarket receipts."),
@@ -34,6 +35,7 @@ function Fridge() {
   const spinach = fridge.find((f) => f.id === "spinach");
 
   const startScan = () => {
+    useExp.getState().track("fridge_receipt_scanned");
     setStep("reading");
     setTimeout(() => setStep("review"), 1200);
   };

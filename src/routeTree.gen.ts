@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CookRouteImport } from './routes/cook'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as FridgeRouteImport } from './routes/fridge'
+import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ListRouteImport } from './routes/list'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as SetupRouteImport } from './routes/setup'
@@ -37,6 +38,11 @@ const FridgeRoute = FridgeRouteImport.update({
   path: '/fridge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InsightsRoute = InsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ListRoute = ListRouteImport.update({
   id: '/list',
   path: '/list',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/cook': typeof CookRoute
   '/deals': typeof DealsRoute
   '/fridge': typeof FridgeRoute
+  '/insights': typeof InsightsRoute
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/cook': typeof CookRoute
   '/deals': typeof DealsRoute
   '/fridge': typeof FridgeRoute
+  '/insights': typeof InsightsRoute
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
@@ -77,21 +85,39 @@ export interface FileRoutesById {
   '/cook': typeof CookRoute
   '/deals': typeof DealsRoute
   '/fridge': typeof FridgeRoute
+  '/insights': typeof InsightsRoute
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cook' | '/deals' | '/fridge' | '/list' | '/plan' | '/setup'
+  fullPaths:
+    | '/'
+    | '/cook'
+    | '/deals'
+    | '/fridge'
+    | '/insights'
+    | '/list'
+    | '/plan'
+    | '/setup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cook' | '/deals' | '/fridge' | '/list' | '/plan' | '/setup'
+  to:
+    | '/'
+    | '/cook'
+    | '/deals'
+    | '/fridge'
+    | '/insights'
+    | '/list'
+    | '/plan'
+    | '/setup'
   id:
     | '__root__'
     | '/'
     | '/cook'
     | '/deals'
     | '/fridge'
+    | '/insights'
     | '/list'
     | '/plan'
     | '/setup'
@@ -102,6 +128,7 @@ export interface RootRouteChildren {
   CookRoute: typeof CookRoute
   DealsRoute: typeof DealsRoute
   FridgeRoute: typeof FridgeRoute
+  InsightsRoute: typeof InsightsRoute
   ListRoute: typeof ListRoute
   PlanRoute: typeof PlanRoute
   SetupRoute: typeof SetupRoute
@@ -137,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FridgeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/insights': {
+      id: '/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof InsightsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/list': {
       id: '/list'
       path: '/list'
@@ -166,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   CookRoute: CookRoute,
   DealsRoute: DealsRoute,
   FridgeRoute: FridgeRoute,
+  InsightsRoute: InsightsRoute,
   ListRoute: ListRoute,
   PlanRoute: PlanRoute,
   SetupRoute: SetupRoute,

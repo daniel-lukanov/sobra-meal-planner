@@ -7,7 +7,8 @@ import { dietOptions, mealOptions } from "@/data/plan";
 import { Button } from "@/components/sobra/ui";
 import { StoreBadge } from "@/components/sobra/Brand";
 import { categoryPhoto } from "@/data/photos";
-import { Check } from "lucide-react";
+import { Check, Lock } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/setup")({
@@ -109,6 +110,7 @@ function Setup() {
           toast(`Week built from your ${s.meals.length} meals and ${s.store} deals.`);
         }}>Build my first week</Button>
       </div>
+      <Link to="/insights" className="mt-8 inline-flex min-h-9 items-center gap-1.5 text-[12.5px] font-medium text-muted-foreground hover:text-ink"><Lock className="size-3.5" aria-hidden />Founder insights</Link>
     </div>
   );
 }

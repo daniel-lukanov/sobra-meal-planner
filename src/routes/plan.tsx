@@ -1,3 +1,4 @@
+import { useExp } from "@/lib/experiment";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -23,7 +24,7 @@ function Plan() {
         small={`Week 46 · ${store}`}
         title="Meal plan for one, built from this week's deals"
         sub="Cook twice a week and eat something different every day, or decide on the day. Both modes use what is already in your fridge."
-        right={<UnderlineTabs label="Planning mode" value={mode} onChange={(m) => set({ mode: m })} options={[{ value: "prep", label: "Weekly prep" }, { value: "daily", label: "Daily pick" }]} />}
+        right={<UnderlineTabs label="Planning mode" value={mode} onChange={(m) => { if (m !== mode) useExp.getState().track("initial_mode_switched"); set({ mode: m }); }} options={[{ value: "prep", label: "Weekly prep" }, { value: "daily", label: "Daily pick" }]} />}
       />
       {mode === "prep" ? <WeeklyPrep /> : <DailyPick />}
     </>
@@ -113,7 +114,7 @@ function WeeklyPrep() {
               {bases.map((b) => {
                 const on = filter === b.id;
                 return (
-                  <button key={b.label} type="button" aria-pressed={on} onClick={() => setFilter(b.id)}
+                  <button key={b.label} type="button" aria-pressed={on} onClick={() => { setFilter(b.id); if (b.id) useExp.getState().track("synergy_filter_used"); }}
                     className={cn("press flex min-h-10 items-center gap-1.5 rounded-full px-3.5 text-[13.5px] font-semibold", on ? "bg-ink text-sheet" : "bg-sheet-2 text-ink hover:bg-sheet-hover")}>
                     {b.id && <IngBadge id={b.id} />}{b.label}
                   </button>
@@ -140,8 +141,8 @@ function WeeklyPrep() {
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {meal.uses.map((u) => (
                           <button key={u} type="button"
-                            onMouseEnter={() => setHover(u)} onFocus={() => setHover(u)} onBlur={() => setHover(null)}
-                            onClick={() => setFilter(filter === u ? null : u)}
+                            onMouseEnter={() => { setHover(u); useExp.getState().track("synergy_filter_used"); }} onFocus={() => setHover(u)} onBlur={() => setHover(null)}
+                            onClick={() => { setFilter(filter === u ? null : u); useExp.getState().track("synergy_filter_used"); }}
                             aria-pressed={active === u} aria-label={`${ingName[u]}, used in ${counts[u]} meals. Highlight them`}
                             className={cn("press flex min-h-8 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-medium", active === u ? "bg-mustard-tint text-ink ring-1 ring-mustard" : "bg-sheet-2 hover:bg-sheet-hover")}>
                             <IngBadge id={u} />{ingName[u]} · {counts[u]} {counts[u] === 1 ? "meal" : "meals"}
@@ -161,6 +162,7 @@ function WeeklyPrep() {
                       </div>
                       <Button variant="secondary" className="min-h-10 px-3 text-[14px]"
                         onClick={() => {
+                          useExp.getState().track("swapped_meal_clicked");
                           set({ swaps: { ...swaps, [i]: (swaps[i] ?? 0) + 1 }, ...(r.day === "Sat" ? { reelAdded: false } : {}) });
                           const b = base!.uses[0];
                           toast(b === "potatoes" ? "Swapped. The plan still uses all 1.5 kg of potatoes." : `Swapped. The plan still uses the same ${b}.`);
@@ -184,7 +186,7 @@ function WeeklyPrep() {
               <div className="flex justify-between"><dt className="text-basil">Below regular prices</dt><dd className="font-semibold text-basil">{eur(weekSummary.belowRegular)}</dd></div>
             </dl>
             <div className="mt-5 flex flex-col gap-2">
-              <Button disabled={weekAccepted} onClick={() => { set({ weekAccepted: true }); addSavings(weekSummary.belowRegular); toast("Week accepted. Shopping list ready."); }}>
+              <Button disabled={weekAccepted} onClick={() => { useExp.getState().track("accepted_week_clicked"); set({ weekAccepted: true }); addSavings(weekSummary.belowRegular); toast("Week accepted. Shopping list ready."); }}>
                 {weekAccepted ? "Week accepted" : "Accept this week"}
               </Button>
               <Button variant="secondary" onClick={() => navigate({ to: "/list" })}>See shopping list</Button>
@@ -243,7 +245,7 @@ function DailyPick() {
           <p className="text-[14px] text-muted-foreground">{sel.summary} {store}.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => { addSavings(1.1); toast("Saving €1.10 tonight compared with regular prices."); navigate({ to: "/cook" }); }}>Start cooking</Button>
+          <Button onClick={() => { useExp.getState().track("accepted_week_clicked"); addSavings(1.1); toast("Saving €1.10 tonight compared with regular prices."); navigate({ to: "/cook" }); }}>Start cooking</Button>
           <Button variant="secondary" onClick={() => toast("Coming later: order through a delivery app for tonight.")}>Order instead tonight</Button>
         </div>
       </div>
