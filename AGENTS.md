@@ -28,3 +28,8 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- Sobra is a local-only prototype: all data lives in `src/data/*.ts` and app state in one zustand store (`src/lib/store.ts`, persisted to localStorage, rehydrated in the Shell after mount) because the brief forbids a backend.
+- Routing uses TanStack Router file routes (the brief's "React Router" is mapped onto it); the shared sidebar, tab bar and top bar live in `src/components/sobra/Shell.tsx`.
+- Colours are tokens in `src/styles.css`; dark mode follows `prefers-color-scheme`, so never add a toggle or hardcoded colours.
