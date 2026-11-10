@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { useExp } from "@/lib/experiment";
 import { taskKeys, tasksDone, type TaskKey } from "@/lib/experiment-types";
@@ -17,6 +17,7 @@ const tasks: Record<TaskKey, { label: string; to: "/plan" | "/deals" | "/list" |
 export function MissionBar() {
   const s = useExp((x) => x.session);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   if (!s) return null;
   const done = tasksDone(s);
   const finished = s.survey_post_completed;
@@ -38,9 +39,12 @@ export function MissionBar() {
             })}
             <li className="num ml-1 text-[13px] text-sheet/75" aria-live="polite">{done} of 5 tasks tried</li>
           </ol>
+          <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => { useExp.getState().setTour({ step: 1, sub: "guided_focus" }); navigate({ to: "/plan" }); }} className="text-[13px] font-medium text-sheet/80 underline underline-offset-4 hover:text-sheet">Restart guided tour</button>
           <button type="button" onClick={() => setOpen(true)} className="press min-h-10 rounded-xl bg-tape px-4 py-2 text-[14px] font-bold text-ink">
             {finished ? (s.bonus_completed ? "See my reward" : "Unlock bonus reward") : "Finish & Claim Free Month (25 sec) ->"}
           </button>
+          </div>
         </div>
       </div>
       <VerdictModal open={open} onOpenChange={setOpen} />

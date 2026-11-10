@@ -41,6 +41,7 @@ export function PreSurvey() {
   const finish = () => {
     update({ q1_household: h, q2_fallback_nights: f, q3_pain_1: pains[0]!, q3_pain_2: pains[1]!, q4_workaround: w, q5_primary_store: st, q5_weekly_spend: spend, survey_pre_completed: true }, true);
     setApp({ setupDone: true, mode: session.ab_plan_variant === "A_weekly_prep" ? "prep" : "daily", store: st as (typeof storeOptions)[number] });
+    useExp.getState().setTour({ step: 1, sub: "guided_focus" });
     navigate({ to: "/plan" });
   };
 

@@ -25,6 +25,7 @@ function Deals() {
   const { store, alerts, set } = useApp();
   const deals = [...dealsByStore[store]].sort((a, b) => Number(isRealDeal(b)) - Number(isRealDeal(a)));
   const traps = deals.filter((d) => !isRealDeal(d)).length;
+  const firstTrap = deals.find((d) => !isRealDeal(d))?.name;
   return (
     <>
       <PageHeader small={`${deals.length} offers this week · ${traps} price ${traps === 1 ? "trap" : "traps"} flagged`} title={`Deals at ${store}, checked against regular prices`}
@@ -33,7 +34,7 @@ function Deals() {
         {deals.map((d) => {
           const real = isRealDeal(d);
           return (
-            <li key={d.name} className="flex flex-col overflow-hidden rounded-2xl border border-rule bg-sheet shadow-sm">
+            <li key={d.name} data-tour={d.name === firstTrap ? "3" : undefined} className="flex flex-col overflow-hidden rounded-2xl border border-rule bg-sheet shadow-sm">
               <div className="relative h-36 bg-sheet-2">
                 <img src={dealPhoto(d.name)} alt="" width={600} height={288} loading="lazy" className="size-full object-cover" />
                 <span className={cn("absolute left-3 top-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-semibold", real ? "bg-sheet text-basil" : "bg-sheet text-tomato")}>
@@ -55,7 +56,7 @@ function Deals() {
         })}
       </ul>
 
-      <section aria-labelledby="pa">
+      <section aria-labelledby="pa" data-tour="3" data-tour-auto className="p-1">
         <h2 id="pa" className="flex items-center gap-2 text-[20px] font-bold"><BellRing className="size-5 text-basil" aria-hidden />Price alerts</h2>
         <p className="mb-4 mt-1 text-[13.5px] text-muted-foreground">We tell you when a product you buy often drops below your usual price.</p>
         <ul className="grid grid-cols-1 gap-5 md:grid-cols-3">
@@ -65,7 +66,7 @@ function Deals() {
                 <span className="block text-[15.5px] font-semibold">{a.name}</span>
                 <span className="num block text-[13px] text-muted-foreground">usual {eur(a.usual)}</span>
               </label>
-              <Switch id={`al-${a.id}`} checked={!!alerts[a.id]} className="data-[state=checked]:bg-basil data-[state=unchecked]:bg-rule"
+              <Switch data-tour-trigger id={`al-${a.id}`} checked={!!alerts[a.id]} className="data-[state=checked]:bg-basil data-[state=unchecked]:bg-rule"
                 onCheckedChange={(v) => { set({ alerts: { ...alerts, [a.id]: v } }); useExp.getState().track("task_3_deals"); toast(v ? "Alert on. We tell you when it drops." : "Alert off."); }} />
             </li>
           ))}

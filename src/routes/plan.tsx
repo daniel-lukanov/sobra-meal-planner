@@ -31,9 +31,9 @@ function Plan() {
           <p className="text-[13px] font-medium text-muted-foreground">Week 46 · {store}</p>
           <h1 className="mt-1 text-[28px] font-bold md:text-[32px]">{headline[framing]}</h1>
         </div>
-        <UnderlineTabs label="Planning mode" value={mode}
+        <div data-tour="2" data-tour-trigger data-tour-auto><UnderlineTabs label="Planning mode" value={mode}
           onChange={(m) => { if (m !== mode) { useExp.getState().track("initial_mode_switched"); useExp.getState().track("task_2_mode"); } set({ mode: m }); }}
-          options={[{ value: "prep", label: "Weekly prep" }, { value: "daily", label: "Daily pick" }]} />
+          options={[{ value: "prep", label: "Weekly prep" }, { value: "daily", label: "Daily pick" }]} /></div>
       </header>
       <WeekBanner />
       {mode === "prep" ? <WeeklyPrep /> : <DailyPick />}
@@ -45,10 +45,10 @@ function WeekBanner() {
   const { weekAccepted, set, addSavings } = useApp();
   const navigate = useNavigate();
   return (
-    <section aria-label="This week" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-basil p-5 text-basil-ink shadow-md">
+    <section aria-label="This week" data-tour="2" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-basil p-5 text-basil-ink shadow-md">
       <p className="num text-[15.5px] font-semibold">{weekSummary.dinners} dinners · {eur(weekSummary.total)} total · 70 min prep · Saves {eur(weekSummary.belowRegular)} vs regular prices</p>
       <div className="flex flex-wrap gap-2">
-        <button type="button" disabled={weekAccepted} className="press rounded-xl bg-sheet px-5 py-2.5 font-semibold text-basil disabled:opacity-80"
+        <button type="button" data-tour-trigger disabled={weekAccepted} className="press rounded-xl bg-sheet px-5 py-2.5 font-semibold text-basil disabled:opacity-80"
           onClick={() => { const e = useExp.getState(); e.track("accepted_week_clicked"); e.track("task_1_plan"); set({ weekAccepted: true }); addSavings(weekSummary.belowRegular); toast("Week accepted. Shopping list ready."); }}>
           {weekAccepted ? "Week accepted" : "Accept this week"}
         </button>
@@ -110,7 +110,7 @@ function WeeklyPrep() {
 
   return (
     <div>
-      <div role="group" aria-label="Filter by prepped base" className="mb-6 flex flex-wrap gap-2">
+      <div role="group" aria-label="Filter by prepped base" data-tour="1" data-tour-auto className="mb-6 flex flex-wrap gap-2">
         {bases.map((b) => {
           const on = filter === b.id;
           return (

@@ -96,3 +96,14 @@ export function toCSV(rows: R[]) {
   };
   return [csvCols.join(","), ...rows.map((r) => csvCols.map((c) => esc(r[c])).join(","))].join("\n");
 }
+
+/** An accidental open: no welcome survey, no tasks, no offer taken. */
+export const isBounce = (r: R) => !r.survey_pre_completed && tasksDone(r) === 0 && r.cta_converted !== true;
+export const isSeeded = (r: R) => r.session_id.startsWith("00000000-0000-4000-8000-");
+export type SessionStatus = "Stage 2 Done" | "Stage 1 Done" | "Empty Bounce" | "Tour In Progress";
+export function statusOf(r: R): SessionStatus {
+  if (r.bonus_completed) return "Stage 2 Done";
+  if (r.survey_post_completed) return "Stage 1 Done";
+  if (isBounce(r)) return "Empty Bounce";
+  return "Tour In Progress";
+}

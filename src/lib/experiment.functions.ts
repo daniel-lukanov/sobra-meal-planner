@@ -5,7 +5,7 @@ import { featureKeys } from "@/data/survey";
 
 const b = z.boolean();
 const t = z.string().max(300).nullable();
-const sessionSchema = z.object({
+export const sessionSchema = z.object({
   session_id: z.string().uuid(),
   created_at: z.string().max(40),
   referral_source: z.string().max(60),
@@ -44,7 +44,11 @@ export const saveExperimentSession = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-async function passcodeMatches(input: string, expected: string) {
+/** The team passcode is case-insensitive. */
+export const normalizePasscode = (s: string) => s.trim().toLowerCase();
+
+async function passcodeMatches(rawInput: string, rawExpected: string) {
+  const input = normalizePasscode(rawInput), expected = normalizePasscode(rawExpected);
   const enc = new TextEncoder();
   const [a, c] = await Promise.all([crypto.subtle.digest("SHA-256", enc.encode(input)), crypto.subtle.digest("SHA-256", enc.encode(expected))]);
   const x = new Uint8Array(a), y = new Uint8Array(c);
@@ -65,4 +69,32 @@ export const getInsights = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false }).limit(1000);
     if (error) throw new Error(error.message);
     return { ok: true as const, rows: (rows ?? []) as unknown as ExperimentSession[] };
+  });
+
+async function requirePasscode(passcode: string) {
+  const expected = process.env["INSIGHTS_PASSCODE"];
+  if (!expected) throw new Error("INSIGHTS_PASSCODE is not set");
+  if (!(await passcodeMatches(passcode, expected))) throw new Error("Wrong passcode");
+}
+
+/** Founder-only edit or manual entry of one session. Guarded by the passcode instead of open RLS policies. */
+export const adminSaveSession = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ passcode: z.string().max(200), session: sessionSchema }).parse(d))
+  .handler(async ({ data }) => {
+    await requirePasscode(data.passcode);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("experiment_sessions").upsert({ ...data.session, updated_at: new Date().toISOString() });
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const adminDeleteSessions = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ passcode: z.string().max(200), ids: z.array(z.string().uuid()).max(1000) }).parse(d))
+  .handler(async ({ data }) => {
+    await requirePasscode(data.passcode);
+    if (!data.ids.length) return { ok: true as const, deleted: 0 };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error, count } = await supabaseAdmin.from("experiment_sessions").delete({ count: "exact" }).in("session_id", data.ids);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, deleted: count ?? 0 };
   });

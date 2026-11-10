@@ -9,6 +9,10 @@ import { SavingsCounter } from "./Savings";
 import { useExp } from "@/lib/experiment";
 import { PreSurvey } from "./PreSurvey";
 import { MissionBar } from "./MissionBar";
+import { GuidedTour } from "./GuidedTour";
+import { isGhost } from "@/lib/experiment";
+import { Ghost } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -77,7 +81,10 @@ export function Shell({ children }: { children: ReactNode }) {
   const session = useExp((s) => s.session);
   const skipped = useExp((s) => s.skipped);
   const showSurvey = !isInsights && expHydrated && !!session && !session.survey_pre_completed && !skipped;
+  const tour = useExp((s) => s.tour);
   const showMission = !isInsights && !isSetup && !showSurvey && !!session && (session.survey_pre_completed || skipped);
+  const [ghost, setGhost] = useState(false);
+  useEffect(() => { setGhost(isGhost()); }, [pathname]);
 
   useEffect(() => { useApp.persist.rehydrate(); useExp.persist.rehydrate(); }, []);
   // Assign the variants once per visitor, and open /plan on the assigned tab.
@@ -108,7 +115,12 @@ export function Shell({ children }: { children: ReactNode }) {
       <main className="mx-auto max-w-6xl px-4 pb-32 pt-7 sm:px-8">
         {showSurvey ? <PreSurvey /> : <div key={pathname} className="fade-route">{children}</div>}
       </main>
-      {showMission && <MissionBar />}
+      {showMission && (tour ? <GuidedTour /> : <MissionBar />)}
+      {ghost && (
+        <span className="fixed bottom-20 left-3 z-50 inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-[12px] font-semibold text-sheet shadow-md md:bottom-4">
+          <Ghost className="size-3.5" aria-hidden />Ghost Mode (Not Recording)
+        </span>
+      )}
       {!showSurvey && !isInsights && (
         <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-rule bg-sheet pb-[env(safe-area-inset-bottom)] md:hidden">
           {nav.map(({ to, label, icon: Icon }) => {

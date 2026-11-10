@@ -1,14 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Download, Lock, RotateCcw } from "lucide-react";
+import { Download, Ghost, Lock, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { getInsights } from "@/lib/experiment.functions";
+import { adminDeleteSessions, adminSaveSession, getInsights } from "@/lib/experiment.functions";
 import type { ExperimentSession } from "@/lib/experiment-types";
-import { useExp } from "@/lib/experiment";
+import { GHOST_KEY, useExp } from "@/lib/experiment";
+import { Switch } from "@/components/ui/switch";
+import { SessionExplorer } from "@/components/sobra/SessionExplorer";
+import { tasksDone } from "@/lib/experiment-types";
 import { getMockExperimentData } from "@/data/mockExperimentData";
 import { fallbackOptions, featureLabels, modeOptions, painOptions, receiptOptions, shortLabel, wasteOptions, wtpOptions } from "@/data/survey";
-import { ctaTable, distribution, featureAverages, framingTable, kpis, painRanking, pct, planTable, referrals, toCSV } from "@/lib/insights";
+import { isBounce, isSeeded, ctaTable, distribution, featureAverages, framingTable, kpis, painRanking, pct, planTable, referrals, toCSV } from "@/lib/insights";
 import { Button, UnderlineTabs } from "@/components/sobra/ui";
 import { SobraLogo } from "@/components/sobra/Brand";
 
@@ -31,6 +34,7 @@ const KEY = "sobra-insights-pass";
 
 function Insights() {
   const fetchInsights = useServerFn(getInsights);
+  const deleteFn = useServerFn(adminDeleteSessions);
   const [pass, setPass] = useState("");
   const [rows, setRows] = useState<ExperimentSession[] | null>(null);
   const [error, setError] = useState(false);
@@ -40,7 +44,18 @@ function Insights() {
     setBusy(true);
     try {
       const res = await fetchInsights({ data: { passcode: code } });
-      if (res.ok) { sessionStorage.setItem(KEY, code); setRows(res.rows); setError(false); }
+      if (res.ok) {
+        sessionStorage.setItem(KEY, code); setError(false);
+        // A founder who opened the app by accident leaves an empty session behind: clean it up.
+        const mine = useExp.getState().session;
+        let list = res.rows;
+        if (mine && !mine.survey_pre_completed && tasksDone(mine) === 0) {
+          await deleteFn({ data: { passcode: code, ids: [mine.session_id] } }).catch(() => {});
+          useExp.getState().reset();
+          list = list.filter((r) => r.session_id !== mine.session_id);
+        }
+        setRows(list);
+      }
       else { sessionStorage.removeItem(KEY); if (!silent) setError(true); }
     } catch { if (!silent) toast("Could not load responses. Try again in a moment."); }
     finally { setBusy(false); }
@@ -62,12 +77,47 @@ function Insights() {
       </div>
     );
   }
-  return <Dashboard live={rows} />;
+  return <Dashboard live={rows} setLive={setRows} passcode={sessionStorage.getItem(KEY) ?? pass} />;
 }
 
-function Dashboard({ live }: { live: ExperimentSession[] }) {
+const EDITS = "sobra_mock_edits", DELETED = "sobra_mock_deleted_ids";
+const readJSON = <T,>(k: string, fallback: T): T => { try { return JSON.parse(localStorage.getItem(k) ?? "") as T; } catch { return fallback; } };
+
+function Dashboard({ live, setLive, passcode }: { live: ExperimentSession[]; setLive: (r: ExperimentSession[]) => void; passcode: string }) {
+  const saveFn = useServerFn(adminSaveSession);
+  const deleteFn = useServerFn(adminDeleteSessions);
   const [mode, setMode] = useState<"live" | "combined">("combined");
-  const rows = useMemo(() => (mode === "live" ? live : [...live, ...getMockExperimentData()]), [mode, live]);
+  const [view, setView] = useState<"overview" | "explorer">("overview");
+  const [excludeBounces, setExcludeBounces] = useState(true);
+  const [ghost, setGhost] = useState(false);
+  const [mockEdits, setMockEdits] = useState<Record<string, ExperimentSession>>({});
+  const [mockDeleted, setMockDeleted] = useState<string[]>([]);
+  useEffect(() => {
+    setGhost(localStorage.getItem(GHOST_KEY) === "1");
+    setMockEdits(readJSON(EDITS, {})); setMockDeleted(readJSON(DELETED, []));
+  }, []);
+  const toggleGhost = (v: boolean) => { setGhost(v); if (v) localStorage.setItem(GHOST_KEY, "1"); else localStorage.removeItem(GHOST_KEY); toast(v ? "Ghost mode on. Your visits on this device are not recorded." : "Ghost mode off."); };
+  const seeded = useMemo(() => getMockExperimentData().filter((r) => !mockDeleted.includes(r.session_id)).map((r) => mockEdits[r.session_id] ?? r), [mockEdits, mockDeleted]);
+  const all = useMemo(() => (mode === "live" ? live : [...live, ...seeded]), [mode, live, seeded]);
+  const rows = useMemo(() => (excludeBounces ? all.filter((r) => !isBounce(r)) : all), [all, excludeBounces]);
+
+  const saveSession = async (s: ExperimentSession) => {
+    if (isSeeded(s)) {
+      const next = { ...mockEdits, [s.session_id]: s }; setMockEdits(next); localStorage.setItem(EDITS, JSON.stringify(next));
+    } else {
+      await saveFn({ data: { passcode, session: s } });
+      setLive(live.some((r) => r.session_id === s.session_id) ? live.map((r) => (r.session_id === s.session_id ? s : r)) : [s, ...live]);
+    }
+  };
+  const deleteSessions = async (ids: string[]) => {
+    const seededIds = ids.filter((id) => id.startsWith("00000000-0000-4000-8000-"));
+    const liveIds = ids.filter((id) => !seededIds.includes(id));
+    if (liveIds.length) await deleteFn({ data: { passcode, ids: liveIds } });
+    if (seededIds.length) { const next = [...new Set([...mockDeleted, ...seededIds])]; setMockDeleted(next); localStorage.setItem(DELETED, JSON.stringify(next)); }
+    setLive(live.filter((r) => !liveIds.includes(r.session_id)));
+  };
+  const restoreSeeded = () => { setMockEdits({}); setMockDeleted([]); localStorage.removeItem(EDITS); localStorage.removeItem(DELETED); toast("Sample responses restored."); };
+  const explorer = <SessionExplorer rows={all} excludeBounces={excludeBounces} setExcludeBounces={setExcludeBounces} onSave={saveSession} onDelete={deleteSessions} onRestoreSeeded={mode === "combined" && (mockDeleted.length > 0 || Object.keys(mockEdits).length > 0) ? restoreSeeded : undefined} />;
   const k = kpis(rows);
   const plan = planTable(rows); const frame = framingTable(rows); const cta = ctaTable(rows);
   const pains = painRanking(rows, painOptions);
@@ -108,11 +158,24 @@ function Dashboard({ live }: { live: ExperimentSession[] }) {
           <p className="text-[13px] font-medium text-muted-foreground">Católica Lisbon NVC · Team V6 Ventures · private</p>
           <h1 className="mt-1 text-[30px] font-bold md:text-[34px]">Founder insights</h1>
         </div>
-        <UnderlineTabs label="Data mode" value={mode} onChange={setMode} options={[
-          { value: "live", label: "Live Supabase Only" },
-          { value: "combined", label: "Combined (32 Pre-Seeded + Live)" },
-        ]} />
+        <div className="flex flex-col gap-3 md:items-end">
+          <label className="inline-flex items-center gap-2.5 rounded-full bg-ink px-4 py-2 text-[13.5px] font-semibold text-sheet">
+            <Ghost className="size-4" aria-hidden />Founder Ghost Mode (Do not record my visits)
+            <Switch checked={ghost} onCheckedChange={toggleGhost} className="data-[state=checked]:bg-tape data-[state=unchecked]:bg-sheet/30" />
+          </label>
+          <UnderlineTabs label="Data mode" value={mode} onChange={setMode} options={[
+            { value: "live", label: "Live Supabase Only" },
+            { value: "combined", label: `Combined (${seeded.length} Pre-Seeded + Live)` },
+          ]} />
+        </div>
       </header>
+
+      <UnderlineTabs label="View" value={view} onChange={setView} options={[
+        { value: "overview", label: "Overview & Charts" },
+        { value: "explorer", label: `Session Explorer & Editor (${all.length})` },
+      ]} />
+
+      {view === "explorer" ? explorer : <>
 
       <section aria-label="Summary" className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
         <Kpi label="Total sessions" value={`${k.n}`} />
@@ -205,6 +268,9 @@ function Dashboard({ live }: { live: ExperimentSession[] }) {
             learning={`Put ${featureLabels[topFeat.key]} first in onboarding and the pitch.`} />
         </div>
       </Section>
+
+      {explorer}
+      </>}
 
       <div className="card flex flex-wrap gap-2 p-4">
         <Button onClick={download}><Download className="size-4" aria-hidden />Download Full 15-Question CSV for R / Python</Button>

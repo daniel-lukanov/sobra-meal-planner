@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { newSession, referralFrom, type ExperimentSession } from "@/lib/experiment-types";
-import { ctaTable, kpis, painRanking } from "@/lib/insights";
+import { ctaTable, isBounce, kpis, painRanking, statusOf } from "@/lib/insights";
+import { normalizePasscode } from "@/lib/experiment.functions";
 import { getMockExperimentData } from "@/data/mockExperimentData";
 import { painOptions } from "@/data/survey";
 
@@ -40,5 +41,23 @@ describe("founder insights", () => {
     expect(newSession("x", () => 0.1).ab_cta_variant).toBe("C1_free_receipt_cashback");
     expect(newSession("x", () => 0.5).ab_cta_variant).toBe("C2_paid_199_student");
     expect(newSession("x", () => 0.9).ab_cta_variant).toBe("C3_paid_399_household");
+  });
+});
+
+
+describe("bounce cleanup rules", () => {
+  it("an untouched session is an empty bounce", () => {
+    const s = newSession();
+    expect(isBounce(s)).toBe(true);
+    expect(statusOf(s)).toBe("Empty Bounce");
+  });
+  it("one finished task means it is not a bounce", () => {
+    expect(isBounce({ ...newSession(), task_3_deals: true })).toBe(false);
+  });
+  it("finishing the welcome survey means it is not a bounce", () => {
+    expect(isBounce({ ...newSession(), survey_pre_completed: true })).toBe(false);
+  });
+  it("the passcode v6ventures67 matches regardless of case", () => {
+    expect(normalizePasscode("V6Ventures67")).toBe(normalizePasscode("v6ventures67"));
   });
 });

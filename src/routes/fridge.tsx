@@ -84,7 +84,7 @@ function Fridge() {
           </ul>
         }
         side={
-          <section aria-labelledby="rs" className="thermal rounded-[4px] bg-paper px-5 shadow-[var(--shadow-sheet)]">
+          <section aria-labelledby="rs" data-tour="5" className="thermal rounded-[4px] bg-paper px-5 shadow-[var(--shadow-sheet)]">
             <h2 id="rs" className="flex items-center gap-2 pt-2 text-[19px] font-bold"><ReceiptText className="size-5 text-muted-foreground" aria-hidden />Receipt scan</h2>
             <div aria-hidden className="mt-2 border-t-2 border-dashed border-rule" />
             {step === "start" && (
@@ -93,7 +93,7 @@ function Fridge() {
                 <label htmlFor="receipt" className="sr-only">Receipt photo</label>
                 <input id="receipt" ref={fileRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={startScan} />
                 <Button className="mt-4" onClick={() => { useExp.getState().track("task_5_fridge"); fileRef.current?.click(); }}>Scan a receipt</Button>
-                <button type="button" onClick={startScan} className="ml-3 min-h-11 text-[13px] font-medium text-muted-foreground underline underline-offset-4">Use the sample receipt</button>
+                <button type="button" data-tour-auto onClick={startScan} className="ml-3 min-h-11 text-[13px] font-medium text-muted-foreground underline underline-offset-4">Use the sample receipt</button>
               </>
             )}
             {step === "reading" && (
@@ -121,7 +121,7 @@ function Fridge() {
                     </li>
                   ))}
                 </ul>
-                <Button className="mt-4 w-full" onClick={() => {
+                <Button data-tour-trigger data-tour-auto className="mt-4 w-full" onClick={() => {
                   const existing = new Set(fridge.map((f) => f.id));
                   set({ fridge: [...receiptRead.filter((r) => !existing.has(r.item.id)).map((r) => ({ ...r.item, isNew: true })), ...fridge] });
                   setStep("done");

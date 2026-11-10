@@ -35,7 +35,7 @@ function List() {
         {shoppingList.map((g) => {
           const Icon = aisleIcon[g.aisle] ?? Package;
           return (
-            <section key={g.aisle} aria-labelledby={`a-${g.aisle}`} className="card p-5">
+            <section key={g.aisle} aria-labelledby={`a-${g.aisle}`} data-tour={g.aisle === "Fruit and veg" ? "4" : undefined} data-tour-auto className="card p-5">
               <h2 id={`a-${g.aisle}`} className="mb-3 flex items-center gap-2.5 text-[18px]">
                 <span className="flex size-9 items-center justify-center rounded-[10px] bg-basil-tint text-basil"><Icon className="size-[18px]" strokeWidth={1.7} aria-hidden /></span>{g.aisle}
               </h2>
