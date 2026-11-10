@@ -68,7 +68,7 @@ function WeeklyPrep() {
             if (row.kind === "prep") return <PrepItem key={i} row={row} />;
             const alt = dayIdx++ % 2 === 1;
             const r = row as DayRow;
-            const meal = r.options[(swaps[i] ?? 0) % r.options.length];
+            const meal = r.options[(swaps[i] ?? 0) % r.options.length]!;
             const finalMeal = reelAdded && r.day === "Sat" ? { title: "Tuscan chicken", how: "From your reel, creamy garlic sauce, 20 min", uses: ["chicken", "spinach", "onion", "rice"] as IngredientId[], price: 2.6 } : meal;
             const lit = hover && finalMeal.uses.includes(hover);
             return (

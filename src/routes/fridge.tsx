@@ -76,7 +76,7 @@ function Fridge() {
             {step === "review" && (
               <div className="slide-in mt-4">
                 <pre className="torn rounded-t-[6px] bg-sheet-2 p-3 font-mono text-[12.5px] leading-relaxed">
-                  {receiptRaw.map(([a, b]) => `${a.padEnd(22)}${b.padStart(9)}`).join("\n")}
+                  {receiptRaw.map(([a, b]) => `${a!.padEnd(22)}${b!.padStart(9)}`).join("\n")}
                 </pre>
                 <ul className="mt-4 divide-y divide-rule">
                   {receiptRead.map((r) => (
