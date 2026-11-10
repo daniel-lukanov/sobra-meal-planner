@@ -1,16 +1,14 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { CalendarDays, ChefHat, Refrigerator, ShoppingBasket, Tag, BookHeart } from "lucide-react";
+import { BookHeart, CalendarDays, ChefHat, ChevronDown, Lock, Refrigerator, ShoppingBag, ShoppingBasket, Tag } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/lib/store";
 import { storeBrand, stores, type StoreName } from "@/data/stores";
 import { SobraLogo, StoreDot } from "./Brand";
-import { ChevronDown, ShoppingBag } from "lucide-react";
 import { SavingsCounter } from "./Savings";
 import { useExp } from "@/lib/experiment";
 import { PreSurvey } from "./PreSurvey";
 import { MissionBar } from "./MissionBar";
-import { Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -20,33 +18,51 @@ const nav = [
   { to: "/fridge", label: "Fridge", icon: Refrigerator },
   { to: "/cook", label: "Cook", icon: ChefHat },
 ] as const;
+const topNav = [...nav, { to: "/setup" as const, label: "Your meals", icon: BookHeart }];
 
-function TopBar() {
+function StorePicker() {
   const store = useApp((s) => s.store);
   const set = useApp((s) => s.set);
   return (
-    <div className="card flex flex-wrap items-center justify-between gap-4 px-4 py-3">
-      <label className="flex items-center gap-3">
-        <span className="text-[13px] font-medium text-muted-foreground">My store</span>
-        <span className="relative inline-flex items-center rounded-full" style={{ backgroundColor: storeBrand[store].pill, color: "#1E1B18" }}>
-        <StoreDot name={store} className="pointer-events-none absolute left-3" />
-        <ShoppingBag className="pointer-events-none absolute left-7 size-4" strokeWidth={1.8} aria-hidden />
-        <select
-          value={store}
-          onChange={(e) => {
-            const s = e.target.value as StoreName;
-            set({ store: s, weekAccepted: false, swaps: {} });
-            toast(`Plan rebuilt from ${s} deals.`);
-          }}
-          className="min-h-11 appearance-none rounded-full bg-transparent pl-[52px] pr-9 text-[15px] font-semibold"
-        >
-          {stores.map((s) => <option key={s}>{s}</option>)}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-3 size-4" aria-hidden />
-        </span>
-      </label>
-      <SavingsCounter />
-    </div>
+    <label className="relative inline-flex shrink-0 items-center rounded-full" style={{ backgroundColor: storeBrand[store].pill, color: "#1E1B18" }}>
+      <span className="sr-only">My store</span>
+      <StoreDot name={store} className="pointer-events-none absolute left-3" />
+      <ShoppingBag className="pointer-events-none absolute left-7 hidden size-4 sm:block" strokeWidth={1.8} aria-hidden />
+      <select value={store}
+        onChange={(e) => { const s = e.target.value as StoreName; set({ store: s, weekAccepted: false, swaps: {} }); toast(`Plan rebuilt from ${s} deals.`); }}
+        className="min-h-10 appearance-none rounded-full bg-transparent pl-8 pr-8 text-[14px] font-semibold sm:pl-[52px]">
+        {stores.map((s) => <option key={s}>{s}</option>)}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-3 size-4" aria-hidden />
+    </label>
+  );
+}
+
+function TopNav({ minimal }: { minimal: boolean }) {
+  const { pathname } = useLocation();
+  return (
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-rule bg-sheet/95 px-4 backdrop-blur-md sm:px-8">
+      <Link to="/plan" aria-label="sobra, go to plan" className="shrink-0"><SobraLogo compact /></Link>
+      {!minimal && (
+        <nav aria-label="Main" className="hidden h-full items-center gap-1 md:flex">
+          {topNav.map(({ to, label }) => {
+            const active = pathname.startsWith(to);
+            return (
+              <Link key={to} to={to} aria-current={active ? "page" : undefined}
+                className={cn("flex h-full items-center border-b-2 px-3 text-[14.5px] transition-colors", active ? "border-basil font-semibold text-basil" : "border-transparent font-medium text-muted-foreground hover:text-ink")}>
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+      <div className="flex items-center gap-2">
+        {!minimal && <><StorePicker /><SavingsCounter /></>}
+        <Link to="/insights" aria-label="Founder insights" className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-sheet-2 hover:text-ink">
+          <Lock className="size-4" aria-hidden />
+        </Link>
+      </div>
+    </header>
   );
 }
 
@@ -61,10 +77,10 @@ export function Shell({ children }: { children: ReactNode }) {
   const session = useExp((s) => s.session);
   const skipped = useExp((s) => s.skipped);
   const showSurvey = !isInsights && expHydrated && !!session && !session.survey_pre_completed && !skipped;
-  const showMission = !isInsights && !isSetup && !!session && (session.survey_pre_completed || skipped);
+  const showMission = !isInsights && !isSetup && !showSurvey && !!session && (session.survey_pre_completed || skipped);
 
   useEffect(() => { useApp.persist.rehydrate(); useExp.persist.rehydrate(); }, []);
-  // Assign the A/B variants once per visitor, and open /plan on the assigned tab.
+  // Assign the variants once per visitor, and open /plan on the assigned tab.
   useEffect(() => {
     if (!hydrated || !expHydrated || isInsights || useExp.getState().session) return;
     const s = useExp.getState().ensure();
@@ -87,51 +103,25 @@ export function Shell({ children }: { children: ReactNode }) {
   }, [isInsights, session?.session_id]);
 
   return (
-    <div className="min-h-screen md:flex">
-      <aside className="sticky top-0 hidden h-screen w-[220px] shrink-0 flex-col px-5 py-7 md:flex">
-        <Link to="/plan" aria-label="sobra, go to plan"><SobraLogo /></Link>
-        <nav aria-label="Main" className="mt-10 flex flex-col gap-1">
-          {[...nav, { to: "/setup" as const, label: "Your meals", icon: BookHeart }].map(({ to, label, icon: Icon }) => {
+    <div className="min-h-screen">
+      <TopNav minimal={showSurvey || isInsights} />
+      <main className="mx-auto max-w-6xl px-4 pb-32 pt-7 sm:px-8">
+        {showSurvey ? <PreSurvey /> : <div key={pathname} className="fade-route">{children}</div>}
+      </main>
+      {showMission && <MissionBar />}
+      {!showSurvey && !isInsights && (
+        <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-rule bg-sheet pb-[env(safe-area-inset-bottom)] md:hidden">
+          {nav.map(({ to, label, icon: Icon }) => {
             const active = pathname.startsWith(to);
             return (
               <Link key={to} to={to} aria-current={active ? "page" : undefined}
-                className={cn("flex min-h-11 items-center gap-3 rounded-[12px] px-3 text-[15px] font-medium transition-colors", active ? "bg-sheet text-ink shadow-[var(--shadow-card)] ring-1 ring-rule" : "text-muted-foreground hover:text-ink")}>
-                <Icon className="size-[18px]" strokeWidth={1.6} aria-hidden />{label}
+                className={cn("flex min-h-14 min-w-14 flex-col items-center justify-center gap-0.5 text-[12px] font-medium", active ? "text-basil" : "text-muted-foreground")}>
+                <Icon className="size-[22px]" strokeWidth={1.6} aria-hidden />{label}
               </Link>
             );
           })}
         </nav>
-        <p className="mt-auto text-[12.5px] leading-snug text-muted-foreground">Prototype. Prices and deals are sample data entered by hand.</p>
-        <Link to="/insights" className="mt-3 flex min-h-9 items-center gap-1.5 text-[12.5px] font-medium text-muted-foreground hover:text-ink"><Lock className="size-3.5" aria-hidden />Founder insights</Link>
-      </aside>
-
-      <div className="min-w-0 flex-1 px-2 pb-28 pt-2 md:px-6 md:py-6">
-        <div className="flex items-center justify-between px-3 pb-2 pt-1 md:hidden">
-          <SobraLogo compact />
-          <Link to="/setup" className="flex min-h-11 items-center text-[13px] font-medium text-muted-foreground">Your meals</Link>
-        </div>
-        <main className="mx-auto max-w-[1040px] px-2 py-3 md:px-4 md:py-2">
-          {showSurvey ? <PreSurvey /> : (
-            <>
-              {!isSetup && !isInsights && <TopBar />}
-              <div key={pathname} className={cn("fade-route", !isSetup && !isInsights && "pt-7", showMission && "pb-24")}>{children}</div>
-            </>
-          )}
-        </main>
-      </div>
-      {showMission && !showSurvey && <MissionBar />}
-
-      <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-rule bg-sheet pb-[env(safe-area-inset-bottom)] md:hidden">
-        {nav.map(({ to, label, icon: Icon }) => {
-          const active = pathname.startsWith(to);
-          return (
-            <Link key={to} to={to} aria-current={active ? "page" : undefined}
-              className={cn("flex min-h-14 min-w-14 flex-col items-center justify-center gap-0.5 text-[12px] font-medium", active ? "text-basil" : "text-muted-foreground")}>
-              <Icon className="size-[22px]" strokeWidth={1.6} aria-hidden />{label}
-            </Link>
-          );
-        })}
-      </nav>
+      )}
     </div>
   );
 }

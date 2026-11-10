@@ -17,8 +17,10 @@ export type Database = {
       experiment_sessions: {
         Row: {
           ab_cta_variant: string
+          ab_framing_variant: string | null
           ab_plan_variant: string
           accepted_week_clicked: boolean
+          bonus_completed: boolean
           contact: string | null
           contact_left: boolean
           cook_tab_visited: boolean
@@ -32,12 +34,36 @@ export type Database = {
           initial_mode_switched: boolean
           open_feedback: string | null
           preferred_store: string | null
+          q1_household: string | null
+          q10_switch_threshold: string | null
+          q11_wasted_items: string[] | null
+          q12_synergy_attitude: string | null
+          q13_buy_a_feature: Json | null
+          q14_stated_wtp: string | null
+          q15_open_feedback: string | null
+          q2_fallback_nights: string | null
+          q3_pain_1: string | null
+          q3_pain_2: string | null
+          q4_workaround: string | null
+          q5_primary_store: string | null
+          q5_weekly_spend: number | null
+          q6_mode_winner: string | null
+          q7_receipt_habit: string | null
+          q8_pmf_score: string | null
+          q9_last_dinner_timing: string | null
           receipt_willingness: string | null
+          referral_source: string
           session_id: string
+          shared_on_whatsapp: boolean
           survey_post_completed: boolean
           survey_pre_completed: boolean
           swapped_meal_clicked: boolean
           synergy_filter_used: boolean
+          task_1_plan: boolean
+          task_2_mode: boolean
+          task_3_deals: boolean
+          task_4_list: boolean
+          task_5_fridge: boolean
           time_spent_seconds: number
           top_pain: string | null
           updated_at: string
@@ -46,8 +72,10 @@ export type Database = {
         }
         Insert: {
           ab_cta_variant: string
+          ab_framing_variant?: string | null
           ab_plan_variant: string
           accepted_week_clicked?: boolean
+          bonus_completed?: boolean
           contact?: string | null
           contact_left?: boolean
           cook_tab_visited?: boolean
@@ -61,12 +89,36 @@ export type Database = {
           initial_mode_switched?: boolean
           open_feedback?: string | null
           preferred_store?: string | null
+          q1_household?: string | null
+          q10_switch_threshold?: string | null
+          q11_wasted_items?: string[] | null
+          q12_synergy_attitude?: string | null
+          q13_buy_a_feature?: Json | null
+          q14_stated_wtp?: string | null
+          q15_open_feedback?: string | null
+          q2_fallback_nights?: string | null
+          q3_pain_1?: string | null
+          q3_pain_2?: string | null
+          q4_workaround?: string | null
+          q5_primary_store?: string | null
+          q5_weekly_spend?: number | null
+          q6_mode_winner?: string | null
+          q7_receipt_habit?: string | null
+          q8_pmf_score?: string | null
+          q9_last_dinner_timing?: string | null
           receipt_willingness?: string | null
+          referral_source?: string
           session_id: string
+          shared_on_whatsapp?: boolean
           survey_post_completed?: boolean
           survey_pre_completed?: boolean
           swapped_meal_clicked?: boolean
           synergy_filter_used?: boolean
+          task_1_plan?: boolean
+          task_2_mode?: boolean
+          task_3_deals?: boolean
+          task_4_list?: boolean
+          task_5_fridge?: boolean
           time_spent_seconds?: number
           top_pain?: string | null
           updated_at?: string
@@ -75,8 +127,10 @@ export type Database = {
         }
         Update: {
           ab_cta_variant?: string
+          ab_framing_variant?: string | null
           ab_plan_variant?: string
           accepted_week_clicked?: boolean
+          bonus_completed?: boolean
           contact?: string | null
           contact_left?: boolean
           cook_tab_visited?: boolean
@@ -90,12 +144,36 @@ export type Database = {
           initial_mode_switched?: boolean
           open_feedback?: string | null
           preferred_store?: string | null
+          q1_household?: string | null
+          q10_switch_threshold?: string | null
+          q11_wasted_items?: string[] | null
+          q12_synergy_attitude?: string | null
+          q13_buy_a_feature?: Json | null
+          q14_stated_wtp?: string | null
+          q15_open_feedback?: string | null
+          q2_fallback_nights?: string | null
+          q3_pain_1?: string | null
+          q3_pain_2?: string | null
+          q4_workaround?: string | null
+          q5_primary_store?: string | null
+          q5_weekly_spend?: number | null
+          q6_mode_winner?: string | null
+          q7_receipt_habit?: string | null
+          q8_pmf_score?: string | null
+          q9_last_dinner_timing?: string | null
           receipt_willingness?: string | null
+          referral_source?: string
           session_id?: string
+          shared_on_whatsapp?: boolean
           survey_post_completed?: boolean
           survey_pre_completed?: boolean
           swapped_meal_clicked?: boolean
           synergy_filter_used?: boolean
+          task_1_plan?: boolean
+          task_2_mode?: boolean
+          task_3_deals?: boolean
+          task_4_list?: boolean
+          task_5_fridge?: boolean
           time_spent_seconds?: number
           top_pain?: string | null
           updated_at?: string

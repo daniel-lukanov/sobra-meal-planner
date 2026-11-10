@@ -33,5 +33,5 @@ use the editor.
 - Sobra's app data lives in `src/data/*.ts` and app state in one zustand store (`src/lib/store.ts`, persisted to localStorage, rehydrated in the Shell after mount); only the customer-discovery experiment uses Lovable Cloud.
 - Experiment sessions live in `src/lib/experiment.ts` (zustand + localStorage) and sync to `experiment_sessions` only through server functions in `src/lib/experiment.functions.ts`; the table has RLS with no policies so browsers can never read other testers' answers.
 - `/insights` data comes only from `getInsights`, which checks the `INSIGHTS_PASSCODE` secret server-side, so responses never ship to visitors without the passcode.
-- Routing uses TanStack Router file routes (the brief's "React Router" is mapped onto it); the shared sidebar, tab bar and top bar live in `src/components/sobra/Shell.tsx`.
-- Colours are tokens in `src/styles.css`; dark mode follows `prefers-color-scheme`, so never add a toggle or hardcoded colours.
+- Routing uses TanStack Router file routes (the brief's "React Router" is mapped onto it); the sticky top navbar and mobile tab bar live in `src/components/sobra/Shell.tsx`.
+- Colours are tokens in `src/styles.css` and the app is light-only (no dark palette), so never add dark-mode rules or hardcoded colours.

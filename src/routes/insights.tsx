@@ -7,8 +7,8 @@ import { getInsights } from "@/lib/experiment.functions";
 import type { ExperimentSession } from "@/lib/experiment-types";
 import { useExp } from "@/lib/experiment";
 import { getMockExperimentData } from "@/data/mockExperimentData";
-import { fallbackOptions, featureOptions, receiptOptions, shortLabel, storeOptions, workaroundOptions } from "@/data/survey";
-import { ctaTable, distribution, kpis, planTable, toCSV } from "@/lib/insights";
+import { fallbackOptions, featureLabels, modeOptions, painOptions, receiptOptions, shortLabel, wasteOptions, wtpOptions } from "@/data/survey";
+import { ctaTable, distribution, featureAverages, framingTable, kpis, painRanking, pct, planTable, referrals, toCSV } from "@/lib/insights";
 import { Button, UnderlineTabs } from "@/components/sobra/ui";
 import { SobraLogo } from "@/components/sobra/Brand";
 
@@ -69,104 +69,146 @@ function Dashboard({ live }: { live: ExperimentSession[] }) {
   const [mode, setMode] = useState<"live" | "combined">("combined");
   const rows = useMemo(() => (mode === "live" ? live : [...live, ...getMockExperimentData()]), [mode, live]);
   const k = kpis(rows);
-  const plan = planTable(rows);
-  const cta = ctaTable(rows);
-  const pains = distribution(rows, "top_pain");
-  const fallback = distribution(rows, "fallback_nights", fallbackOptions);
-  const work = distribution(rows, "current_workaround", workaroundOptions);
-  const stores = distribution(rows, "preferred_store", storeOptions);
-  const feat = distribution(rows, "winning_feature", featureOptions);
-  const rec = distribution(rows, "receipt_willingness", receiptOptions);
-  const heavy = fallback.filter((f) => f.label === "3–4 nights" || f.label === "5+ nights").reduce((a, f) => a + f.pct, 0);
-  const [A, B] = plan; const [C1, C2] = cta;
-  const planWin = A!.acceptance >= B!.acceptance ? A! : B!;
-  const ctaWin = C1!.primary >= C2!.primary ? C1! : C2!;
-  const cashbackReceipt = rec.find((r) => r.label.startsWith("Only if"))?.pct ?? 0;
+  const plan = planTable(rows); const frame = framingTable(rows); const cta = ctaTable(rows);
+  const pains = painRanking(rows, painOptions);
+  const fallback = distribution(rows, "q2_fallback_nights", fallbackOptions);
+  const modeWin = distribution(rows, "q6_mode_winner", modeOptions);
+  const rec = distribution(rows, "q7_receipt_habit", receiptOptions);
+  const wtp = distribution(rows, "q14_stated_wtp", wtpOptions);
+  const waste = distribution(rows, "q11_wasted_items", wasteOptions);
+  const feats = featureAverages(rows);
+  const refs = referrals(rows);
+  const heavy = fallback.filter((f) => ["3 nights", "4 nights", "5+ nights"].includes(f.label)).reduce((a, f) => a + f.count, 0);
+  const heavyPct = pct(heavy, fallback.reduce((a, f) => a + f.count, 0));
+  const [A, B] = plan; const [F1, F2] = frame; const [C1, C2, C3] = cta;
+  const ctaBest = [...cta].sort((a, b) => b.conversion - a.conversion)[0]!;
+  const paidWtp = wtp.filter((w) => w.label.startsWith("Up to")).reduce((a, w) => a + w.pct, 0);
+  const topFeat = [...feats].sort((a, b) => b.avg - a.avg)[0]!;
+  const ctaName = { C1_free_receipt_cashback: "Free + €2 cashback", C2_paid_199_student: "€1.99/mo Student Pro", C3_paid_399_household: "€3.99/mo Household Pro" } as const;
 
   const download = () => {
     const blob = new Blob([toCSV(rows)], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `sobra-experiment-${mode}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `sobra-15q-${mode}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
   const resetMine = () => {
     useExp.getState().reset();
-    localStorage.removeItem("sobra-experiment-v1");
+    localStorage.removeItem("sobra-experiment-v2");
     localStorage.removeItem("sobra-v1");
     toast("Your test session is cleared. Open the app to take the survey again.");
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[13px] font-medium text-muted-foreground">Católica Lisbon NVC Study · private</p>
+          <p className="text-[13px] font-medium text-muted-foreground">Católica Lisbon NVC · Team V6 Ventures · private</p>
           <h1 className="mt-1 text-[30px] font-bold md:text-[34px]">Founder insights</h1>
         </div>
         <UnderlineTabs label="Data mode" value={mode} onChange={setMode} options={[
-          { value: "live", label: "Live Responses Only" },
-          { value: "combined", label: "Combined View (28 Pre-Seeded Lisbon Student Responses + Live)" },
+          { value: "live", label: "Live Supabase Only" },
+          { value: "combined", label: "Combined (32 Pre-Seeded + Live)" },
         ]} />
       </header>
 
-      <section aria-label="Summary" className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <Kpi label="Total respondents" value={`${k.n}`} />
-        <Kpi label="Survey completion" value={`${k.completion}%`} />
+      <section aria-label="Summary" className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+        <Kpi label="Total sessions" value={`${k.n}`} />
+        <Kpi label="Stage 1 completion" value={`${k.stage1}%`} />
+        <Kpi label="Stage 2 bonus completion" value={`${k.stage2}%`} />
+        <Kpi label="Sean Ellis PMF score" value={`${k.pmf}%`} sub="very disappointed · 40% = PMF" />
         <Kpi label="Overall CTA conversion" value={`${k.ctaConversion}%`} />
-        <Kpi label="Avg time explored" value={`${k.avgTime}s`} />
-        <Kpi label="Top validated pain" value={k.topPain ? `${k.topPain.pct}%` : "–"} sub={k.topPain?.label} />
+        <Kpi label="Avg tasks completed" value={`${k.avgTasks}/5`} />
       </section>
 
-      <Section title="Testing the circle" sub="Customer discovery: what hurts, and what people do today.">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Bars title="Top frustrations ranked" items={pains.map((p) => ({ ...p, label: shortLabel(p.label) }))} tone="tomato" />
-          <Bars title="Nights per week falling back to pasta or delivery" items={fallback} tone="mustard" />
-          <Bars title="Current workarounds" items={work} tone="basil" />
-          <Bars title="Supermarket share in Lisbon" items={stores} tone="basil" />
-        </div>
-      </Section>
-
-      <Section title="Testing the square" sub="Two A/B tests running at the same time, each split 50/50.">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Table title="Product mode A/B" head={["", "Variant A (Weekly Prep Default)", "Variant B (Daily Pick Default)"]} rows={[
+      <Section title="Willingness to pay: 3-way split" sub="Each visitor saw one of three offers at the end of Stage 1, split 33/33/33.">
+        <Table title="Business model A/B/C" head={["", "C1: Free + €2 Cashback", "C2: €1.99/mo Student Pass (1st Mo Free)", "C3: €3.99/mo Household Pass (1st Mo Free)"]} highlight={cta.indexOf(ctaBest) + 1} rows={[
+          ["Visitors (n)", `${C1!.n}`, `${C2!.n}`, `${C3!.n}`],
+          ["CTA conversion rate", `${C1!.conversion}%`, `${C2!.conversion}%`, `${C3!.conversion}%`],
+          ["Email / WhatsApp left", `${C1!.contact}%`, `${C2!.contact}%`, `${C3!.contact}%`],
+          ["Stage 2 bonus completion", `${C1!.bonus}%`, `${C2!.bonus}%`, `${C3!.bonus}%`],
+        ]} />
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <Table title="Product mode A/B" head={["", "Variant A (Weekly Prep)", "Variant B (Daily Pick)"]} rows={[
             ["Visitors (n)", `${A!.n}`, `${B!.n}`],
-            ["Plan acceptance rate", `${A!.acceptance}%`, `${B!.acceptance}%`],
+            ["Plan acceptance", `${A!.acceptance}%`, `${B!.acceptance}%`],
             ["Mode switch rate", `${A!.switched}%`, `${B!.switched}%`],
-            ["Synergy pill clicks", `${A!.synergy}%`, `${B!.synergy}%`],
-            ["Final conversion", `${A!.conversion}%`, `${B!.conversion}%`],
+            ["CTA conversion", `${A!.conversion}%`, `${B!.conversion}%`],
           ]} />
-          <Table title="Business model / willingness to pay A/B" head={["", "Variant 1 (Free + €2.00 Receipt Cashback)", "Variant 2 (€1.99/mo Student Pass)"]} rows={[
-            ["Visitors (n)", `${C1!.n}`, `${C2!.n}`],
-            ["Primary CTA click rate", `${C1!.primary}%`, `${C2!.primary}%`],
-            ["Contact info left", `${C1!.contact}%`, `${C2!.contact}%`],
+          <Table title="Headline framing A/B" head={["", "Frame 1 (Money Saver)", "Frame 2 (Time & Mental Load)"]} rows={[
+            ["Visitors (n)", `${F1!.n}`, `${F2!.n}`],
+            ["Plan acceptance", `${F1!.acceptance}%`, `${F2!.acceptance}%`],
+            ["CTA conversion", `${F1!.conversion}%`, `${F2!.conversion}%`],
+            ["PMF score", `${F1!.pmf}%`, `${F2!.pmf}%`],
           ]} />
-          <Bars title="Feature value vote" items={feat.map((f) => ({ ...f, label: shortLabel(f.label) }))} tone="basil" />
-          <Bars title="Receipt habit" items={rec} tone="mustard" />
         </div>
       </Section>
 
-      <Section title="Test cards and learning cards" sub="Filled in from the numbers above, ready to screenshot into the slides.">
-        <div className="grid gap-4 lg:grid-cols-3">
-          <LearnCard n={1} hypothesis="We believe Lisbon students fall back to pasta or delivery because they have no plan for the week."
-            test={`Pre-prototype survey, n = ${k.preCount}. Metric: share reporting 3 or more fallback nights.`}
-            observation={`${heavy}% fell back 3 or more nights last week. Top pain: ${k.topPain?.label ?? "no data yet"} (${k.topPain?.pct ?? 0}%).`}
-            learning={heavy >= 40 ? "The problem is real and frequent. Keep the plan as the core promise and lead the pitch with it." : "Fallback nights are less common than assumed. Talk to more students before building more."} />
-          <LearnCard n={2} hypothesis="Students accept a plan more often when the app opens on Weekly prep than on Daily pick."
-            test={`Product mode A/B, ${A!.n} vs ${B!.n} visitors. Metric: plan acceptance rate.`}
-            observation={`Weekly prep ${A!.acceptance}% vs Daily pick ${B!.acceptance}%. Mode switch rate ${A!.switched}% vs ${B!.switched}%.`}
-            learning={`${planWin.variant === "A_weekly_prep" ? "Weekly prep" : "Daily pick"} wins for now. Make it the default and run a bigger sample to confirm.`} />
-          <LearnCard n={3} hypothesis="Students engage more with a free cashback pilot than with a €1.99 monthly pass."
-            test={`Business model A/B, ${C1!.n} vs ${C2!.n} visitors. Metric: primary CTA click rate.`}
-            observation={`Cashback ${C1!.primary}% vs paid pass ${C2!.primary}%. ${cashbackReceipt}% would only scan receipts for cashback.`}
-            learning={`${ctaWin.variant === "1_receipt_cashback" ? "Cashback pulls harder. Fund the concierge pilot with brand partners first" : "Students will pay. Test the €1.99 pass with a real checkout next"}.`} />
+      <Section title="Stage 1 core answers (Q1–Q8)" sub="Everyone who finished the 8 core questions.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="card p-5">
+            <h3 className="text-[17px] font-bold">Speedboat pain ranking (Q3)</h3>
+            <ul className="mt-3 space-y-3">
+              {pains.map((p) => {
+                const max = Math.max(1, ...pains.map((x) => x.first + x.second));
+                return (
+                  <li key={p.label}>
+                    <div className="flex justify-between gap-3 text-[13.5px]"><span>{shortLabel(p.label)}</span><span className="num shrink-0"><b className="text-tomato">#1: {p.first}</b> · <b className="text-mustard-ink">#2: {p.second}</b></span></div>
+                    <div className="mt-1 flex h-2 overflow-hidden rounded-full bg-sheet-2">
+                      <div className="bg-tomato" style={{ width: `${(p.first / max) * 100}%` }} /><div className="bg-mustard" style={{ width: `${(p.second / max) * 100}%` }} />
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+          <Bars title="Fallback nights last week (Q2)" items={fallback} tone="mustard" />
+          <Bars title="Mode winner (Q6)" items={modeWin.map((m) => ({ ...m, label: shortLabel(m.label) }))} tone="basil" />
+          <Bars title="Fridge tracking friction (Q7)" items={rec} tone="mustard" />
+        </div>
+      </Section>
+
+      <Section title="Stage 2 deep dive (Q9–Q15)" sub="Only people who unlocked the bonus questions.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Bars title="Stated willingness to pay (Q14)" items={wtp.map((w) => ({ ...w, label: shortLabel(w.label) }))} tone="basil" />
+          <Bars title="Buy-a-feature, average of 100 points (Q13)" items={feats.map((f) => ({ label: featureLabels[f.key], count: f.avg, pct: f.avg }))} tone="basil" unit="pts" />
+          <Bars title="Pack-size waste, last 14 days (Q11)" items={waste} tone="tomato" />
+          <div className="card p-5">
+            <h3 className="text-[17px] font-bold">Teammate referral leaderboard</h3>
+            <table className="num mt-3 w-full text-[13.5px]">
+              <thead><tr className="border-b border-rule text-left text-muted-foreground"><th className="py-2 font-medium">?ref=</th><th className="py-2 font-medium">Sessions</th><th className="py-2 font-medium">Stage 1 done</th></tr></thead>
+              <tbody>{refs.map((r) => <tr key={r.ref} className="border-b border-rule last:border-0"><td className="py-2 font-semibold">{r.ref}</td><td className="py-2">{r.n}</td><td className="py-2">{r.stage1}</td></tr>)}</tbody>
+            </table>
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Strategyzer test cards and learning cards" sub="Filled in from the numbers above, ready to screenshot into the slides.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <LearnCard n={1} hypothesis="We believe Lisbon students fall back to emergency food because they have no plan for the week."
+            test={`Pre-app survey, n = ${k.preCount}. Metric: share with 3+ fallback nights.`}
+            observation={`${heavyPct}% fell back 3+ nights. Top #1 pain: ${shortLabel(pains[0]?.label ?? "")} (${pains[0]?.first ?? 0} first picks).`}
+            learning={heavyPct >= 40 ? "The problem is frequent. Lead the pitch with the no-plan pain." : "Fallback nights are rarer than assumed. Interview more students first."} />
+          <LearnCard n={2} hypothesis="Students will commit to a paid plan if the first month is free."
+            test={`3-way CTA split, ${C1!.n}/${C2!.n}/${C3!.n} visitors. Metric: CTA conversion.`}
+            observation={`Free ${C1!.conversion}% · €1.99 ${C2!.conversion}% · €3.99 ${C3!.conversion}%. ${paidWtp}% state they would pay something (Q14).`}
+            learning={`${ctaName[ctaBest.variant]} converts best. ${C2!.conversion >= 40 ? "Test a real €1.99 checkout next." : "Start free, funded by brand cashback."}`} />
+          <LearnCard n={3} hypothesis="Sobra reaches product-market fit with Lisbon students (40%+ very disappointed)."
+            test={`Sean Ellis question (Q8), n = ${rows.filter((r) => r.q8_pmf_score).length}.`}
+            observation={`${k.pmf}% would be very disappointed without Sobra.`}
+            learning={k.pmf >= 40 ? "Above the 40% bar. Narrow to the very-disappointed segment and scale outreach." : "Below the 40% bar. Talk to the very-disappointed users to find what they love."} />
+          <LearnCard n={4} hypothesis="Weekly synergy prep is the feature students value most."
+            test="Buy-a-feature game (Q13) plus mode winner (Q6)."
+            observation={`${featureLabels[topFeat.key]} gets ${topFeat.avg} of 100 points on average. Top mode: ${shortLabel(modeWin.slice().sort((a, b) => b.count - a.count)[0]?.label ?? "")}.`}
+            learning={`Put ${featureLabels[topFeat.key]} first in onboarding and the pitch.`} />
         </div>
       </Section>
 
       <div className="card flex flex-wrap gap-2 p-4">
-        <Button onClick={download}><Download className="size-4" aria-hidden />Download CSV for R / Python</Button>
-        <Button variant="secondary" onClick={resetMine}><RotateCcw className="size-4" aria-hidden />Reset My Test Session</Button>
+        <Button onClick={download}><Download className="size-4" aria-hidden />Download Full 15-Question CSV for R / Python</Button>
+        <Button variant="secondary" onClick={resetMine}><RotateCcw className="size-4" aria-hidden />Reset My Local Test Session</Button>
       </div>
     </div>
   );
@@ -191,7 +233,7 @@ function Section({ title, sub, children }: { title: string; sub: string; childre
   );
 }
 const toneBg = { basil: "bg-basil", tomato: "bg-tomato", mustard: "bg-mustard" } as const;
-function Bars({ title, items, tone }: { title: string; items: { label: string; count: number; pct: number }[]; tone: keyof typeof toneBg }) {
+function Bars({ title, items, tone, unit }: { title: string; items: { label: string; count: number; pct: number }[]; tone: keyof typeof toneBg; unit?: string }) {
   return (
     <div className="card p-5">
       <h3 className="text-[17px] font-bold">{title}</h3>
@@ -199,7 +241,7 @@ function Bars({ title, items, tone }: { title: string; items: { label: string; c
         <ul className="mt-3 space-y-3">
           {items.map((it) => (
             <li key={it.label}>
-              <div className="flex justify-between gap-3 text-[13.5px]"><span>{it.label}</span><span className="num shrink-0 font-semibold">{it.pct}% <span className="font-normal text-muted-foreground">({it.count})</span></span></div>
+              <div className="flex justify-between gap-3 text-[13.5px]"><span>{it.label}</span><span className="num shrink-0 font-semibold">{unit ? `${it.count} ${unit}` : <>{it.pct}% <span className="font-normal text-muted-foreground">({it.count})</span></>}</span></div>
               <div className="mt-1 h-2 overflow-hidden rounded-full bg-sheet-2"><div className={`h-full rounded-full ${toneBg[tone]}`} style={{ width: `${it.pct}%` }} /></div>
             </li>
           ))}
@@ -208,13 +250,13 @@ function Bars({ title, items, tone }: { title: string; items: { label: string; c
     </div>
   );
 }
-function Table({ title, head, rows }: { title: string; head: string[]; rows: string[][] }) {
+function Table({ title, head, rows, highlight }: { title: string; head: string[]; rows: string[][]; highlight?: number }) {
   return (
     <div className="card overflow-x-auto p-5">
       <h3 className="text-[17px] font-bold">{title}</h3>
       <table className="num mt-3 w-full text-[13.5px]">
-        <thead><tr className="border-b border-rule text-left text-muted-foreground">{head.map((h, i) => <th key={i} className="py-2 pr-3 font-medium">{h}</th>)}</tr></thead>
-        <tbody>{rows.map((r) => <tr key={r[0]} className="border-b border-rule last:border-0">{r.map((c, i) => <td key={i} className={i === 0 ? "py-2 pr-3" : "py-2 pr-3 font-serif text-[16px] font-bold"}>{c}</td>)}</tr>)}</tbody>
+        <thead><tr className="border-b border-rule text-left text-muted-foreground">{head.map((h, i) => <th key={i} className={`py-2 pr-3 font-medium ${i === highlight ? "text-basil" : ""}`}>{h}</th>)}</tr></thead>
+        <tbody>{rows.map((r) => <tr key={r[0]} className="border-b border-rule last:border-0">{r.map((c, i) => <td key={i} className={i === 0 ? "py-2 pr-3" : `py-2 pr-3 font-serif text-[16px] font-bold ${i === highlight ? "bg-basil-tint text-basil" : ""}`}>{c}</td>)}</tr>)}</tbody>
       </table>
     </div>
   );

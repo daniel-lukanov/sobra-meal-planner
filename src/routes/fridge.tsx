@@ -36,6 +36,7 @@ function Fridge() {
 
   const startScan = () => {
     useExp.getState().track("fridge_receipt_scanned");
+    useExp.getState().track("task_5_fridge");
     setStep("reading");
     setTimeout(() => setStep("review"), 1200);
   };
@@ -61,7 +62,7 @@ function Fridge() {
               const Icon = cat.icon;
               const src = sourceOf(f);
               return (
-                <li key={f.id + f.name} className={cn("card flex items-center gap-3 p-3.5", f.isNew && "slide-in", low && "border-tomato/40")}>
+                <li key={f.id + f.name} className={cn("card flex bg-sheet items-center gap-3 p-3.5", f.isNew && "slide-in", low && "border-tomato/40")}>
                   <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-[12px]", low ? "bg-tomato-tint text-tomato" : "bg-sheet-2 text-ink")} title={cat.label}>
                     <Icon className="size-5" strokeWidth={1.7} aria-hidden /><span className="sr-only">{cat.label}</span>
                   </span>
@@ -72,7 +73,7 @@ function Fridge() {
                     </div>
                     <div className="mt-2 flex items-center gap-3">
                       <div className="flex flex-1 gap-1" aria-hidden>
-                        {[0, 1, 2, 3, 4].map((k) => <span key={k} className={cn("h-1.5 flex-1 rounded-full", k < filled ? (low ? "bg-tomato" : "bg-basil") : "bg-sheet-2")} />)}
+                        {[0, 1, 2, 3, 4].map((k) => <span key={k} className={cn("h-2 flex-1 rounded-full", k < filled ? (low ? "bg-tomato" : "bg-basil") : "bg-sheet-2")} />)}
                       </div>
                       <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11.5px] font-semibold", src.prep ? "bg-mustard-tint text-[var(--mustard-ink)]" : "bg-sheet-2 text-muted-foreground")}>{src.label}</span>
                     </div>
@@ -83,7 +84,7 @@ function Fridge() {
           </ul>
         }
         side={
-          <section aria-labelledby="rs" className="thermal rounded-[4px] bg-sheet px-5 shadow-[var(--shadow-sheet)]">
+          <section aria-labelledby="rs" className="thermal rounded-[4px] bg-paper px-5 shadow-[var(--shadow-sheet)]">
             <h2 id="rs" className="flex items-center gap-2 pt-2 text-[19px] font-bold"><ReceiptText className="size-5 text-muted-foreground" aria-hidden />Receipt scan</h2>
             <div aria-hidden className="mt-2 border-t-2 border-dashed border-rule" />
             {step === "start" && (
@@ -91,7 +92,7 @@ function Fridge() {
                 <p className="mt-1 text-[13px] text-muted-foreground">Take a photo of the receipt. We read the abbreviations and you confirm in a few seconds.</p>
                 <label htmlFor="receipt" className="sr-only">Receipt photo</label>
                 <input id="receipt" ref={fileRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={startScan} />
-                <Button className="mt-4" onClick={() => fileRef.current?.click()}>Scan a receipt</Button>
+                <Button className="mt-4" onClick={() => { useExp.getState().track("task_5_fridge"); fileRef.current?.click(); }}>Scan a receipt</Button>
                 <button type="button" onClick={startScan} className="ml-3 min-h-11 text-[13px] font-medium text-muted-foreground underline underline-offset-4">Use the sample receipt</button>
               </>
             )}

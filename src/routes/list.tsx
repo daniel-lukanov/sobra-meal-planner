@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check } from "lucide-react";
+import { Beef, Carrot, Check, Egg, Package, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { eur, useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
 import { shoppingList } from "@/data/list";
-import { Button, PageHeader, TwoCol } from "@/components/sobra/ui";
+import { Button, PageHeader } from "@/components/sobra/ui";
+import { useExp } from "@/lib/experiment";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/list")({
@@ -12,52 +13,54 @@ export const Route = createFileRoute("/list")({
   component: List,
 });
 
+const aisleIcon: Record<string, LucideIcon> = { "Fruit and veg": Carrot, "Meat and fish": Beef, "Eggs and dairy": Egg, Pantry: Package };
+
 function List() {
   const { store, checked, set } = useApp();
   return (
     <>
       <PageHeader small={`Monday to Wednesday · ${store}`} title="Shopping list sorted by aisle"
-        sub="Only what is missing. Onions and rice are already in your fridge, so they are crossed out."
-        right={<div className="md:text-right"><p className="num text-[22px] font-bold">€14.23</p><p className="num text-[13px] text-muted-foreground">8 items · <span className="text-basil">€6.85 below regular prices</span></p></div>} />
-      <TwoCol
-        main={
-          <div className="space-y-6">
-            {shoppingList.map((g) => (
-              <section key={g.aisle} aria-labelledby={`a-${g.aisle}`}>
-                <h2 id={`a-${g.aisle}`} className="border-b border-rule pb-2 text-[18px]">{g.aisle}</h2>
-                <ul className="divide-y divide-rule">
-                  {g.items.map((it) => {
-                    const on = it.inFridge || !!checked[it.id];
-                    return (
-                      <li key={it.id}>
-                        <label className={cn("flex min-h-14 items-center gap-3", it.inFridge ? "cursor-default" : "cursor-pointer")}>
-                          <input type="checkbox" className="peer sr-only" checked={on} disabled={it.inFridge}
-                            onChange={(e) => set({ checked: { ...checked, [it.id]: e.target.checked } })} />
-                          <span aria-hidden className={cn("flex size-6 shrink-0 items-center justify-center rounded-chip border-2 transition-colors duration-150 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-basil", on ? "border-basil bg-basil text-basil-ink" : "border-rule")}>
-                            {on && <Check className="size-4" strokeWidth={3} />}
-                          </span>
-                          <span className={cn("flex-1 text-[15.5px] decoration-1 transition-colors duration-200 ease-kitchen", on ? "text-muted-foreground line-through decoration-current" : "line-through decoration-transparent")}>{it.name}</span>
-                          <span className="num text-[15px] text-muted-foreground">{it.inFridge ? "in fridge" : eur(it.price ?? 0)}</span>
-                        </label>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            ))}
-          </div>
-        }
-        side={
-          <section aria-labelledby="tired">
-            <h2 id="tired" className="text-[18px]">Too tired to shop?</h2>
-            <p className="mt-1 text-[13px] text-muted-foreground">Send this list to an online supermarket, or order dinner tonight and keep the plan for tomorrow.</p>
-            <div className="mt-4 flex flex-col gap-2">
-              <Button variant="secondary" onClick={() => toast("Coming later: send the list to Continente Online or Glovo.")}>Send list to online shop</Button>
-              <Button variant="secondary" onClick={() => toast("Coming later: order through a delivery app for tonight.")}>Order dinner tonight</Button>
-            </div>
-          </section>
-        }
-      />
+        sub="Only what is missing. Onions and rice are already in your fridge, so they are crossed out." />
+      <section aria-label="List total" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rule bg-sheet p-5">
+        <div className="num">
+          <p className="font-serif text-[26px] font-bold leading-none">€14.23</p>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">8 items · <span className="font-semibold text-basil">€6.85 saved vs regular prices</span></p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => toast("Coming later: send the list to Continente Online or Glovo.")}>Send list to online shop</Button>
+          <Button variant="secondary" onClick={() => toast("Coming later: order through a delivery app for tonight.")}>Order dinner tonight</Button>
+        </div>
+      </section>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        {shoppingList.map((g) => {
+          const Icon = aisleIcon[g.aisle] ?? Package;
+          return (
+            <section key={g.aisle} aria-labelledby={`a-${g.aisle}`} className="card p-5">
+              <h2 id={`a-${g.aisle}`} className="mb-3 flex items-center gap-2.5 text-[18px]">
+                <span className="flex size-9 items-center justify-center rounded-[10px] bg-basil-tint text-basil"><Icon className="size-[18px]" strokeWidth={1.7} aria-hidden /></span>{g.aisle}
+              </h2>
+              <ul>
+                {g.items.map((it) => {
+                  const on = it.inFridge || !!checked[it.id];
+                  return (
+                    <li key={it.id} className="mb-2 rounded-xl bg-row">
+                      <label className={cn("flex min-h-12 items-center justify-between gap-3 p-3", it.inFridge ? "cursor-default" : "cursor-pointer")}>
+                        <input type="checkbox" className="peer sr-only" checked={on} disabled={it.inFridge}
+                          onChange={(e) => { set({ checked: { ...checked, [it.id]: e.target.checked } }); if (e.target.checked) useExp.getState().track("task_4_list"); }} />
+                        <span aria-hidden className={cn("flex size-6 shrink-0 items-center justify-center rounded-chip border-2 transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-basil", on ? "border-basil bg-basil text-basil-ink" : "border-rule bg-sheet")}>
+                          {on && <Check className="size-4" strokeWidth={3} />}
+                        </span>
+                        <span className={cn("flex-1 text-[15px] font-medium", on && "text-muted-foreground line-through")}>{it.name}</span>
+                        <span className="num text-[14.5px] text-muted-foreground">{it.inFridge ? "in fridge" : eur(it.price ?? 0)}</span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          );
+        })}
+      </div>
     </>
   );
 }

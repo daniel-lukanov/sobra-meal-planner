@@ -1,24 +1,46 @@
 import { useState } from "react";
-import { Compass } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Check } from "lucide-react";
 import { useExp } from "@/lib/experiment";
-import { Button } from "./ui";
+import { taskKeys, tasksDone, type TaskKey } from "@/lib/experiment-types";
 import { VerdictModal } from "./VerdictModal";
+import { cn } from "@/lib/utils";
+
+const tasks: Record<TaskKey, { label: string; to: "/plan" | "/deals" | "/list" | "/fridge"; hint: string }> = {
+  task_1_plan: { label: "Plan", to: "/plan", hint: "Tap a base filter or Accept this week" },
+  task_2_mode: { label: "Mode", to: "/plan", hint: "Switch between Weekly prep and Daily pick" },
+  task_3_deals: { label: "Deals", to: "/deals", hint: "Toggle a price alert" },
+  task_4_list: { label: "List", to: "/list", hint: "Check off 1 grocery item" },
+  task_5_fridge: { label: "Fridge", to: "/fridge", hint: "Tap Scan a receipt" },
+};
 
 export function MissionBar() {
   const s = useExp((x) => x.session);
   const [open, setOpen] = useState(false);
-  if (!s || s.survey_post_completed) return null;
-  const steps = (s.initial_mode_switched ? 1 : 0) + (s.deals_tab_visited || s.fridge_receipt_scanned ? 1 : 0);
+  if (!s) return null;
+  const done = tasksDone(s);
+  const finished = s.survey_post_completed;
   return (
     <>
-      <div className="fixed inset-x-2 bottom-[68px] z-30 md:bottom-4 md:left-[244px] md:right-6">
-        <div className="mx-auto flex max-w-[1000px] flex-wrap items-center gap-3 rounded-[16px] border border-mustard bg-mustard-tint px-4 py-2.5 shadow-[var(--shadow-card)]">
-          <Compass className="hidden size-5 shrink-0 text-[var(--mustard-ink)] sm:block" strokeWidth={1.7} aria-hidden />
-          <p className="min-w-0 flex-1 text-[13.5px] leading-snug">
-            <span className="font-semibold">Quick test:</span> 1. Try Weekly Prep vs Daily Pick · 2. Check Deals or scan a receipt in Fridge
-            <span className="num ml-2 rounded-full bg-sheet px-2 py-0.5 text-[12px] font-semibold" aria-live="polite">{steps}/2 explored</span>
-          </p>
-          <Button className="min-h-10 px-3.5 text-[14px]" onClick={() => setOpen(true)}>Give 20-sec verdict</Button>
+      <div className="fixed inset-x-4 bottom-16 z-30 mx-auto max-w-4xl md:bottom-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-ink px-5 py-3 text-sheet shadow-xl">
+          <ol className="flex flex-wrap items-center gap-1.5" aria-label="Test tasks">
+            {taskKeys.map((k, i) => {
+              const t = tasks[k]; const on = s[k];
+              return (
+                <li key={k}>
+                  <Link to={t.to} title={t.hint} aria-label={`Task ${i + 1}: ${t.hint}${on ? ", done" : ""}`}
+                    className={cn("press flex min-h-9 items-center gap-1 rounded-full px-3 text-[13px] font-semibold", on ? "bg-basil text-basil-ink" : "bg-sheet/10 text-sheet hover:bg-sheet/20")}>
+                    {on ? <Check className="size-3.5" strokeWidth={3} aria-hidden /> : <span className="num">{i + 1}.</span>}{t.label}
+                  </Link>
+                </li>
+              );
+            })}
+            <li className="num ml-1 text-[13px] text-sheet/75" aria-live="polite">{done} of 5 tasks tried</li>
+          </ol>
+          <button type="button" onClick={() => setOpen(true)} className="press min-h-10 rounded-xl bg-tape px-4 py-2 text-[14px] font-bold text-ink">
+            {finished ? (s.bonus_completed ? "See my reward" : "Unlock bonus reward") : "Finish & Claim Free Month (25 sec) ->"}
+          </button>
         </div>
       </div>
       <VerdictModal open={open} onOpenChange={setOpen} />

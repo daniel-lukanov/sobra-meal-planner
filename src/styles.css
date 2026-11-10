@@ -2,8 +2,6 @@
 @source "../src";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Fraunces", Georgia, serif;
@@ -30,6 +28,10 @@
   --color-tomato-tint: var(--tomato-tint);
   --color-mustard: var(--mustard);
   --color-mustard-tint: var(--mustard-tint);
+  --color-mustard-ink: var(--mustard-ink);
+  --color-row: var(--row);
+  --color-paper: var(--paper);
+  --color-prep: var(--prep-rule);
   --color-background: var(--ground);
   --color-foreground: var(--ink);
   --color-card: var(--sheet);
@@ -60,7 +62,7 @@
   --muted: #6E655C;
   --rule: #E5DEC9;
   --basil: #1E5631;
-  --basil-ink: #FFFDF9;
+  --basil-ink: #FFFFFF;
   --basil-tint: #E3EFE6;
   --tape: #F2E3B6;
   --tape-ink: #2E2618;
@@ -69,42 +71,19 @@
   --mustard: #C98A1B;
   --mustard-ink: #8A5D0F;
   --mustard-tint: #FBF1DC;
+  --row: #FAF6EE;
+  --paper: #FFFFFF;
+  --prep-rule: #D8CEB8;
   --shadow-sheet: 0 1px 2px rgba(30, 27, 24, 0.04), 0 12px 40px -18px rgba(30, 27, 24, 0.14);
-  --shadow-card: 0 2px 8px rgba(30, 27, 24, 0.04);
+  --shadow-card: 0 4px 20px -2px rgba(30, 27, 24, 0.05);
   --shadow-tape: 0 1px 1.5px rgba(46, 38, 24, 0.22);
   --radius: 10px;
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ground: #1A1714;
-    --sheet: #24201C;
-    --sheet-2: #2E2924;
-    --sheet-hover: #383229;
-    --ink: #F3ECE0;
-    --muted: #B3A898;
-    --rule: #3A332B;
-    --basil: #7FC496;
-    --basil-ink: #142A1C;
-    --basil-tint: #22362A;
-    --tape: #6B5A30;
-    --tape-ink: #F6EBC8;
-    --tomato: #E8836A;
-    --tomato-tint: #3D2620;
-    --mustard: #E0AA4A;
-    --mustard-ink: #EBC277;
-    --mustard-tint: #3A2F1C;
-    --shadow-sheet: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 40px -18px rgba(0, 0, 0, 0.6);
-    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.25);
-    --shadow-tape: 0 1px 1.5px rgba(0, 0, 0, 0.4);
-    color-scheme: dark;
-  }
-}
-
 @layer base {
   * { border-color: var(--color-rule); }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; color-scheme: light; }
   body {
     background: var(--ground);
     color: var(--ink);
