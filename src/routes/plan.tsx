@@ -149,7 +149,7 @@ function WeeklyPrep() {
 function DailyPick() {
   const { pick, set, store, addSavings } = useApp();
   const navigate = useNavigate();
-  const sel = dailyPicks.find((p) => p.id === pick) ?? dailyPicks[0];
+  const sel = dailyPicks.find((p) => p.id === pick) ?? dailyPicks[0]!;
   return (
     <div>
       <h2 className="mb-4 text-[18px]">Tonight, pick one</h2>

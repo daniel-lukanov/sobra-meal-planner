@@ -31,7 +31,7 @@ function Cook() {
   const [pace, setPace] = useState<"relaxed" | "fast">("relaxed");
   const steps = pace === "relaxed" ? relaxedSteps : fastSteps;
   const [i, setI] = useState(0);
-  const step = steps[Math.min(i, steps.length - 1)];
+  const step = steps[Math.min(i, steps.length - 1)]!;
   const [left, setLeft] = useState(step.timer ?? 0);
   const [running, setRunning] = useState(false);
   const navigate = useNavigate();
@@ -79,10 +79,10 @@ function Cook() {
       <TwoCol
         main={
           <section aria-label="Cook mode"
-            onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
+            onTouchStart={(e) => { touchX.current = e.touches[0]!.clientX; }}
             onTouchEnd={(e) => {
               if (touchX.current === null) return;
-              const dx = e.changedTouches[0].clientX - touchX.current;
+              const dx = e.changedTouches[0]!.clientX - touchX.current;
               if (dx < -60 && !last) setI(i + 1);
               if (dx > 60) prev();
               touchX.current = null;
