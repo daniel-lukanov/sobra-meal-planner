@@ -5,7 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", Georgia, serif;
   --font-hand: "Caveat", cursive;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --ease-kitchen: cubic-bezier(.2, .8, .2, 1);
@@ -17,6 +18,7 @@
   --color-ground: var(--ground);
   --color-sheet: var(--sheet);
   --color-sheet-2: var(--sheet-2);
+  --color-sheet-hover: var(--sheet-hover);
   --color-ink: var(--ink);
   --color-rule: var(--rule);
   --color-basil: var(--basil);
@@ -50,48 +52,52 @@
 }
 
 :root {
-  --ground: oklch(0.951 0.008 135);
-  --sheet: oklch(1 0 0);
-  --sheet-2: oklch(0.967 0.006 130);
-  --ink: oklch(0.226 0.022 155);
-  --muted: oklch(0.51 0.022 155);
-  --rule: oklch(0.912 0.012 140);
-  --basil: oklch(0.465 0.106 150);
-  --basil-ink: oklch(1 0 0);
-  --basil-tint: oklch(0.94 0.02 150);
-  --tape: oklch(0.917 0.05 90);
-  --tape-ink: oklch(0.318 0.03 90);
-  --tomato: oklch(0.53 0.15 35);
-  --tomato-tint: oklch(0.932 0.025 35);
-  --mustard: oklch(0.6 0.12 80);
-  --mustard-ink: oklch(0.5 0.105 80);
-  --mustard-tint: oklch(0.942 0.04 90);
-  --shadow-sheet: 0 1px 2px oklch(0.226 0.022 155 / 4%), 0 12px 40px -18px oklch(0.226 0.022 155 / 14%);
-  --shadow-tape: 0 1px 1.5px oklch(0.3 0.03 90 / 22%);
+  --ground: #F6F1E7;
+  --sheet: #FFFDF9;
+  --sheet-2: #EFE8DA;
+  --sheet-hover: #E8DFCE;
+  --ink: #1E1B18;
+  --muted: #6E655C;
+  --rule: #E5DEC9;
+  --basil: #1E5631;
+  --basil-ink: #FFFDF9;
+  --basil-tint: #E3EFE6;
+  --tape: #F2E3B6;
+  --tape-ink: #2E2618;
+  --tomato: #C84B31;
+  --tomato-tint: #FAE6E1;
+  --mustard: #C98A1B;
+  --mustard-ink: #8A5D0F;
+  --mustard-tint: #FBF1DC;
+  --shadow-sheet: 0 1px 2px rgba(30, 27, 24, 0.04), 0 12px 40px -18px rgba(30, 27, 24, 0.14);
+  --shadow-card: 0 2px 8px rgba(30, 27, 24, 0.04);
+  --shadow-tape: 0 1px 1.5px rgba(46, 38, 24, 0.22);
   --radius: 10px;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --ground: oklch(0.183 0.01 155);
-    --sheet: oklch(0.226 0.014 155);
-    --sheet-2: oklch(0.262 0.015 155);
-    --ink: oklch(0.945 0.01 150);
-    --muted: oklch(0.74 0.018 150);
-    --rule: oklch(0.31 0.016 155);
-    --basil: oklch(0.75 0.12 152);
-    --basil-ink: oklch(0.2 0.03 155);
-    --basil-tint: oklch(0.3 0.04 152);
-    --tape: oklch(0.45 0.05 90);
-    --tape-ink: oklch(0.93 0.05 92);
-    --tomato: oklch(0.72 0.13 35);
-    --tomato-tint: oklch(0.3 0.05 35);
-    --mustard: oklch(0.78 0.12 82);
-    --mustard-ink: oklch(0.82 0.12 82);
-    --mustard-tint: oklch(0.31 0.04 85);
-    --shadow-sheet: 0 1px 2px oklch(0 0 0 / 30%), 0 12px 40px -18px oklch(0 0 0 / 60%);
-    --shadow-tape: 0 1px 1.5px oklch(0 0 0 / 40%);
+    --ground: #1A1714;
+    --sheet: #24201C;
+    --sheet-2: #2E2924;
+    --sheet-hover: #383229;
+    --ink: #F3ECE0;
+    --muted: #B3A898;
+    --rule: #3A332B;
+    --basil: #7FC496;
+    --basil-ink: #142A1C;
+    --basil-tint: #22362A;
+    --tape: #6B5A30;
+    --tape-ink: #F6EBC8;
+    --tomato: #E8836A;
+    --tomato-tint: #3D2620;
+    --mustard: #E0AA4A;
+    --mustard-ink: #EBC277;
+    --mustard-tint: #3A2F1C;
+    --shadow-sheet: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 40px -18px rgba(0, 0, 0, 0.6);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.25);
+    --shadow-tape: 0 1px 1.5px rgba(0, 0, 0, 0.4);
     color-scheme: dark;
   }
 }
@@ -106,8 +112,9 @@
     font-size: 15.5px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
   }
-  h1, h2, h3 { font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+  h1, h2, h3 { font-family: var(--font-serif); font-weight: 600; letter-spacing: -0.01em; line-height: 1.2; }
   :focus-visible { outline: 2px solid var(--basil); outline-offset: 2px; border-radius: 6px; }
 }
 
@@ -117,6 +124,22 @@
   background: var(--sheet);
   border-radius: var(--radius-sheet);
   box-shadow: var(--shadow-sheet);
+}
+
+@utility card {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+@utility thermal {
+  --zz: conic-gradient(from 135deg at top, #0000 90deg, #000 0) top / 14px 8px repeat-x,
+    conic-gradient(from -45deg at bottom, #0000 90deg, #000 0) bottom / 14px 8px repeat-x,
+    linear-gradient(#000 0 0) center / 100% calc(100% - 14px) no-repeat;
+  mask: var(--zz);
+  -webkit-mask: var(--zz);
+  padding-block: 22px;
 }
 
 @utility tape {

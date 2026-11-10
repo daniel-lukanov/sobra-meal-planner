@@ -41,7 +41,7 @@ export function SavingsCounter() {
       </svg>
       <div aria-live="polite">
         <div key={bumped} className={bumped ? "bump -mx-1 rounded-chip px-1" : "-mx-1 px-1"}>
-          <span className="num text-[22px] font-bold leading-none text-basil">{eur(v)}</span>
+          <span className="num font-serif text-[24px] font-bold leading-none text-basil">{eur(v)}</span>
         </div>
         <p className="num mt-0.5 text-[12px] text-muted-foreground">saved this week · {eur(month)} this month</p>
         <p className="sr-only">Goal {eur(goal)} per week. Compared with the cheapest regular price of each product.</p>

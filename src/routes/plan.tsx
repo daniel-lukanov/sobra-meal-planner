@@ -3,13 +3,15 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { eur, useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
-import { dailyPicks, weekPlan, weekSummary, type DayRow, type PrepRow } from "@/data/plan";
+import { dailyPicks, weekPlan, weekSummary, type DayRow, type Meal, type PrepRow } from "@/data/plan";
+import { mealPhoto, photo } from "@/data/photos";
+import { Clock, Link2, RefreshCw } from "lucide-react";
 import { ingredientColors, type IngredientId } from "@/data/ingredients";
-import { Button, Chip, Dot, PageHeader, Tape, TwoCol, UnderlineTabs } from "@/components/sobra/ui";
+import { Button, Chip, PageHeader, Tape, TwoCol, UnderlineTabs } from "@/components/sobra/ui";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/plan")({
-  head: pageHead("Meal plan", "A week of dinners for one, built from this week's deals."),
+  head: pageHead("Meal plan", "A week of dinners for one, built from this week's deals.", true),
   component: Plan,
 });
 
@@ -28,26 +30,55 @@ function Plan() {
   );
 }
 
+const ingName: Record<IngredientId, string> = {
+  potatoes: "Potatoes", chicken: "Chicken", onion: "Onion", carrots: "Carrots", eggs: "Eggs",
+  rice: "Rice", chickpeas: "Chickpeas", peppers: "Peppers", tuna: "Tuna", spinach: "Spinach",
+};
+const bases: { id: IngredientId | null; label: string }[] = [
+  { id: null, label: "All bases" },
+  { id: "potatoes", label: "1.5 kg Potatoes (Mon–Wed)" },
+  { id: "chicken", label: "1 kg Chicken" },
+  { id: "rice", label: "600 g Rice (Thu–Fri)" },
+  { id: "peppers", label: "Roast Peppers (Fri–Sat)" },
+];
+const prepNote: Partial<Record<IngredientId, string>> = {
+  potatoes: "Uses Sunday prepped potatoes",
+  chicken: "Uses Sunday roast chicken",
+  onion: "Uses Sunday chopped onions",
+  carrots: "Uses Sunday chopped carrots",
+  rice: "Uses Wednesday cooked rice",
+  peppers: "Uses Wednesday roast peppers",
+  chickpeas: "Uses Wednesday chickpea base",
+};
+
+function IngBadge({ id }: { id: IngredientId }) {
+  return (
+    <svg viewBox="0 0 16 16" className="size-4 shrink-0" aria-hidden>
+      <circle cx="8" cy="8" r="7" fill={ingredientColors[id]} opacity=".22" />
+      <circle cx="8" cy="8" r="3.6" fill={ingredientColors[id]} />
+    </svg>
+  );
+}
+
 function PrepItem({ row }: { row: PrepRow }) {
   const navigate = useNavigate();
   return (
-    <li className="py-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
-        <div className="w-14 pt-0.5"><Tape basil>{row.day}</Tape></div>
-        <div className="min-w-0 flex-1 rounded-block bg-basil-tint p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="text-[15.5px]">{row.title}</h3>
-              <p className="text-[13px] text-muted-foreground">{row.meta}</p>
-            </div>
-            {row.day === "Sun" && <Button variant="primary" onClick={() => navigate({ to: "/cook", hash: "prep" })}>Open prep plan</Button>}
-          </div>
-          <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Ingredients">
-            {row.tags.map((t) => <li key={t} className="num rounded-chip bg-sheet px-2 py-1 text-[13px]">{t}</li>)}
+    <li className="card overflow-hidden border-basil/20 bg-basil-tint p-3.5">
+      <div className="grid grid-cols-[76px_1fr] items-start gap-4 sm:grid-cols-[76px_1fr_auto]">
+        <div className="relative">
+          <img src={photo.prep} alt="Kitchen counter with chopped vegetables ready for batch cooking" width={76} height={76} loading="lazy" className="size-[76px] rounded-[12px] bg-sheet-2 object-cover" />
+          <div className="absolute -left-2 -top-3"><Tape basil>{row.day}</Tape></div>
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-[17px] font-bold">{row.title}</h3>
+          <p className="flex items-center gap-1.5 text-[13px] text-muted-foreground"><Clock className="size-3.5" aria-hidden />{row.meta}</p>
+          <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Ingredients">
+            {row.tags.map((t) => <li key={t} className="num rounded-full bg-sheet px-2.5 py-1 text-[12.5px] font-medium">{t}</li>)}
           </ul>
         </div>
+        {row.day === "Sun" && <Button className="col-span-2 sm:col-span-1" onClick={() => navigate({ to: "/cook", hash: "prep" })}>Open prep plan</Button>}
       </div>
-      {row.note && <p className="mt-3 text-[13px] text-muted-foreground sm:pl-[76px]">{row.note}</p>}
+      {row.note && <p className="mt-3 text-[13px] text-muted-foreground">{row.note}</p>}
     </li>
   );
 }
@@ -56,58 +87,95 @@ function WeeklyPrep() {
   const { swaps, set, weekAccepted, addSavings, reelAdded } = useApp();
   const navigate = useNavigate();
   const [hover, setHover] = useState<IngredientId | null>(null);
+  const [filter, setFilter] = useState<IngredientId | null>(null);
   const [reel, setReel] = useState("instagram.com/reel/tuscan-chicken");
   const [checked, setChecked] = useState(false);
+  const active = hover ?? filter;
+
   let dayIdx = 0;
+  const rows = weekPlan.map((row, i) => {
+    if (row.kind === "prep") return { i, row, meal: null, alt: false };
+    const r = row as DayRow;
+    const meal = r.options[(swaps[i] ?? 0) % r.options.length]!;
+    const finalMeal: Meal = reelAdded && r.day === "Sat" ? { title: "Tuscan chicken", how: "From your reel, creamy garlic sauce, 20 min", uses: ["chicken", "spinach", "onion", "rice"], price: 2.6 } : meal;
+    return { i, row, meal: finalMeal, base: meal, alt: dayIdx++ % 2 === 1 };
+  });
+  const counts: Partial<Record<IngredientId, number>> = {};
+  rows.forEach((r) => r.meal?.uses.forEach((u) => { counts[u] = (counts[u] ?? 0) + 1; }));
 
   return (
     <TwoCol
       main={
-        <ul className="divide-y divide-rule" onMouseLeave={() => setHover(null)}>
-          {weekPlan.map((row, i) => {
-            if (row.kind === "prep") return <PrepItem key={i} row={row} />;
-            const alt = dayIdx++ % 2 === 1;
-            const r = row as DayRow;
-            const meal = r.options[(swaps[i] ?? 0) % r.options.length]!;
-            const finalMeal = reelAdded && r.day === "Sat" ? { title: "Tuscan chicken", how: "From your reel, creamy garlic sauce, 20 min", uses: ["chicken", "spinach", "onion", "rice"] as IngredientId[], price: 2.6 } : meal;
-            const lit = hover && finalMeal.uses.includes(hover);
-            return (
-              <li key={i} className={cn("-mx-3 rounded-block px-3 py-4 transition-[background-color,opacity] duration-200 ease-kitchen", lit && "bg-sheet-2", hover && !lit && "opacity-45")}>
-                <div className="flex items-start gap-5">
-                  <div className="w-14 pt-0.5"><Tape alt={alt}>{r.day}</Tape></div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-[15.5px]">{finalMeal.title}</h3>
-                    <p className="text-[13px] text-muted-foreground">{finalMeal.how}</p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-x-1 text-[13px] text-muted-foreground">
-                      <span className="mr-1">Uses</span>
-                      {finalMeal.uses.map((u) => (
-                        <button key={u} type="button" onMouseEnter={() => setHover(u)} onFocus={() => setHover(u)} onBlur={() => setHover(null)}
-                          aria-label={`${u}, highlight every day that uses it`} aria-pressed={hover === u}
-                          className="flex min-h-8 items-center gap-1.5 rounded-chip px-1.5 hover:bg-sheet">
-                          <Dot color={ingredientColors[u]} className={cn("transition-transform duration-200", hover === u && "scale-150")} />{u}
-                        </button>
-                      ))}
+        <div>
+          <div className="mb-5">
+            <p className="text-[14px] font-medium">Tap a prepped base to see how it turns into 3 different dinners:</p>
+            <div role="group" aria-label="Filter by prepped base" className="mt-2.5 flex flex-wrap gap-2">
+              {bases.map((b) => {
+                const on = filter === b.id;
+                return (
+                  <button key={b.label} type="button" aria-pressed={on} onClick={() => setFilter(b.id)}
+                    className={cn("press flex min-h-10 items-center gap-1.5 rounded-full px-3.5 text-[13.5px] font-semibold", on ? "bg-ink text-sheet" : "bg-sheet-2 text-ink hover:bg-sheet-hover")}>
+                    {b.id && <IngBadge id={b.id} />}{b.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <ul className="space-y-3" onMouseLeave={() => setHover(null)}>
+            {rows.map(({ i, row, meal, base, alt }) => {
+              if (row.kind === "prep" || !meal) return <PrepItem key={i} row={row as PrepRow} />;
+              const r = row as DayRow;
+              const lit = !!active && meal.uses.includes(active);
+              const img = mealPhoto[meal.title] ?? photo.prep;
+              return (
+                <li key={i} className={cn("card p-3.5 transition-[box-shadow,opacity,border-color] duration-200 ease-kitchen", lit && "border-mustard shadow-[0_0_0_1px_var(--mustard)]", active && !lit && "opacity-50")}>
+                  <div className="grid grid-cols-[76px_1fr] items-start gap-4 sm:grid-cols-[76px_1fr_auto]">
+                    <div className="relative">
+                      <img src={img} alt={meal.title} width={76} height={76} loading="lazy" className="size-[76px] rounded-[12px] bg-sheet-2 object-cover" />
+                      <div className="absolute -left-2 -top-3"><Tape alt={alt}>{r.day}</Tape></div>
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-[17px] font-bold">{meal.title}</h3>
+                      <p className="flex items-center gap-1.5 text-[13px] text-muted-foreground"><Clock className="size-3.5" aria-hidden />{meal.how}</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {meal.uses.map((u) => (
+                          <button key={u} type="button"
+                            onMouseEnter={() => setHover(u)} onFocus={() => setHover(u)} onBlur={() => setHover(null)}
+                            onClick={() => setFilter(filter === u ? null : u)}
+                            aria-pressed={active === u} aria-label={`${ingName[u]}, used in ${counts[u]} meals. Highlight them`}
+                            className={cn("press flex min-h-8 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-medium", active === u ? "bg-mustard-tint text-ink ring-1 ring-mustard" : "bg-sheet-2 hover:bg-sheet-hover")}>
+                            <IngBadge id={u} />{ingName[u]} · {counts[u]} {counts[u] === 1 ? "meal" : "meals"}
+                          </button>
+                        ))}
+                      </div>
+                      {lit && active && prepNote[active] && (
+                        <p className="slide-in mt-2 inline-flex items-center gap-1.5 rounded-full bg-mustard-tint px-2.5 py-1 text-[12.5px] font-semibold text-[var(--mustard-ink)]">
+                          <Link2 className="size-3.5" aria-hidden />{prepNote[active]}
+                        </p>
+                      )}
+                    </div>
+                    <div className="col-span-2 flex items-center justify-between gap-3 border-t border-rule pt-3 sm:col-span-1 sm:flex-col sm:items-end sm:border-0 sm:pt-0">
+                      <div className="sm:text-right">
+                        <span className="num font-serif text-[18px] font-bold">{eur(meal.price)}</span>
+                        <span className="ml-1 text-[12px] text-muted-foreground sm:ml-0 sm:block">per portion</span>
+                      </div>
+                      <Button variant="secondary" className="min-h-10 px-3 text-[14px]"
+                        onClick={() => {
+                          set({ swaps: { ...swaps, [i]: (swaps[i] ?? 0) + 1 }, ...(r.day === "Sat" ? { reelAdded: false } : {}) });
+                          const b = base!.uses[0];
+                          toast(b === "potatoes" ? "Swapped. The plan still uses all 1.5 kg of potatoes." : `Swapped. The plan still uses the same ${b}.`);
+                        }}><RefreshCw className="size-4" strokeWidth={1.8} aria-hidden />Swap</Button>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <span className="num text-[15.5px] font-semibold">{eur(finalMeal.price)}</span>
-                    <span className="text-[12px] text-muted-foreground">per portion</span>
-                    <button type="button" className="min-h-11 text-[13px] font-medium text-muted-foreground underline-offset-4 hover:text-ink hover:underline"
-                      onClick={() => {
-                        set({ swaps: { ...swaps, [i]: (swaps[i] ?? 0) + 1 }, ...(r.day === "Sat" ? { reelAdded: false } : {}) });
-                        const base = meal.uses[0];
-                        toast(base === "potatoes" ? "Swapped. The plan still uses all 1.5 kg of potatoes." : `Swapped. The plan still uses the same ${base}.`);
-                      }}>Swap</button>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       }
       side={
-        <div className="space-y-8">
-          <section aria-labelledby="tw">
+        <div className="space-y-4">
+          <section aria-labelledby="tw" className="card p-5">
             <h2 id="tw" className="text-[18px]">This week</h2>
             <dl className="num mt-3 space-y-2 text-[15px]">
               <div className="flex justify-between"><dt className="text-muted-foreground">Dinners</dt><dd>{weekSummary.dinners}</dd></div>
@@ -122,7 +190,7 @@ function WeeklyPrep() {
               <Button variant="secondary" onClick={() => navigate({ to: "/list" })}>See shopping list</Button>
             </div>
           </section>
-          <section aria-labelledby="reel" className="border-t border-rule pt-6">
+          <section aria-labelledby="reel" className="card p-5">
             <h2 id="reel" className="text-[18px]">Add a recipe from a reel</h2>
             <p className="mt-1 text-[13px] text-muted-foreground">Paste an Instagram or TikTok link. We check how much it shares with your week.</p>
             <label htmlFor="reel-url" className="sr-only">Reel link</label>
@@ -158,20 +226,20 @@ function DailyPick() {
           const on = p.id === sel.id;
           return (
             <button key={p.id} type="button" aria-pressed={on} onClick={() => set({ pick: p.id })}
-              className="group text-left transition-transform duration-200 ease-kitchen hover:-translate-y-0.5">
-              <div className={cn("aspect-[4/3] overflow-hidden rounded-photo bg-sheet-2 outline-offset-[3px]", on ? "outline-2 outline-basil" : "outline-0")}>
-                <img src={p.image} alt={p.alt} width={1024} height={768} loading="lazy" className="size-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+              className={cn("card group overflow-hidden p-2.5 text-left transition-transform duration-200 ease-kitchen hover:-translate-y-0.5", on && "border-basil shadow-[0_0_0_1px_var(--basil)]")}>
+              <div className="aspect-[4/3] overflow-hidden rounded-[12px] bg-sheet-2">
+                <img src={p.image} alt={p.alt} width={600} height={450} loading="lazy" className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" onError={(e) => { e.currentTarget.style.display = "none"; }} />
               </div>
-              <h3 className="mt-3 text-[15.5px]">{p.title}</h3>
+              <div className="px-1.5 pb-1.5"><h3 className="mt-3 text-[18px] font-bold">{p.title}</h3>
               <p className="num text-[13px] text-muted-foreground">{p.minutes} min · {eur(p.price)} per portion</p>
-              <Chip tone={p.tone} className="mt-2">{p.reason}</Chip>
+              <Chip tone={p.tone} className="mt-2">{p.reason}</Chip></div>
             </button>
           );
         })}
       </div>
-      <div className="mt-8 flex flex-col gap-4 border-t border-rule pt-5 md:flex-row md:items-center md:justify-between">
+      <div className="card mt-6 flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <h3 className="text-[15.5px]">{sel.title}</h3>
+          <h3 className="text-[19px] font-bold">{sel.title}</h3>
           <p className="text-[14px] text-muted-foreground">{sel.summary} {store}.</p>
         </div>
         <div className="flex flex-wrap gap-2">

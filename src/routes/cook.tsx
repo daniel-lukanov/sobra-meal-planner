@@ -6,6 +6,8 @@ import { pageHead } from "@/lib/head";
 import { cookIngredients, fastSteps, prepLanes, relaxedSteps, type Block } from "@/data/cook";
 import { Button, PageHeader, TwoCol, UnderlineTabs } from "@/components/sobra/ui";
 import { cn } from "@/lib/utils";
+import { photo } from "@/data/photos";
+import { CookingPot, Flame, UtensilsCrossed } from "lucide-react";
 
 export const Route = createFileRoute("/cook")({
   head: pageHead("Cook", "Step by step cook mode with timers, plus your Sunday prep timeline."),
@@ -76,6 +78,9 @@ function Cook() {
     <>
       <PageHeader small={pace === "relaxed" ? "Tonight · 22 min" : "Tonight · 8 min"} title="Chicken and spinach rice"
         right={<UnderlineTabs label="Cooking pace" value={pace} onChange={setPace} options={[{ value: "relaxed", label: "Relaxed" }, { value: "fast", label: "Fast" }]} />} />
+      <div className="mb-6 aspect-[16/7] overflow-hidden rounded-[18px] bg-sheet-2">
+        <img src={photo.chickenRice} alt="Bowl of rice with pan-fried chicken and wilted spinach" width={1200} height={525} className="size-full object-cover" />
+      </div>
       <TwoCol
         main={
           <section aria-label="Cook mode"
@@ -91,16 +96,23 @@ function Cook() {
               {steps.map((_, k) => <span key={k} className={cn("h-1 flex-1 rounded-full transition-colors duration-200", k <= i ? "bg-basil" : "bg-rule")} />)}
             </div>
             <p className="num mt-5 text-[13px] font-medium text-muted-foreground" aria-live="polite">Step {i + 1} of {steps.length}</p>
-            <p key={`${pace}${i}`} className="fade-route mt-2 max-w-[22ch] text-[26px] font-semibold leading-snug tracking-[-0.02em] md:text-[30px]">{step.text}</p>
+            <p key={`${pace}${i}`} className="fade-route mt-2 max-w-[24ch] font-serif text-[26px] font-semibold leading-snug md:text-[30px]">{step.text}</p>
 
             {step.timer && (
-              <div className="mt-6 flex flex-wrap items-center gap-4">
-                <span className="num text-[52px] font-bold leading-none text-basil" role="timer" aria-label={`${fmt(left)} remaining`}>{fmt(left)}</span>
+              <div className="card mt-6 flex flex-wrap items-center gap-5 p-4">
+                <div className="relative size-[112px] shrink-0">
+                  <svg viewBox="0 0 112 112" className="size-full -rotate-90" aria-hidden>
+                    <circle cx="56" cy="56" r="48" fill="none" stroke="var(--sheet-2)" strokeWidth="8" />
+                    <circle cx="56" cy="56" r="48" fill="none" stroke="var(--basil)" strokeWidth="8" strokeLinecap="round"
+                      strokeDasharray={2 * Math.PI * 48} strokeDashoffset={2 * Math.PI * 48 * (1 - left / step.timer)} className="transition-[stroke-dashoffset] duration-1000 ease-linear" />
+                  </svg>
+                  <span className="num absolute inset-0 flex items-center justify-center font-serif text-[26px] font-bold text-basil" role="timer" aria-label={`${fmt(left)} remaining`}>{fmt(left)}</span>
+                </div>
                 <Button variant="secondary" onClick={() => { if (left === 0) setLeft(step.timer!); setRunning(!running); }}>{running ? "Pause timer" : "Start timer"}</Button>
               </div>
             )}
             {step.meanwhile && (
-              <p className="mt-6 border-l-2 border-mustard pl-3 text-[15px]"><span className="font-semibold text-[var(--mustard-ink)]">Meanwhile</span> · {step.meanwhile.replace(/^Meanwhile, /, "").replace(/^./, (c) => c.toUpperCase())}</p>
+              <p className="mt-6 rounded-[14px] bg-mustard-tint px-4 py-3 text-[15px]"><span className="font-semibold text-[var(--mustard-ink)]">Meanwhile</span> · {step.meanwhile.replace(/^Meanwhile, /, "").replace(/^./, (c) => c.toUpperCase())}</p>
             )}
             <div className="mt-8 flex flex-wrap gap-2">
               <Button variant="secondary" onClick={prev} disabled={i === 0}>Previous step</Button>
@@ -110,7 +122,7 @@ function Cook() {
           </section>
         }
         side={
-          <section aria-labelledby="ing">
+          <section aria-labelledby="ing" className="card p-5">
             <h2 id="ing" className="text-[18px]">Ingredients</h2>
             <ul className="mt-3 divide-y divide-rule">
               {cookIngredients.map((g) => (
@@ -135,21 +147,23 @@ const tone: Record<Block["tone"], string> = {
   mustard: "bg-mustard-tint text-ink ring-1 ring-inset ring-mustard",
 };
 
+const laneIcon: Record<string, typeof Flame> = { Hob: CookingPot, Oven: Flame, Board: UtensilsCrossed };
+
 function PrepTimeline() {
   const [sel, setSel] = useState<Block | null>(null);
   const total = 45;
   return (
-    <section id="prep" aria-labelledby="pt" className="mt-10 scroll-mt-6 border-t border-rule pt-7">
-      <p className="text-[13px] font-medium text-muted-foreground">Sunday · prep session 1</p>
-      <h2 id="pt" className="mt-1 text-[22px]">45 minutes, three things at once</h2>
+    <section id="prep" aria-labelledby="pt" className="card mt-8 scroll-mt-6 p-5 md:p-6">
+      <div className="flex items-center gap-4"><img src={photo.prep} alt="" width={64} height={64} loading="lazy" className="size-16 rounded-[12px] object-cover" /><div><p className="text-[13px] font-medium text-muted-foreground">Sunday · prep session 1</p>
+      <h2 id="pt" className="mt-1 text-[22px] font-bold">45 minutes, three things at once</h2></div></div>
       <div className="mt-5 overflow-x-auto pb-2">
         <div className="min-w-[640px]">
-          <div className="relative ml-16 h-5 text-[12px] text-muted-foreground num">
-            {[0, 15, 30, 45].map((m) => <span key={m} className="absolute -translate-x-1/2" style={{ left: `${(m / total) * 100}%` }}>{m} min</span>)}
+          <div className="relative ml-20 mr-6 h-5 text-[12px] text-muted-foreground num">
+            {[0, 15, 30, 45].map((m) => <span key={m} className="absolute -translate-x-1/2 whitespace-nowrap" style={{ left: `${(m / total) * 100}%` }}>{m} min</span>)}
           </div>
           {prepLanes.map((l) => (
             <div key={l.lane} className="flex items-center border-t border-rule py-2">
-              <span className="w-16 shrink-0 text-[13px] font-medium">{l.lane}</span>
+              <span className="flex w-20 shrink-0 items-center gap-1.5 text-[13px] font-semibold">{(() => { const I = laneIcon[l.lane] ?? UtensilsCrossed; return <I className="size-4 text-muted-foreground" strokeWidth={1.7} aria-hidden />; })()}{l.lane}</span>
               <div className="relative h-12 flex-1">
                 {[15, 30].map((m) => <span key={m} aria-hidden className="absolute inset-y-0 w-px bg-rule" style={{ left: `${(m / total) * 100}%` }} />)}
                 {l.blocks.map((b) => (

@@ -1,7 +1,5 @@
 import type { IngredientId } from "./ingredients";
-import rice from "@/assets/chicken-spinach-rice.jpg";
-import curry from "@/assets/chickpea-curry.jpg";
-import pasta from "@/assets/tuna-pasta.jpg";
+import { photo } from "./photos";
 
 export type Meal = { title: string; how: string; uses: IngredientId[]; price: number };
 export type PrepRow = { kind: "prep"; day: string; title: string; meta: string; tags: string[]; note?: string };
@@ -42,9 +40,9 @@ export const weekSummary = { dinners: 6, total: 11.85, time: "70 min prep + 72 m
 export type Pick = { id: string; title: string; minutes: number; price: number; reason: string; tone: "basil" | "mustard" | "neutral"; image: string; alt: string; summary: string };
 
 export const dailyPicks: Pick[] = [
-  { id: "rice", title: "Chicken and spinach rice", minutes: 22, price: 2.35, reason: "Uses spinach that expires tomorrow", tone: "basil", image: rice, alt: "Bowl of rice with pan-fried chicken pieces and wilted spinach", summary: "You have rice, chicken and spinach. Missing: soy sauce, €1.29 at" },
-  { id: "curry", title: "Chickpea curry", minutes: 25, price: 1.8, reason: "Chickpeas on deal this week", tone: "mustard", image: curry, alt: "Chickpea curry and white rice side by side in a frying pan", summary: "You have chickpeas, rice and onion. Missing: coconut milk, €0.99 at" },
-  { id: "pasta", title: "Tuna pasta with lemon", minutes: 15, price: 1.95, reason: "Fastest option tonight", tone: "neutral", image: pasta, alt: "Plate of spaghetti with tuna, lemon zest and parsley", summary: "You have tuna and onion. Missing: spaghetti, €0.89 at" },
+  { id: "rice", title: "Chicken and spinach rice", minutes: 22, price: 2.35, reason: "Uses spinach that expires tomorrow", tone: "basil", image: photo.chickenRice, alt: "Bowl of rice with pan-fried chicken pieces and wilted spinach", summary: "You have rice, chicken and spinach. Missing: soy sauce, €1.29 at" },
+  { id: "curry", title: "Chickpea curry", minutes: 25, price: 1.8, reason: "Chickpeas on deal this week", tone: "mustard", image: photo.curry, alt: "Chickpea curry and white rice side by side in a frying pan", summary: "You have chickpeas, rice and onion. Missing: coconut milk, €0.99 at" },
+  { id: "pasta", title: "Tuna pasta with lemon", minutes: 15, price: 1.95, reason: "Fastest option tonight", tone: "neutral", image: photo.tunaPasta, alt: "Plate of spaghetti with tuna, lemon zest and parsley", summary: "You have tuna and onion. Missing: spaghetti, €0.89 at" },
 ];
 
 export const dietOptions = ["Meat", "Fish", "Vegetarian", "Vegan", "High protein", "No pork"];

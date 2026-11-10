@@ -3,7 +3,9 @@ import { CalendarDays, ChefHat, Refrigerator, ShoppingBasket, Tag, BookHeart } f
 import { useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/lib/store";
-import { stores, type StoreName } from "@/data/stores";
+import { storeBrand, stores, type StoreName } from "@/data/stores";
+import { SobraLogo, StoreDot } from "./Brand";
+import { ChevronDown, ShoppingBag } from "lucide-react";
 import { SavingsCounter } from "./Savings";
 import { cn } from "@/lib/utils";
 
@@ -19,9 +21,12 @@ function TopBar() {
   const store = useApp((s) => s.store);
   const set = useApp((s) => s.set);
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-rule pb-4">
+    <div className="card flex flex-wrap items-center justify-between gap-4 px-4 py-3">
       <label className="flex items-center gap-3">
         <span className="text-[13px] font-medium text-muted-foreground">My store</span>
+        <span className="relative inline-flex items-center rounded-full" style={{ backgroundColor: storeBrand[store].pill, color: "#1E1B18" }}>
+        <StoreDot name={store} className="pointer-events-none absolute left-3" />
+        <ShoppingBag className="pointer-events-none absolute left-7 size-4" strokeWidth={1.8} aria-hidden />
         <select
           value={store}
           onChange={(e) => {
@@ -29,10 +34,12 @@ function TopBar() {
             set({ store: s, weekAccepted: false, swaps: {} });
             toast(`Plan rebuilt from ${s} deals.`);
           }}
-          className="min-h-11 rounded-ctl bg-sheet-2 px-3 pr-8 text-[15px] font-semibold text-ink"
+          className="min-h-11 appearance-none rounded-full bg-transparent pl-[52px] pr-9 text-[15px] font-semibold"
         >
           {stores.map((s) => <option key={s}>{s}</option>)}
         </select>
+        <ChevronDown className="pointer-events-none absolute right-3 size-4" aria-hidden />
+        </span>
       </label>
       <SavingsCounter />
     </div>
@@ -54,13 +61,13 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen md:flex">
       <aside className="sticky top-0 hidden h-screen w-[220px] shrink-0 flex-col px-5 py-7 md:flex">
-        <Link to="/plan" className="font-hand text-[38px] font-bold leading-none text-basil" aria-label="sobra, go to plan">sobra</Link>
+        <Link to="/plan" aria-label="sobra, go to plan"><SobraLogo /></Link>
         <nav aria-label="Main" className="mt-10 flex flex-col gap-1">
           {[...nav, { to: "/setup" as const, label: "Your meals", icon: BookHeart }].map(({ to, label, icon: Icon }) => {
             const active = pathname.startsWith(to);
             return (
               <Link key={to} to={to} aria-current={active ? "page" : undefined}
-                className={cn("flex min-h-11 items-center gap-3 rounded-ctl px-3 text-[15px] font-medium transition-colors", active ? "bg-sheet text-ink" : "text-muted-foreground hover:text-ink")}>
+                className={cn("flex min-h-11 items-center gap-3 rounded-[12px] px-3 text-[15px] font-medium transition-colors", active ? "bg-sheet text-ink shadow-[var(--shadow-card)] ring-1 ring-rule" : "text-muted-foreground hover:text-ink")}>
                 <Icon className="size-[18px]" strokeWidth={1.6} aria-hidden />{label}
               </Link>
             );
@@ -71,10 +78,10 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 flex-1 px-2 pb-28 pt-2 md:px-6 md:py-6">
         <div className="flex items-center justify-between px-3 pb-2 pt-1 md:hidden">
-          <span className="font-hand text-[30px] font-bold leading-none text-basil">sobra</span>
+          <SobraLogo compact />
           <Link to="/setup" className="flex min-h-11 items-center text-[13px] font-medium text-muted-foreground">Your meals</Link>
         </div>
-        <main className="sheet mx-auto max-w-[1000px] px-4 py-5 md:px-10 md:py-8">
+        <main className="mx-auto max-w-[1040px] px-2 py-3 md:px-4 md:py-2">
           {!isSetup && <TopBar />}
           <div key={pathname} className={cn("fade-route", !isSetup && "pt-7")}>{children}</div>
         </main>

@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Pencil } from "lucide-react";
+import { Carrot, CookingPot, Egg, Package, Pencil, ReceiptText, type LucideIcon } from "lucide-react";
+import type { FridgeItem } from "@/data/fridge";
 import { useRef, useState } from "react";
 import { useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
@@ -12,6 +13,18 @@ export const Route = createFileRoute("/fridge")({
   head: pageHead("Fridge", "Your fridge inventory, filled from your supermarket receipts."),
   component: Fridge,
 });
+
+const cats: Record<string, { label: string; icon: LucideIcon }> = {
+  veg: { label: "Vegetable", icon: Carrot },
+  prep: { label: "Cooked prep", icon: CookingPot },
+  dairy: { label: "Dairy", icon: Egg },
+  pantry: { label: "Pantry", icon: Package },
+};
+const categoryOf = (id: string) => cats[id === "chicken" || id === "potatoes" ? "prep" : id === "eggs" ? "dairy" : id === "rice" || id === "chickpeas" ? "pantry" : "veg"]!;
+const sourceOf = (f: FridgeItem) =>
+  f.id === "chicken" || f.id === "potatoes" ? { label: "From Sunday prep", prep: true }
+  : ["carrots", "chickpeas", "peppers", "rice"].includes(f.id) ? { label: "From Lidl receipt", prep: false }
+  : { label: "From Pingo Doce receipt", prep: false };
 
 function Fridge() {
   const { fridge, set } = useApp();
@@ -30,25 +43,37 @@ function Fridge() {
       <PageHeader small={`${fridge.length} items tracked`} title="Your fridge, filled from your receipts"
         sub="Scan the receipt after shopping. Cooking a planned meal takes its ingredients off the list, so nothing needs typing." />
       {spinach && spinach.daysLeft !== null && spinach.daysLeft <= 1 && (
-        <div role="status" className="mb-7 flex flex-col gap-3 rounded-block bg-tomato-tint p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div role="status" className="mb-6 flex flex-col gap-3 rounded-[16px] bg-tomato-tint p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[15px]"><span className="font-semibold text-tomato">Spinach expires tomorrow.</span> Chicken and spinach rice uses it tonight.</p>
           <Button onClick={() => { set({ mode: "daily", pick: "rice" }); navigate({ to: "/plan" }); }}>Plan it for tonight</Button>
         </div>
       )}
       <TwoCol
         main={
-          <ul className="divide-y divide-rule border-y border-rule">
+          <ul className="space-y-2.5">
             {fridge.map((f) => {
               const low = f.daysLeft !== null && f.daysLeft <= 2;
-              const pct = f.daysLeft === null ? 100 : Math.max(6, Math.min(100, (f.daysLeft / f.maxDays) * 100));
+              const pct = f.daysLeft === null ? 1 : Math.max(0.05, Math.min(1, f.daysLeft / f.maxDays));
+              const filled = Math.max(1, Math.round(pct * 5));
+              const cat = categoryOf(f.id);
+              const Icon = cat.icon;
+              const src = sourceOf(f);
               return (
-                <li key={f.id + f.name} className={cn("py-4", f.isNew && "slide-in")}>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[15.5px] font-medium">{f.name}</span>
-                    <Chip tone={low ? "tomato" : "neutral"} className="num">{f.daysLeft === null ? "long life" : `${f.daysLeft} ${f.daysLeft === 1 ? "day" : "days"} left`}</Chip>
-                  </div>
-                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-sheet-2" aria-hidden>
-                    <div className={cn("h-full rounded-full", low ? "bg-tomato" : "bg-basil")} style={{ width: `${pct}%` }} />
+                <li key={f.id + f.name} className={cn("card flex items-center gap-3 p-3.5", f.isNew && "slide-in", low && "border-tomato/40")}>
+                  <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-[12px]", low ? "bg-tomato-tint text-tomato" : "bg-sheet-2 text-ink")} title={cat.label}>
+                    <Icon className="size-5" strokeWidth={1.7} aria-hidden /><span className="sr-only">{cat.label}</span>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-[15.5px] font-semibold">{f.name.replace(/ \(from Sunday\)/, "")}</span>
+                      <Chip tone={low ? "tomato" : "neutral"} className="num">{f.daysLeft === null ? "long life" : `${f.daysLeft} ${f.daysLeft === 1 ? "day" : "days"} left`}</Chip>
+                    </div>
+                    <div className="mt-2 flex items-center gap-3">
+                      <div className="flex flex-1 gap-1" aria-hidden>
+                        {[0, 1, 2, 3, 4].map((k) => <span key={k} className={cn("h-1.5 flex-1 rounded-full", k < filled ? (low ? "bg-tomato" : "bg-basil") : "bg-sheet-2")} />)}
+                      </div>
+                      <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11.5px] font-semibold", src.prep ? "bg-mustard-tint text-[var(--mustard-ink)]" : "bg-sheet-2 text-muted-foreground")}>{src.label}</span>
+                    </div>
                   </div>
                 </li>
               );
@@ -56,8 +81,9 @@ function Fridge() {
           </ul>
         }
         side={
-          <section aria-labelledby="rs">
-            <h2 id="rs" className="text-[18px]">Receipt scan</h2>
+          <section aria-labelledby="rs" className="thermal rounded-[4px] bg-sheet px-5 shadow-[var(--shadow-sheet)]">
+            <h2 id="rs" className="flex items-center gap-2 pt-2 text-[19px] font-bold"><ReceiptText className="size-5 text-muted-foreground" aria-hidden />Receipt scan</h2>
+            <div aria-hidden className="mt-2 border-t-2 border-dashed border-rule" />
             {step === "start" && (
               <>
                 <p className="mt-1 text-[13px] text-muted-foreground">Take a photo of the receipt. We read the abbreviations and you confirm in a few seconds.</p>
@@ -75,7 +101,7 @@ function Fridge() {
             )}
             {step === "review" && (
               <div className="slide-in mt-4">
-                <pre className="torn rounded-t-[6px] bg-sheet-2 p-3 font-mono text-[12.5px] leading-relaxed">
+                <pre className="overflow-x-auto rounded-[4px] bg-sheet-2 p-3 font-mono text-[12px] leading-relaxed">
                   {receiptRaw.map(([a, b]) => `${a!.padEnd(22)}${b!.padStart(9)}`).join("\n")}
                 </pre>
                 <ul className="mt-4 divide-y divide-rule">
