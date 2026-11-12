@@ -24,7 +24,7 @@ export function MissionBar() {
   return (
     <>
       <div className="fixed inset-x-4 bottom-16 z-30 mx-auto max-w-4xl md:bottom-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-ink px-5 py-3 text-sheet shadow-xl">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-sheet bg-ink px-5 py-3 text-sheet shadow-float">
           <ol className="flex flex-wrap items-center gap-1.5" aria-label="Test tasks">
             {taskKeys.map((k, i) => {
               const t = tasks[k]; const on = s[k];
@@ -41,7 +41,7 @@ export function MissionBar() {
           </ol>
           <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => { useExp.getState().setTour({ step: 1, sub: "guided_focus" }); navigate({ to: "/plan" }); }} className="text-[13px] font-medium text-sheet/80 underline underline-offset-4 hover:text-sheet">Restart guided tour</button>
-          <button type="button" onClick={() => setOpen(true)} className="press min-h-10 rounded-xl bg-tape px-4 py-2 text-[14px] font-bold text-ink">
+          <button type="button" onClick={() => setOpen(true)} className="press min-h-10 rounded-[12px] bg-tape px-4 py-2 text-[14px] font-bold text-ink">
             {finished ? (s.bonus_completed ? "See my reward" : "Unlock bonus reward") : "Finish & Claim Free Month (25 sec) ->"}
           </button>
           </div>

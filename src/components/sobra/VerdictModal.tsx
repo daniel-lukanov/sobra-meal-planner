@@ -62,7 +62,7 @@ export function VerdictModal({ open, onOpenChange }: { open: boolean; onOpenChan
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-rule bg-sheet p-6 shadow-2xl sm:p-8">
+      <DialogContent className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-sheet bg-sheet p-6 sm:p-8">
         {!s.survey_post_completed ? (
           <>
             <DialogTitle className="text-[24px] font-bold">Your 25-second verdict</DialogTitle>
@@ -77,12 +77,12 @@ export function VerdictModal({ open, onOpenChange }: { open: boolean; onOpenChan
               <Q title="8. If Sobra launched in Lisbon next month with live Pingo Doce, Continente & Lidl prices, how disappointed would you be if you could NOT use it?">
                 <div className="flex flex-wrap gap-2">{pmfOptions.map((o) => <Pill key={o} on={pmf === o} onClick={() => setPmf(o)}>{o}</Pill>)}</div>
               </Q>
-              <section className="rounded-2xl bg-basil-tint p-5" aria-labelledby="cta-t">
+              <section className="rounded-sheet bg-basil-tint p-5" aria-labelledby="cta-t">
                 <span className="inline-flex rounded-full bg-sheet px-3 py-1 text-[12.5px] font-semibold text-basil">{cta.badge}</span>
                 <h3 id="cta-t" className="mt-3 text-[20px] font-bold">{cta.title}</h3>
                 <p className="mt-1 text-[14px]">{cta.text}</p>
                 <label htmlFor="contact" className="mt-4 block text-[13px] font-medium">Your email or WhatsApp number (optional, to send your free month code)</label>
-                <input id="contact" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={200} autoComplete="email" className="mt-1.5 min-h-11 w-full rounded-ctl border border-rule bg-sheet px-3" />
+                <input id="contact" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={200} autoComplete="email" className="mt-1.5 min-h-11 w-full rounded-ctl bg-sheet px-3" />
                 <Button className="mt-4 w-full" disabled={!stage1Ready} onClick={() => submit1(true)}>{cta.button}</Button>
                 {!stage1Ready && <p className="mt-2 text-[12.5px] text-muted-foreground">Answer questions 6 to 8 first.</p>}
               </section>
@@ -93,12 +93,12 @@ export function VerdictModal({ open, onOpenChange }: { open: boolean; onOpenChan
           <div className="text-center">
             <DialogTitle className="text-[24px] font-bold">Your VIP code is ready</DialogTitle>
             <DialogDescription className="mt-1 text-muted-foreground">3 months of Sobra Pro free plus a €2.00 voucher. Thank you for helping the Católica team.</DialogDescription>
-            <p className="num mx-auto mt-5 inline-block rounded-2xl border-2 border-dashed border-basil bg-basil-tint px-6 py-4 font-serif text-[28px] font-bold tracking-wide text-basil">SOBRA-VIP-FREE</p>
+            <p className="num mx-auto mt-5 inline-block rounded-sheet border-2 border-dashed border-basil bg-basil-tint px-6 py-4 text-[28px] font-bold tracking-wide text-basil">SOBRA-VIP-FREE</p>
             <div className="mt-6 flex flex-col items-center gap-2"><ShareBtn /><Button variant="quiet" onClick={() => onOpenChange(false)}>Back to Sobra</Button></div>
           </div>
         ) : (
           <>
-            <div className="mb-5 rounded-2xl border border-mustard bg-mustard-tint p-4">
+            <div className="mb-5 rounded-sheet border border-mustard bg-mustard-tint p-4">
               <DialogTitle className="flex items-center gap-2 text-[17px] font-bold"><Check className="size-5 text-basil" strokeWidth={3} aria-hidden />Stage 1 saved!</DialogTitle>
               <DialogDescription className="mt-1 text-[14px] text-ink">Want to upgrade your reward to 3 Months of Sobra Pro 100% FREE + a €2.00 Lidl/Continente voucher? Answer 7 quick bonus questions (45 sec) for our Católica thesis team:</DialogDescription>
             </div>
@@ -126,10 +126,10 @@ export function VerdictModal({ open, onOpenChange }: { open: boolean; onOpenChan
                   <p className="num mb-2 text-[13px] font-semibold" aria-live="polite">{100 - used} points left</p>
                   <ul className="space-y-2">
                     {featureKeys.map((k, i) => (
-                      <li key={k} className="flex items-center gap-3 rounded-xl bg-row p-3">
+                      <li key={k} className="flex items-center gap-3 rounded-[12px] bg-row p-3">
                         <span className="min-w-0 flex-1 text-[14px] font-medium">{i + 1}. {featureLabels[k]}</span>
                         <button type="button" aria-label={`Remove 20 points from ${featureLabels[k]}`} onClick={() => adjust(k, -20)} className="press flex size-9 items-center justify-center rounded-full bg-sheet-2"><Minus className="size-4" /></button>
-                        <span className="num w-9 text-center font-serif text-[17px] font-bold">{pts[k]}</span>
+                        <span className="num w-9 text-center text-[17px] font-bold">{pts[k]}</span>
                         <button type="button" aria-label={`Add 20 points to ${featureLabels[k]}`} onClick={() => adjust(k, 20)} className="press flex size-9 items-center justify-center rounded-full bg-basil text-basil-ink"><Plus className="size-4" /></button>
                       </li>
                     ))}
@@ -140,7 +140,7 @@ export function VerdictModal({ open, onOpenChange }: { open: boolean; onOpenChan
                 </Q>
                 <Q title="15. What is the #1 reason you might stop using Sobra after 2 weeks, or what felt missing?">
                   <label htmlFor="q15" className="sr-only">Your answer</label>
-                  <input id="q15" value={q15} onChange={(e) => setQ15(e.target.value)} maxLength={500} className="min-h-11 w-full rounded-ctl border border-rule bg-sheet px-3" />
+                  <input id="q15" value={q15} onChange={(e) => setQ15(e.target.value)} maxLength={500} className="min-h-11 w-full rounded-ctl bg-sheet px-3" />
                 </Q>
                 <Button className="w-full" disabled={!bonusReady} onClick={submit2}>Submit Bonus Answers &amp; Reveal VIP Code -&gt;</Button>
                 {!bonusReady && <p className="text-[12.5px] text-muted-foreground">Answer 9 to 14 and spend all 100 points to reveal the code.</p>}

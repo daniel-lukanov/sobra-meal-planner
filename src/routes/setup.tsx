@@ -62,14 +62,14 @@ function Setup() {
               <button key={m} type="button" aria-pressed={on} onClick={() => {
                 if (!on && s.meals.length >= 12) { toast("You have 12 meals. Remove one first."); return; }
                 s.set({ meals: toggleIn(s.meals, m) });
-              }} className={cn("card press group relative overflow-hidden p-2 text-left", on && "border-basil shadow-[0_0_0_1px_var(--basil)]")}>
+              }} className={cn("card press group relative overflow-hidden p-2 text-left", on && "border-basil")}>
                 <div className="aspect-[4/3] overflow-hidden rounded-[10px] bg-sheet-2">
                   <img src={categoryPhoto[m]} alt="" width={300} height={225} loading="lazy" className={cn("size-full object-cover transition", !on && "opacity-80 saturate-[.8]")} />
                 </div>
                 <span className={cn("absolute right-3.5 top-3.5 flex size-7 items-center justify-center rounded-full transition", on ? "bg-basil text-basil-ink" : "bg-sheet/90 text-muted-foreground")} aria-hidden>
                   {on ? <Check className="size-4" strokeWidth={2.4} /> : <span className="size-3 rounded-full ring-2 ring-current" />}
                 </span>
-                <span className="mt-2 block px-1 pb-0.5 font-serif text-[16px] font-semibold">{m}</span>
+                <span className="mt-2 block px-1 pb-0.5 text-[16px] font-semibold">{m}</span>
               </button>
             );
           })}

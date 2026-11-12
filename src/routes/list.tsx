@@ -21,9 +21,9 @@ function List() {
     <>
       <PageHeader small={`Monday to Wednesday · ${store}`} title="Shopping list sorted by aisle"
         sub="Only what is missing. Onions and rice are already in your fridge, so they are crossed out." />
-      <section aria-label="List total" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-rule bg-sheet p-5">
+      <section aria-label="List total" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sheet bg-sheet p-5">
         <div className="num">
-          <p className="font-serif text-[26px] font-bold leading-none">€14.23</p>
+          <p className=" text-[26px] font-bold leading-none">€14.23</p>
           <p className="mt-1 text-[13.5px] text-muted-foreground">8 items · <span className="font-semibold text-basil">€6.85 saved vs regular prices</span></p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -43,7 +43,7 @@ function List() {
                 {g.items.map((it) => {
                   const on = it.inFridge || !!checked[it.id];
                   return (
-                    <li key={it.id} className="mb-2 rounded-xl bg-row">
+                    <li key={it.id} className="mb-2 rounded-[12px] bg-row">
                       <label className={cn("flex min-h-12 items-center justify-between gap-3 p-3", it.inFridge ? "cursor-default" : "cursor-pointer")}>
                         <input type="checkbox" className="peer sr-only" checked={on} disabled={it.inFridge}
                           onChange={(e) => { set({ checked: { ...checked, [it.id]: e.target.checked } }); if (e.target.checked) useExp.getState().track("task_4_list"); }} />

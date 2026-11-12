@@ -28,7 +28,7 @@ function StorePicker() {
   const store = useApp((s) => s.store);
   const set = useApp((s) => s.set);
   return (
-    <label className="relative inline-flex shrink-0 items-center rounded-full" style={{ backgroundColor: storeBrand[store].pill, color: "#1E1B18" }}>
+    <label className="relative inline-flex shrink-0 items-center rounded-full" style={{ backgroundColor: storeBrand[store].pill, color: "#1D2A33" }}>
       <span className="sr-only">My store</span>
       <StoreDot name={store} className="pointer-events-none absolute left-3" />
       <ShoppingBag className="pointer-events-none absolute left-7 hidden size-4 sm:block" strokeWidth={1.8} aria-hidden />
@@ -45,7 +45,7 @@ function StorePicker() {
 function TopNav({ minimal }: { minimal: boolean }) {
   const { pathname } = useLocation();
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-rule bg-sheet/95 px-4 backdrop-blur-md sm:px-8">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-rule bg-ground px-4 sm:px-8">
       <Link to="/plan" aria-label="sobra, go to plan" className="shrink-0"><SobraLogo compact /></Link>
       {!minimal && (
         <nav aria-label="Main" className="hidden h-full items-center gap-1 md:flex">
@@ -117,7 +117,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </main>
       {showMission && (tour ? <GuidedTour /> : <MissionBar />)}
       {ghost && (
-        <span className="fixed bottom-20 left-3 z-50 inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-[12px] font-semibold text-sheet shadow-md md:bottom-4">
+        <span className="fixed bottom-20 left-3 z-50 inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1.5 text-[12px] font-semibold text-sheet md:bottom-4">
           <Ghost className="size-3.5" aria-hidden />Ghost Mode (Not Recording)
         </span>
       )}

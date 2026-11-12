@@ -84,7 +84,7 @@ function Fridge() {
           </ul>
         }
         side={
-          <section aria-labelledby="rs" data-tour="5" className="thermal rounded-[4px] bg-paper px-5 shadow-[var(--shadow-sheet)]">
+          <section aria-labelledby="rs" data-tour="5" className="thermal rounded-[4px] bg-paper px-5">
             <h2 id="rs" className="flex items-center gap-2 pt-2 text-[19px] font-bold"><ReceiptText className="size-5 text-muted-foreground" aria-hidden />Receipt scan</h2>
             <div aria-hidden className="mt-2 border-t-2 border-dashed border-rule" />
             {step === "start" && (

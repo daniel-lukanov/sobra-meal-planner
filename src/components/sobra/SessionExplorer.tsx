@@ -74,7 +74,7 @@ export function SessionExplorer({ rows, excludeBounces, setExcludeBounces, onSav
           <label className="relative min-w-[240px] flex-1">
             <span className="sr-only">Search sessions</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search id, ?ref=, store or contact" className="min-h-10 w-full rounded-xl bg-sheet-2 pl-9 pr-3 text-[14px]" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search id, ?ref=, store or contact" className="min-h-10 w-full rounded-[12px] bg-sheet-2 pl-9 pr-3 text-[14px]" />
           </label>
           <label className="inline-flex items-center gap-2 text-[13.5px] font-medium">
             <Switch checked={excludeBounces} onCheckedChange={setExcludeBounces} className="data-[state=checked]:bg-basil data-[state=unchecked]:bg-rule" />
@@ -83,7 +83,7 @@ export function SessionExplorer({ rows, excludeBounces, setExcludeBounces, onSav
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" disabled={busy || !bounces.length} onClick={() => del(bounces.map((r) => r.session_id), `all ${bounces.length} empty bounce sessions`)}
-            className="press inline-flex min-h-10 items-center gap-2 rounded-xl bg-tomato-tint px-4 text-[13.5px] font-semibold text-tomato disabled:opacity-50">
+            className="press inline-flex min-h-10 items-center gap-2 rounded-[12px] bg-tomato-tint px-4 text-[13.5px] font-semibold text-tomato disabled:opacity-50">
             <Trash2 className="size-4" aria-hidden />Purge All Empty Bounce Sessions ({bounces.length})
           </button>
           <Button variant="secondary" disabled={busy || !sel.length} onClick={() => del(sel, `${sel.length} selected sessions`)} className="min-h-10 text-[13.5px]">
@@ -130,8 +130,8 @@ export function SessionExplorer({ rows, excludeBounces, setExcludeBounces, onSav
                   </td>
                   <td className="p-3" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => setEdit(r)} className="inline-flex min-h-8 items-center gap-1 rounded-lg px-2 font-semibold text-basil hover:bg-basil-tint"><Pencil className="size-3.5" aria-hidden />Inspect / Edit</button>
-                      <button type="button" aria-label="Delete session" onClick={() => del([r.session_id], "this session")} className="flex size-8 items-center justify-center rounded-lg text-tomato hover:bg-tomato-tint"><Trash2 className="size-4" aria-hidden /></button>
+                      <button type="button" onClick={() => setEdit(r)} className="inline-flex min-h-8 items-center gap-1 rounded-[12px] px-2 font-semibold text-basil hover:bg-basil-tint"><Pencil className="size-3.5" aria-hidden />Inspect / Edit</button>
+                      <button type="button" aria-label="Delete session" onClick={() => del([r.session_id], "this session")} className="flex size-8 items-center justify-center rounded-[12px] text-tomato hover:bg-tomato-tint"><Trash2 className="size-4" aria-hidden /></button>
                     </div>
                   </td>
                 </tr>
@@ -164,14 +164,14 @@ function SessionEditor({ initial, isNew, onClose, onSave, onDelete, busy }: { in
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-rule bg-sheet p-6 shadow-2xl sm:p-8">
-        <DialogTitle className="font-serif text-[24px] font-bold">{isNew ? "Add manual session" : "Session inspector & editor"}</DialogTitle>
+      <DialogContent className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-sheet bg-sheet p-6 sm:p-8">
+        <DialogTitle className=" text-[24px] font-bold">{isNew ? "Add manual session" : "Session inspector & editor"}</DialogTitle>
         <DialogDescription className="font-mono text-[12.5px]">{s.session_id} · {isSeeded(s) ? "seeded sample (edits saved on this device)" : "live"}</DialogDescription>
         <UnderlineTabs label="Editor section" value={tab} onChange={setTab} options={tabs.map((t) => ({ ...t }))} />
 
         {tab === "behavior" && (
           <div className="space-y-5">
-            <p className="rounded-xl bg-sheet-2 p-3 text-[13.5px]">
+            <p className="rounded-[12px] bg-sheet-2 p-3 text-[13.5px]">
               {tasksDone(s)} of 5 tasks done, {s.time_spent_seconds}s in the app.
               {s.accepted_week_clicked ? " Accepted the week." : ""}{s.swapped_meal_clicked ? " Swapped a meal." : ""}{s.fridge_receipt_scanned ? " Scanned a receipt." : ""}{s.cook_tab_visited ? " Opened Cook." : ""}
             </p>
@@ -251,10 +251,10 @@ function SessionEditor({ initial, isNew, onClose, onSave, onDelete, busy }: { in
         )}
 
         <div className="mt-2 flex flex-wrap items-center justify-between gap-3 border-t border-rule pt-5">
-          {!isNew ? <button type="button" disabled={busy} onClick={onDelete} className="press inline-flex min-h-10 items-center gap-2 rounded-xl bg-tomato-tint px-4 text-[14px] font-semibold text-tomato"><Trash2 className="size-4" aria-hidden />Delete Session</button> : <span />}
+          {!isNew ? <button type="button" disabled={busy} onClick={onDelete} className="press inline-flex min-h-10 items-center gap-2 rounded-[12px] bg-tomato-tint px-4 text-[14px] font-semibold text-tomato"><Trash2 className="size-4" aria-hidden />Delete Session</button> : <span />}
           <div className="flex gap-2">
             <Button variant="secondary" onClick={onClose}>Cancel</Button>
-            <button type="button" disabled={busy} onClick={() => onSave(s)} className="press rounded-xl bg-basil px-6 py-2.5 font-semibold text-basil-ink disabled:opacity-60">{busy ? "Saving" : "Save Changes & Recalculate Insights"}</button>
+            <button type="button" disabled={busy} onClick={() => onSave(s)} className="press rounded-[12px] bg-basil px-6 py-2.5 font-semibold text-basil-ink disabled:opacity-60">{busy ? "Saving" : "Save Changes & Recalculate Insights"}</button>
           </div>
         </div>
       </DialogContent>
@@ -262,7 +262,7 @@ function SessionEditor({ initial, isNew, onClose, onSave, onDelete, busy }: { in
   );
 }
 
-const inputCls = "mt-1 min-h-10 w-full rounded-xl border border-rule bg-sheet px-3 text-[14px]";
+const inputCls = "mt-1 min-h-10 w-full rounded-[12px] bg-sheet px-3 text-[14px]";
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return <div><p className="text-[12.5px] font-semibold text-muted-foreground">{label}</p>{children}</div>;
 }
@@ -277,7 +277,7 @@ function Sel({ value, options, onChange }: { value: string | null; options: read
 }
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-sheet-2 px-3 text-[13.5px] font-medium">
+    <label className="flex min-h-11 items-center justify-between gap-3 rounded-[12px] bg-sheet-2 px-3 text-[13.5px] font-medium">
       <span className="font-mono text-[12.5px]">{label}</span>
       <Switch checked={checked} onCheckedChange={onChange} className="data-[state=checked]:bg-basil data-[state=unchecked]:bg-rule" />
     </label>

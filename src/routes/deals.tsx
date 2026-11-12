@@ -34,7 +34,7 @@ function Deals() {
         {deals.map((d) => {
           const real = isRealDeal(d);
           return (
-            <li key={d.name} data-tour={d.name === firstTrap ? "3" : undefined} className="flex flex-col overflow-hidden rounded-2xl border border-rule bg-sheet shadow-sm">
+            <li key={d.name} data-tour={d.name === firstTrap ? "3" : undefined} className="flex flex-col overflow-hidden rounded-sheet bg-sheet">
               <div className="relative h-36 bg-sheet-2">
                 <img src={dealPhoto(d.name)} alt="" width={600} height={288} loading="lazy" className="size-full object-cover" />
                 <span className={cn("absolute left-3 top-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] font-semibold", real ? "bg-sheet text-basil" : "bg-sheet text-tomato")}>
@@ -44,7 +44,7 @@ function Deals() {
               <div className="flex flex-1 items-end justify-between gap-3 p-4">
                 <h2 className="text-[18px] font-bold">{d.name}</h2>
                 <p className="num shrink-0 text-right">
-                  <span className={cn("block font-serif text-[20px] font-bold", !real && "text-tomato")}>{eur(d.price)}</span>
+                  <span className={cn("block text-[20px] font-bold", !real && "text-tomato")}>{eur(d.price)}</span>
                   <span className="text-[12.5px] text-muted-foreground line-through"><span className="sr-only">was </span>{eur(d.was)}</span>
                 </p>
               </div>

@@ -111,13 +111,13 @@ export function GuidedTour() {
     <>
       {focusStep && rects.length > 0 && (
         <>
-          <div aria-hidden className="fixed inset-0 z-[45] bg-ink/65 backdrop-blur-[2px] transition-opacity"
+          <div aria-hidden className="fixed inset-0 z-[45] bg-ink/65-[2px] transition-opacity"
             style={{ clipPath: `path(evenodd, "M0 0H${W}V${H}H0z${holes}")` }} />
           {rects.map((r, i) => (
-            <div key={i} aria-hidden className="pointer-events-none fixed z-[46] rounded-2xl ring-4 ring-tape shadow-[0_0_0_8px_color-mix(in_oklab,var(--tape)_30%,transparent),0_20px_50px_rgba(0,0,0,0.45)] transition-all duration-300"
+            <div key={i} aria-hidden className="pointer-events-none fixed z-[46] rounded-sheet ring-4 ring-tape transition-all duration-300"
               style={{ left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 }} />
           ))}
-          <span aria-hidden className="pointer-events-none fixed z-[47] flex animate-bounce items-center gap-1 rounded-full bg-tape px-3 py-1 text-xs font-bold text-ink shadow-md"
+          <span aria-hidden className="pointer-events-none fixed z-[47] flex animate-bounce items-center gap-1 rounded-full bg-tape px-3 py-1 text-xs font-bold text-ink shadow-float"
             style={{ left: rects[0]!.left, top: Math.max(4, rects[0]!.top - pad - 30) }}>
             <Hand className="size-3.5" aria-hidden />Tap here first
           </span>
@@ -126,14 +126,14 @@ export function GuidedTour() {
 
       <div className="fixed inset-x-4 bottom-16 z-50 mx-auto max-w-3xl md:bottom-5" role="region" aria-label="Guided tour">
         {active?.sub === "guided_focus" && (
-          <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border-2 border-tape bg-ink p-4 text-sheet shadow-2xl sm:flex-row sm:items-center">
+          <div className="flex flex-col items-start justify-between gap-4 rounded-sheet border-2 border-tape bg-ink p-4 text-sheet shadow-float sm:flex-row sm:items-center">
             <div className="min-w-0">
               <p className="text-[12px] font-semibold text-sheet/70">Step {active.step} of 5 · Guided action</p>
-              <p className="font-serif text-[18px] font-bold text-tape">{steps[active.step].title}</p>
+              <p className=" text-[18px] font-bold text-tape">{steps[active.step].title}</p>
               <p className="mt-0.5 text-[14px] leading-snug text-sheet/90" aria-live="polite">{steps[active.step].guide}</p>
             </div>
             <div className="flex shrink-0 flex-col items-start gap-1.5 sm:items-end">
-              <button type="button" onClick={doForMe} className="press inline-flex items-center gap-1 rounded-lg bg-sheet/15 px-3 py-2 text-xs font-semibold text-sheet hover:bg-sheet/25">
+              <button type="button" onClick={doForMe} className="press inline-flex items-center gap-1 rounded-[12px] bg-sheet/15 px-3 py-2 text-xs font-semibold text-sheet hover:bg-sheet/25">
                 {pathname.startsWith(steps[active.step].to) ? "Do this for me" : "Take me there"}<ArrowRight className="size-3.5" aria-hidden />
               </button>
               <button type="button" onClick={() => setTour(null)} className="text-xs text-sheet/70 underline underline-offset-4 hover:text-sheet">Unlock free roam</button>
@@ -157,7 +157,7 @@ export function GuidedTour() {
 
 function Celebrate({ text, button, icon }: { text: ReactNode; button: ReactNode; icon?: ReactNode }) {
   return (
-    <div className="fade-route flex flex-col items-center justify-between gap-4 rounded-2xl border-2 border-tape bg-basil p-4 text-basil-ink shadow-2xl sm:flex-row">
+    <div className="fade-route flex flex-col items-center justify-between gap-4 rounded-sheet border-2 border-tape bg-basil p-4 text-basil-ink shadow-float sm:flex-row">
       <p className="flex items-start gap-2 text-[14.5px] leading-snug" aria-live="polite">{icon ?? <Check className="mt-0.5 size-5 shrink-0 text-tape" strokeWidth={3} aria-hidden />}<span>{text}</span></p>
       {button}
     </div>
@@ -165,7 +165,7 @@ function Celebrate({ text, button, icon }: { text: ReactNode; button: ReactNode;
 }
 function GoldButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className={cn("press inline-flex shrink-0 animate-pulse items-center gap-1.5 rounded-xl bg-tape px-5 py-2.5 font-bold text-ink shadow-md transition-transform hover:bg-sheet active:scale-95 hover:animate-none")}>
+    <button type="button" onClick={onClick} className={cn("press inline-flex shrink-0 animate-pulse items-center gap-1.5 rounded-[12px] bg-tape px-5 py-2.5 font-bold text-ink shadow-float transition-transform hover:bg-sheet active:scale-95 hover:animate-none")}>
       {children}<ArrowRight className="size-4" aria-hidden />
     </button>
   );

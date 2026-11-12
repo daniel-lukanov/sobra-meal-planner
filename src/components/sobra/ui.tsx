@@ -7,7 +7,7 @@ export const btn = cva(
   {
     variants: {
       variant: {
-        primary: "bg-basil text-basil-ink hover:opacity-90 disabled:opacity-60",
+        primary: "bg-basil text-basil-ink hover:bg-basil-700 active:bg-basil-700 disabled:bg-basil disabled:opacity-40 disabled:text-basil-ink",
         secondary: "bg-sheet-2 text-ink hover:bg-sheet-hover disabled:opacity-60",
         quiet: "min-h-11 px-2 font-medium text-muted-foreground hover:text-ink",
       },
@@ -69,8 +69,8 @@ export function PageHeader({ small, title, sub, right }: { small: string; title:
   return (
     <header className="flex flex-col gap-4 pb-6 md:flex-row md:items-end md:justify-between md:gap-8">
       <div className="max-w-[560px]">
-        <p className="text-[13px] font-medium text-muted-foreground">{small}</p>
-        <h1 className="mt-1 text-[28px] font-bold md:text-[34px]">{title}</h1>
+        <p className="eyebrow">{small}</p>
+        <h1 className="mt-1 text-[32px] font-extrabold">{title}</h1>
         {sub && <p className="mt-2 text-muted-foreground">{sub}</p>}
       </div>
       {right && <div className="shrink-0">{right}</div>}

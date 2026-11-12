@@ -35,4 +35,4 @@ use the editor.
 - `/insights` reads (`getInsights`) and edits/deletes (`adminSaveSession`, `adminDeleteSessions`) all check the `INSIGHTS_PASSCODE` secret server-side; the table keeps no browser RLS policies so nobody without the passcode can read, change or delete answers. Seeded sample edits live only in localStorage.
 - The guided tour finds its spotlight targets through `data-tour="N"` attributes (`data-tour-trigger` limits what unlocks, `data-tour-auto` is what "Do this for me" clicks).
 - Routing uses TanStack Router file routes (the brief's "React Router" is mapped onto it); the sticky top navbar and mobile tab bar live in `src/components/sobra/Shell.tsx`.
-- Colours are tokens in `src/styles.css` and the app is light-only (no dark palette), so never add dark-mode rules or hardcoded colours.
+- Colours are tokens in `src/styles.css` and light and dark palettes are both defined there via prefers-color-scheme, so never hardcode colours in components.

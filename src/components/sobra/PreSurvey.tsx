@@ -46,7 +46,7 @@ export function PreSurvey() {
   };
 
   return (
-    <div className="mx-auto my-8 max-w-2xl rounded-3xl border border-rule bg-sheet p-6 shadow-sm sm:p-8">
+    <div className="mx-auto my-8 max-w-2xl rounded-sheet bg-sheet p-6 sm:p-8">
       <div className="flex items-start justify-between gap-4">
         <SobraLogo />
         <button type="button" onClick={skip} className="min-h-11 text-[13.5px] font-medium text-muted-foreground underline-offset-4 hover:text-ink hover:underline">Skip to app</button>
@@ -102,7 +102,7 @@ export function PreSurvey() {
           </div>
           <div className="mt-5 flex items-center justify-between gap-3">
             <label htmlFor="spend" className="text-[15px] font-semibold">Roughly how much do you spend on groceries per person per week?</label>
-            <span className="num shrink-0 rounded-full bg-basil-tint px-3 py-1 font-serif text-[16px] font-bold text-basil">€{spend}/week</span>
+            <span className="num shrink-0 rounded-full bg-basil-tint px-3 py-1 text-[16px] font-bold text-basil">€{spend}/week</span>
           </div>
           <input id="spend" type="range" min={15} max={100} step={5} value={spend} onChange={(e) => setSpend(Number(e.target.value))} className="mt-3 w-full accent-[var(--basil)]" />
           <div className="num flex justify-between text-[12px] text-muted-foreground"><span>€15</span><span>€100</span></div>

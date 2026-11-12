@@ -96,7 +96,7 @@ function Cook() {
               {steps.map((_, k) => <span key={k} className={cn("h-1 flex-1 rounded-full transition-colors duration-200", k <= i ? "bg-basil" : "bg-rule")} />)}
             </div>
             <p className="num mt-5 text-[13px] font-medium text-muted-foreground" aria-live="polite">Step {i + 1} of {steps.length}</p>
-            <p key={`${pace}${i}`} className="fade-route mt-2 max-w-[24ch] font-serif text-[26px] font-semibold leading-snug md:text-[30px]">{step.text}</p>
+            <p key={`${pace}${i}`} className="fade-route mt-2 max-w-[24ch] text-[26px] font-semibold leading-snug md:text-[30px]">{step.text}</p>
 
             {step.timer && (
               <div className="card mt-6 flex flex-wrap items-center gap-5 p-4">
@@ -106,7 +106,7 @@ function Cook() {
                     <circle cx="56" cy="56" r="48" fill="none" stroke="var(--basil)" strokeWidth="8" strokeLinecap="round"
                       strokeDasharray={2 * Math.PI * 48} strokeDashoffset={2 * Math.PI * 48 * (1 - left / step.timer)} className="transition-[stroke-dashoffset] duration-1000 ease-linear" />
                   </svg>
-                  <span className="num absolute inset-0 flex items-center justify-center font-serif text-[26px] font-bold text-basil" role="timer" aria-label={`${fmt(left)} remaining`}>{fmt(left)}</span>
+                  <span className="num absolute inset-0 flex items-center justify-center text-[26px] font-bold text-basil" role="timer" aria-label={`${fmt(left)} remaining`}>{fmt(left)}</span>
                 </div>
                 <Button variant="secondary" onClick={() => { if (left === 0) setLeft(step.timer!); setRunning(!running); }}>{running ? "Pause timer" : "Start timer"}</Button>
               </div>

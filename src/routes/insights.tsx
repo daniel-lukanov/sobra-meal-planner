@@ -284,7 +284,7 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub?: string
   return (
     <div className="card p-4">
       <p className="text-[12.5px] font-medium text-muted-foreground">{label}</p>
-      <p className="num mt-1 font-serif text-[28px] font-bold leading-none">{value}</p>
+      <p className="num mt-1 text-[28px] font-bold leading-none">{value}</p>
       {sub && <p className="mt-1 text-[12px] text-muted-foreground">{sub}</p>}
     </div>
   );
@@ -322,7 +322,7 @@ function Table({ title, head, rows, highlight }: { title: string; head: string[]
       <h3 className="text-[17px] font-bold">{title}</h3>
       <table className="num mt-3 w-full text-[13.5px]">
         <thead><tr className="border-b border-rule text-left text-muted-foreground">{head.map((h, i) => <th key={i} className={`py-2 pr-3 font-medium ${i === highlight ? "text-basil" : ""}`}>{h}</th>)}</tr></thead>
-        <tbody>{rows.map((r) => <tr key={r[0]} className="border-b border-rule last:border-0">{r.map((c, i) => <td key={i} className={i === 0 ? "py-2 pr-3" : `py-2 pr-3 font-serif text-[16px] font-bold ${i === highlight ? "bg-basil-tint text-basil" : ""}`}>{c}</td>)}</tr>)}</tbody>
+        <tbody>{rows.map((r) => <tr key={r[0]} className="border-b border-rule last:border-0">{r.map((c, i) => <td key={i} className={i === 0 ? "py-2 pr-3" : `py-2 pr-3 text-[16px] font-bold ${i === highlight ? "bg-basil-tint text-basil" : ""}`}>{c}</td>)}</tr>)}</tbody>
       </table>
     </div>
   );

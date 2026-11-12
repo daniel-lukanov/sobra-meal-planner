@@ -19,7 +19,7 @@ export function SobraLogo({ compact }: { compact?: boolean }) {
     <span className="flex items-center gap-2.5">
       <SobraMark />
       <span className="leading-none">
-        <span className={cn("block font-serif font-bold tracking-[-0.02em] text-ink", compact ? "text-[22px]" : "text-[24px]")}>sobra.</span>
+        <span className={cn("block font-extrabold tracking-[-0.02em] text-ink", compact ? "text-[22px]" : "text-[24px]")}>sobra.</span>
         <span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">lisboa</span>
       </span>
     </span>
@@ -34,7 +34,7 @@ export function StoreDot({ name, className }: { name: StoreName; className?: str
 /** Brand pills keep fixed light tints, so text stays dark in both themes. */
 export function StoreBadge({ name, className }: { name: StoreName; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold", className)} style={{ backgroundColor: storeBrand[name].pill, color: "#1E1B18" }}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold", className)} style={{ backgroundColor: storeBrand[name].pill, color: "#1D2A33" }}>
       <StoreDot name={name} />
       <ShoppingBag className="size-3.5" strokeWidth={1.8} aria-hidden />
       {name}
