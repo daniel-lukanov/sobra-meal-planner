@@ -6,7 +6,8 @@ import chickenRiceLocal from "@/assets/chicken-spinach-rice.jpg";
 import chickpeaCurry from "@/assets/chickpea-curry.jpg";
 import tunaPastaLocal from "@/assets/tuna-pasta.jpg";
 
-const u = (id: string) => `https://images.unsplash.com/photo-${id}?w=600&auto=format&fit=crop&q=80`;
+// Photos are saved locally by scripts/localize-images.ts (public/images/photos/<unsplash id>.jpg).
+const u = (id: string) => `/images/photos/${id}.jpg`;
 
 export const photo = {
   roast: u("1598515214211-89d3c73ae83b"),
@@ -49,7 +50,7 @@ export const categoryPhoto: Record<string, string> = {
   Chilli: photo.chilli, Salads: photo.potatoSalad, Gnocchi: photo.gnocchi,
 };
 
-const ing = (id: string) => `https://images.unsplash.com/photo-${id}?w=600&h=360&auto=format&fit=crop&q=80`;
+const ing = (id: string) => `/images/photos/${id}.jpg`;
 /** Ingredient photos for deal cards, matched by a keyword in the product name. */
 const dealPhotos: [RegExp, string][] = [
   [/chicken/i, ing("1604503468506-a8da13d82791")],

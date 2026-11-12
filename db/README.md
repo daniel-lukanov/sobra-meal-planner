@@ -15,6 +15,7 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 | `005_seed_reference.sql` | chains, the 14 EU allergens, diets, 14 meal types, starter ingredients |
 | `006_storage_guidelines.sql` | USDA FoodKeeper rows and per-ingredient storage guidelines with a review status (the app reads approved rows only) |
 | `007_net_weight.sql` | usable (net) weight: `ingredient.usable_fraction`, `product.usable_qty` with `usable_source`; `product_price_today` prices per usable unit |
+| `008_image_storage.sql` | public Storage bucket `recipe-images` (1 MB, jpeg/png/webp) for recipe photos; readable by URL, writable only with the secret key |
 
 **Read `METHODOLOGY.md` first**: free-plan principles (activity, size, batching, no backups, keys), the rule that a model proposes and a person approves food-safety data, and how we change the database.
 
@@ -40,6 +41,10 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 - Diets and allergens are **computed** from ingredient flags (`recipe_diets`, `recipe_allergen`), never labelled by hand.
 - Catalog tables are public read, service-role write. Personal data is owner-only, household data is member-only.
 - "Today" in the price views is the Lisbon date.
+
+## Images
+
+Fixed images (store logos, the meal and ingredient photos) live in the repo under `public/images/` and are saved there once by `scripts/localize-images.ts`, so the app works locally and does not depend on Lovable's media storage or Unsplash. Images for recipes that are added later (generated or uploaded) go to the public Storage bucket `recipe-images` (migration 008); put its URL in `recipe.image_url`. Keep each image under 1 MB.
 
 ## App reads
 
