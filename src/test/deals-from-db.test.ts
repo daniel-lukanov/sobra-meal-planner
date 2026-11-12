@@ -13,7 +13,7 @@ describe("buildLiveDeals", () => {
       row({ product_id: "a", name: "Azeite A", effective_price: 4, promo_price: 4, regular_price: 5, price_per_base_unit: 4 / 750 }),
       row({ product_id: "b", name: "Azeite B", chain_id: "lidl", effective_price: 3, regular_price: 3, price_per_base_unit: 3 / 750 }),
     ];
-    const d = buildLiveDeals(rows, ings).Continente![0];
+    const d = buildLiveDeals(rows, ings).Continente![0]!;
     expect(d.cheapestRegular).toBe(3); // Lidl's regular 3.00 per 750 ml beats the 4.00 promotion: a price trap
     expect(d.price).toBe(4);
     expect(d.name).toBe("Azeite A 750 ml");
@@ -23,7 +23,7 @@ describe("buildLiveDeals", () => {
       row({ ingredient_id: "i-tuna", product_id: "a", name: "Atum A", pack_qty: 120, pack_unit: "g", effective_price: 1.4, promo_price: 1.4, regular_price: 1.8, price_per_base_unit: 1.4 / 84 }),
       row({ ingredient_id: "i-tuna", product_id: "b", name: "Atum B", pack_qty: 120, pack_unit: "g", effective_price: 1.5, regular_price: 1.5, price_per_base_unit: 1.5 / 84 }),
     ];
-    const d = buildLiveDeals(rows, ings).Continente![0];
+    const d = buildLiveDeals(rows, ings).Continente![0]!;
     expect(d.ingredient).toBe("tuna");
     expect(d.cheapestRegular).toBe(1.5);
   });
@@ -36,7 +36,7 @@ describe("buildLiveDeals", () => {
       row({ product_id: "a", name: "Azeite Virgem Extra Reserva", effective_price: 6, promo_price: 6, regular_price: 9, price_per_base_unit: 6 / 750 }),
       row({ product_id: "b", name: "Azeite Continente", effective_price: 3.25, regular_price: 3.25, price_per_base_unit: 3.25 / 750 }),
     ];
-    const d = buildLiveDeals(rows, ings).Continente![0];
+    const d = buildLiveDeals(rows, ings).Continente![0]!;
     expect(d.cheapestRegular).toBe(9); // only itself in its group: a real saving of 3.00
   });
   it("tags the kind of a product", () => {

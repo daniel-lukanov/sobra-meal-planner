@@ -31,7 +31,7 @@ export function variantKey(name: string): string {
   if (/(campo|ar livre|solo)/.test(n)) tags.push("free-range");
   if (/(filete|ventresca|lombo)/.test(n)) tags.push("fillet");
   const grain = n.match(/\b(agulha|carolino|basmati|vaporizado|jasmim|risotto|arb[óo]reo|sushi|selvagem|redondo)\b/);
-  if (grain) tags.push(grain[1]);
+  if (grain?.[1]) tags.push(grain[1]);
   return tags.sort().join("+");
 }
 const groupKey = (ingredientId: string, name: string) => `${ingredientId}|${variantKey(name)}`;
@@ -65,12 +65,12 @@ export function buildLiveDeals(rows: PriceRow[], ingredients: IngredientRef[]): 
       const best = cheapestRegularPerUnit.get(groupKey(r.ingredient_id, r.name));
       const slug = slugOf.get(r.ingredient_id) ?? "";
       deals.push({
-        id: r.product_id ?? undefined,
+        ...(r.product_id ? { id: r.product_id } : {}),
         name: `${r.name} ${formatPack(Number(r.pack_qty), r.pack_unit ?? "g")}`,
         ingredient: (KNOWN as string[]).includes(slug) ? (slug as IngredientId) : null,
         price: r.promo_price, was: r.regular_price,
         cheapestRegular: u && best !== undefined ? round2(best * u) : r.regular_price,
-        endsOn: r.promo_ends_on ?? undefined, photoKey: slug.replace(/-/g, " "),
+        ...(r.promo_ends_on ? { endsOn: r.promo_ends_on } : {}), photoKey: slug.replace(/-/g, " "),
       });
     }
     deals.sort((a, b) => (b.cheapestRegular - b.price) - (a.cheapestRegular - a.price));
