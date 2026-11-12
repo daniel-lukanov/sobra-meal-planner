@@ -71,7 +71,7 @@ function FinalFeedback({ open, onOpenChange }: { open: boolean; onOpenChange: (v
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-sheet bg-sheet p-6 sm:p-8">
+      <DialogContent className="max-h-[92vh] w-[calc(100%-16px)] max-w-2xl overflow-y-auto rounded-sheet bg-sheet p-6 sm:p-8">
         {!s.survey_post_completed ? (
           <>
             <DialogTitle className="text-[24px] font-bold">Your feedback</DialogTitle>

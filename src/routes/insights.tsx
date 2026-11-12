@@ -153,7 +153,7 @@ function Overview({ rows, spend, setSpend, passcode }: { rows: ExperimentSession
   const f = funnel(rows);
   const weeks = plansPerWeek(rows);
   const cost = costPerTester(rows, spend);
-  const act = activation(rows.filter((r) => r.events.length === 0 || r.first_session || r.visits >= 1));
+  const act = activation(rows);
   const [A, B] = planTable(rows);
   const cta = ctaTable(rows);
   const bh = behaviour(rows);

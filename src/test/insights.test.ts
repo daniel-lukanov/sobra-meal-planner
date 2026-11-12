@@ -1,63 +1,76 @@
 import { describe, expect, it } from "vitest";
-import { newSession, referralFrom, type ExperimentSession } from "@/lib/experiment-types";
-import { ctaTable, isBounce, kpis, painRanking, statusOf } from "@/lib/insights";
+import { applyEvent, attributionFrom, newSession, type ExperimentSession } from "@/lib/experiment-types";
+import { activation, costPerTester, funnel, isBounce } from "@/lib/insights";
 import { normalizePasscode } from "@/lib/experiment.functions";
-import { getMockExperimentData } from "@/data/mockExperimentData";
-import { painOptions } from "@/data/survey";
+import { PAIN_NONE, toggleMulti } from "@/data/survey";
+import { alternatives, neededItems, perPerson, shareText, weekCards, weekTotal } from "@/lib/week";
 
-const row = (p: Partial<ExperimentSession>) => ({ ...newSession(), ...p });
+const row = (p: Partial<ExperimentSession> = {}) => ({ ...newSession(), ...p });
 
-describe("founder insights", () => {
-  it("ships 32 sample responses, all Stage 1 complete and 24 with the bonus", () => {
-    const m = getMockExperimentData();
-    expect(m).toHaveLength(32);
-    expect(m.every((r) => r.survey_post_completed)).toBe(true);
-    expect(m.filter((r) => r.bonus_completed)).toHaveLength(24);
+describe("survey rules", () => {
+  it("lets you pick at most 2 pains", () => {
+    expect(toggleMulti(["a", "b"], "c", { max: 2, exclusive: PAIN_NONE })).toEqual({ next: ["a", "b"], limited: true });
   });
-  it("counts CTA conversion only for primary button clicks", () => {
-    expect(kpis([row({ cta_converted: true }), row({ cta_converted: false }), row({ cta_converted: null }), row({ cta_converted: true })]).ctaConversion).toBe(50);
+  it("None of these clears the others, and another option clears None", () => {
+    expect(toggleMulti(["a", "b"], PAIN_NONE, { max: 2, exclusive: PAIN_NONE }).next).toEqual([PAIN_NONE]);
+    expect(toggleMulti([PAIN_NONE], "a", { max: 2, exclusive: PAIN_NONE }).next).toEqual(["a"]);
   });
-  it("PMF score is the share answering Very disappointed", () => {
-    const rows = [row({ survey_post_completed: true, q8_pmf_score: "Very disappointed (I really want this)" }), row({ survey_post_completed: true, q8_pmf_score: "Not disappointed" })];
-    expect(kpis(rows).pmf).toBe(50);
+  it("defaults utm_source to direct", () => {
+    expect(attributionFrom("").utm_source).toBe("direct");
+    expect(attributionFrom("?ref=ab12&utm_source=instagram&utm_content=post2")).toEqual({ ref: "ab12", utm_source: "instagram", utm_content: "post2" });
   });
-  it("splits the offer test three ways", () => {
-    const rows = [row({ ab_cta_variant: "C3_paid_399_household", contact_left: true }), row({ ab_cta_variant: "C3_paid_399_household" })];
-    const t = ctaTable(rows);
-    expect(t).toHaveLength(3);
-    expect(t[2]!.contact).toBe(50);
-    expect(t[0]!.n).toBe(0);
-  });
-  it("ranks pain #1 picks double #2 picks", () => {
-    const rows = [row({ q3_pain_1: painOptions[1]!, q3_pain_2: painOptions[0]! })];
-    expect(painRanking(rows, painOptions)[0]!.label).toBe(painOptions[1]);
-  });
-  it("reads ?ref= then ?utm_source=, defaulting to direct_link", () => {
-    expect(referralFrom("?ref=Martin")).toBe("martin");
-    expect(referralFrom("?utm_source=ig")).toBe("ig");
-    expect(referralFrom("")).toBe("direct_link");
-  });
-  it("assigns each new visitor one of three offers", () => {
-    expect(newSession("x", () => 0.1).ab_cta_variant).toBe("C1_free_receipt_cashback");
-    expect(newSession("x", () => 0.5).ab_cta_variant).toBe("C2_paid_199_student");
-    expect(newSession("x", () => 0.9).ab_cta_variant).toBe("C3_paid_399_household");
+  it("assigns only the two CTA variants", () => {
+    expect(["free_pilot", "paid_199"]).toContain(newSession().ab_cta_variant);
   });
 });
 
+describe("tracking", () => {
+  it("marks an accept during tour step 1 as in_tour, and outside the tour as voluntary", () => {
+    const guided = applyEvent(row(), "accepted_week_clicked", 1);
+    const own = applyEvent(row(), "accepted_week_clicked", null);
+    expect(guided.events[0]!.in_tour).toBe(true);
+    expect(own.events[0]!.in_tour).toBe(false);
+    const a = activation([guided, own]);
+    expect(a.voluntary).toBe(50);
+    expect(a.withTour).toBe(100);
+  });
+  it("only counts referral sign-ups as sign-ups", () => {
+    const visited = row({ ref: "x", utm_source: "whatsapp_share", survey_pre_completed: true });
+    const signed = applyEvent(visited, "referral_signup", null);
+    expect(funnel([visited, signed]).at(-1)!.count).toBe(1);
+  });
+  it("treats a session with no Block 1 and no actions as a bounce", () => {
+    expect(isBounce(row())).toBe(true);
+    expect(isBounce(applyEvent(row(), "swap", null))).toBe(false);
+  });
+  it("divides spend by Block 1 completions", () => {
+    const c = costPerTester([row({ survey_pre_completed: true }), row({ survey_pre_completed: true }), row()], [{ channel: "instagram", amount: 10 }]);
+    expect(c.cpa).toBe(5);
+  });
+  it("normalizes the passcode", () => expect(normalizePasscode("  V6Ventures67 ")).toBe("v6ventures67"));
+});
 
-describe("bounce cleanup rules", () => {
-  it("an untouched session is an empty bounce", () => {
-    const s = newSession();
-    expect(isBounce(s)).toBe(true);
-    expect(statusOf(s)).toBe("Empty Bounce");
+describe("plan", () => {
+  it("starts at €11.85 for 6 dinners", () => {
+    expect(weekCards({}).length).toBe(6);
+    expect(weekTotal(weekCards({}))).toBe(11.85);
   });
-  it("one finished task means it is not a bounce", () => {
-    expect(isBounce({ ...newSession(), task_3_deals: true })).toBe(false);
+  it("swapping a dinner changes the total and shopping list", () => {
+    const alt = alternatives(1, {}, ["Meat", "Fish"]);
+    expect(alt.length).toBeGreaterThan(0);
+    expect(alt.length).toBeLessThanOrEqual(3);
+    const chosen = { 1: "Chicken fried rice" };
+    expect(weekTotal(weekCards(chosen))).toBe(11.65);
+    expect(neededItems(weekCards(chosen)).find((i) => i.id === "rice")!.dinners).toBe(3);
   });
-  it("finishing the welcome survey means it is not a bounce", () => {
-    expect(isBounce({ ...newSession(), survey_pre_completed: true })).toBe(false);
+  it("never offers meat to a vegetarian", () => {
+    expect(alternatives(1, {}, ["Vegetarian"]).some((m) => m.uses.includes("chicken") || m.uses.includes("tuna"))).toBe(false);
   });
-  it("the passcode v6ventures67 matches regardless of case", () => {
-    expect(normalizePasscode("V6Ventures67")).toBe(normalizePasscode("v6ventures67"));
+  it("splits the share text per person and drops the link when it failed", () => {
+    expect(perPerson(11.85, 2)).toBe(5.93);
+    const t = shareText({ store: "Lidl", dinners: [{ day: "Mon", title: "Soup" }], total: 11.85, people: 2, items: ["Carrots"], link: null });
+    expect(t).toContain("€5.93 each if we split between 2 people");
+    expect(t).not.toContain("Open the plan");
+    expect(t).toContain("Sample prices, no guarantee.");
   });
 });

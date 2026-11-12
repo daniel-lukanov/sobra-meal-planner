@@ -40,10 +40,11 @@ function Plan() {
           <p className="eyebrow">Prices from {store}</p>
           <h1 className="mt-1 text-[28px] font-bold md:text-[32px]">{mode === "prep" ? "Cook twice this week, eat something different every night" : "Pick tonight's dinner"}</h1>
         </div>
-        <div data-tour="1"><UnderlineTabs label="Planning mode" value={mode} onChange={switchMode}
+        <div><UnderlineTabs label="Planning mode" value={mode} onChange={switchMode}
           options={[{ value: "prep", label: "Weekly prep" }, { value: "daily", label: "Daily pick" }]} /></div>
       </header>
       <ModeQuestion />
+      <WeekBanner />
       {mode === "prep" ? <WeeklyPrep /> : <DailyPick />}
       {weekAccepted && <div className="mt-8"><SharePlan /></div>}
     </>
@@ -56,7 +57,7 @@ function WeekBanner() {
   const cards = weekCards(chosen);
   const items = neededItems(cards).filter((i) => !i.inFridge);
   return (
-    <section aria-label="This week" className="mb-8 flex flex-col gap-5 border-y border-rule py-5 md:flex-row md:items-center md:justify-between">
+    <section aria-label="This week" data-tour="1" className="mb-8 flex flex-col gap-5 border-y border-rule py-5 md:flex-row md:items-center md:justify-between">
       <div>
         <dl className="num grid grid-cols-3 gap-x-8">
           {[["Dinners", String(cards.length)], ["Total", eur(weekTotal(cards))], ["Prep time", "70 min"]].map(([k, v], i) => (
@@ -117,7 +118,6 @@ function WeeklyPrep() {
 
   return (
     <div>
-      <WeekBanner />
       <div role="group" aria-label="Show dinners that use" className="mb-8 flex flex-wrap gap-x-6 gap-y-2 border-b border-rule">
         {bases.map((b) => (
           <button key={b.label} type="button" aria-pressed={filter === b.id} onClick={() => setFilter(b.id)}
