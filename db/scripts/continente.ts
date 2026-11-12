@@ -15,23 +15,23 @@ type Rule = { query: string; ingredient: string; category: RegExp; include: RegE
 export const RULES: Rule[] = [
   { query: "batata", ingredient: "potatoes", category: /Frutas e Legumes\/Legumes\/Batata$/, include: /^batata/i, exclude: /(doce|airfryer|palitos|gomos|cubos|congelad)/i },
   { query: "cebola", ingredient: "onion", category: /Frutas e Legumes\/Legumes\/Cebola e Alho$/, include: /^cebola/i, exclude: /(picada|laminada|frasco|chalota)/i },
-  { query: "cenoura", ingredient: "carrots", category: /Frutas e Legumes\/Legumes\/Cenoura e Abóbora$/, include: /^cenoura/i, exclude: /(ripada|palitos)/i },
+  { query: "cenoura", ingredient: "carrots", category: /Frutas e Legumes\/Legumes(\/Cenoura e Abóbora)?$/, include: /^cenoura/i, exclude: /(ripad|palitos|preparado|creme|sopa|juliana)/i },
   { query: "ovos", ingredient: "eggs", category: /Laticínios e Ovos\/Ovos$/, include: /^ovos/i, exclude: /(pasteurizados|l[ií]quid|cozidos|codorniz)/i },
   { query: "arroz", ingredient: "rice", category: /Arroz, Massa e Farinha\/Arroz$/, include: /^arroz/i },
   // canned (cooked) chickpeas only: dried ones sit under "Leguminosas" and recipes count cooked chickpeas.
   // The tile weight may already be the drained weight: usable share left at 1 until checked on a label.
   { query: "grão de bico", ingredient: "chickpeas", category: /Conservas\/Feijão e Grão de Bico$/, include: /^gr[ãa]o de bico/i, exclude: /(estilo|tagine)/i },
   { query: "pimento", ingredient: "peppers", category: /Frutas e Legumes\/Legumes\/Pepino e Pimento$/, include: /^pimento/i, exclude: /(assad|tiras|piquillo|jalape|fatiado|misto|conserva|frasco)/i },
-  { query: "atum", ingredient: "tuna", category: /Conservas\/Atum$/, include: /^atum/i, exclude: /(pat[eé]|salada)/i, usable: [[/./, 0.7]] }, // label weight includes oil/brine
+  { query: "atum", ingredient: "tuna", category: /Conservas\/Atum$/, include: /^(filetes? de |ventresca de |lombos? de )?atum/i, exclude: /(pat[eé]|salada|hamb[uú]rguer|escabeche|malagueta|alcaparras|manjeric|couscous)/i, usable: [[/./, 0.7]] }, // label weight includes oil/brine
   { query: "espinafre", ingredient: "spinach", category: /(Frutas e Legumes\/Legumes\/Espinafres|Congelados\/Frutas e Legumes\/Legumes)$/, include: /^espinafre/i, exclude: /(preparado|esparregado|creme)/i },
-  { query: "frango", ingredient: "chicken", category: /Talho\/Frango$/, include: /^(frango|peito|bifes? de frango|lombinhos? de frango|coxas?|sobrecoxas?|perna|perninhas?|asas?|asinhas?)/i,
+  { query: "frango", ingredient: "chicken", category: /Talho\/Frango$/, include: /^(frango|metades? de frango|peito|bifes? de frango|lombinhos? de frango|coxas?|sobrecoxas?|perna|perninhas?|asas?|asinhas?)/i,
     exclude: /(moelas|f[ií]gado|pescoço|strogonoff|almôndega|hambúrguer|miúdos de)/i,
     byName: [[/peito/i, "chicken-breast"], [/sobrecoxa|coxa/i, "chicken-thighs"]],
     usable: [[/(peito|bifes?|lombinhos?)/i, 1], [/./, 0.65]] }, // bone-in cuts: roughly 65% edible (placeholder)
-  { query: "esparguete", ingredient: "spaghetti", category: /Arroz, Massa e Farinha\/Massa$/, include: /^(massa )?esparguete/i, exclude: /(shirataki|konjac|tricolor|picante|com ovo|noodle)/i },
+  { query: "esparguete", ingredient: "spaghetti", category: /Arroz, Massa e Farinha\/Massa$/, include: /^(massa )?esparguete/i, exclude: /(shirataki|konjac|com ovo|noodle)/i },
   { query: "leite de coco", ingredient: "coconut-milk", category: /Leite Condensado e Leite de Coco$/, include: /^leite de coco/i, exclude: /(condensado|creme de)/i },
   { query: "limão", ingredient: "lemon", category: /Frutas\/Limão e Lima$/, include: /^lim[ãa]o/i },
-  { query: "molho de soja", ingredient: "soy-sauce", category: /Molhos, Temperos e Sal\/Molhos$/, include: /^molho de soja/i, exclude: /(ponzu|yakitori|sushi|sashimi|tempura|teriyaki)/i },
+  { query: "molho de soja", ingredient: "soy-sauce", category: /Molhos, Temperos e Sal\/Molhos$/, include: /^molho de soja/i, exclude: /(ponzu|yakitori|tempura|teriyaki)/i },
   { query: "azeite", ingredient: "olive-oil", category: /Azeite, Óleo e Vinagre\/Azeite$/, include: /^azeite/i, exclude: /(spray|sabor|aromatizado)/i },
 ];
 
@@ -263,7 +263,7 @@ async function main() {
   if (!rules.length) throw new Error(`No rule for query "${only}". Known: ${RULES.map((r) => r.query).join(", ")}`);
   const rows: Row[] = []; const seen = new Set<string>();
   for (const rule of rules) {
-    let kept = 0, dropped = 0, unitMismatch = 0, pages = 0, total: number | null = null;
+    let kept = 0, dropped = 0, unitMismatch = 0, pages = 0, emptyStreak = 0, total: number | null = null;
     for (let p = 0; p < maxPages; p++) {
       const html = file ? readFileSync(file, "utf8") : await fetchGrid(rule.query, p * 24);
       if (!file) writeFileSync(`data/raw/continente/${rule.query.replace(/\W+/g, "_")}_p${p}.html`, html);
@@ -278,8 +278,10 @@ async function main() {
         rows.push({ ...it, packQty: fit.qty, packUnit: fit.unit, ingredientSlug: slug, usableQty: uf ? Math.round(fit.qty * uf * 10) / 10 : null });
       }
       if (g.skipped.length) console.log(`  skipped ${g.skipped.length} (no pack size or price): ${g.skipped.slice(0, 3).join(" | ")}`);
-      // results come in relevance order: once a page has no product in the right category, the rest is noise
-      if (file || keptHere === 0 || (p + 1) * 24 >= (total ?? 0)) break;
+      // results come in relevance order, but not strictly (a page with 1 kept product can be followed by one with 3):
+      // stop only after two pages in a row with no product in the right category
+      emptyStreak = keptHere === 0 ? emptyStreak + 1 : 0;
+      if (file || emptyStreak >= 2 || (p + 1) * 24 >= (total ?? 0)) break;
       await sleep(2000);
     }
     console.log(`${rule.query.padEnd(14)} -> ${rule.ingredient.padEnd(12)} kept ${kept}, rejected ${dropped}${unitMismatch ? `, unit mismatch ${unitMismatch}` : ""}, ${pages} page${pages > 1 ? "s" : ""}, shop has ${total ?? "?"} results`);
