@@ -131,12 +131,18 @@
     font-variant-numeric: tabular-nums;
   }
   h1, h2, h3 { font-family: var(--font-serif); font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; text-align: left; }
-  h1 { font-weight: 500; }
+  h1 { font-weight: 400; font-size: clamp(40px, 5vw, 64px) !important; line-height: 1.02 !important; letter-spacing: -0.035em; }
+  h2 { font-weight: 400; font-size: clamp(26px, 3vw, 36px) !important; line-height: 1.1 !important; letter-spacing: -0.025em; }
+  h3 { font-weight: 500; letter-spacing: -0.015em; }
+  main { padding-top: 16px; }
+  /* Editorial: square corners everywhere except true circles (logo, avatars, switch knobs) */
+  *:not(svg):not(svg *):not([role="switch"]):not([role="switch"] *):not([data-round]) { border-radius: 0 !important; }
+  button, a[class*="px-"] { letter-spacing: 0.01em; }
   :focus-visible { outline: 2px solid var(--basil); outline-offset: 2px; border-radius: 6px; }
 }
 
 @utility num { font-variant-numeric: tabular-nums; }
-@utility eyebrow { font-family: var(--font-serif); font-size: 16px; font-weight: 500; text-transform: none; letter-spacing: -0.01em; color: var(--ink); }
+@utility eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
 @utility shadow-float { box-shadow: var(--shadow-float); }
 
 @utility sheet {
