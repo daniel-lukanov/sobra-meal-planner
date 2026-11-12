@@ -9,26 +9,30 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 
 // ---------- what to search for, and how a result maps to one of our ingredients ----------
-type Rule = { query: string; ingredient: string; include: RegExp; exclude?: RegExp; byName?: [RegExp, string][] };
-const RULES: Rule[] = [
-  { query: "batata", ingredient: "potatoes", include: /^batata/i, exclude: /(frita|palha|chips|doce|snack|pur[eé]|gnocchi|croquete|airfryer|palitos|gomos|cubos|congelad|pr[eé]-?cozid|rosti|wedges)/i },
-  { query: "cebola", ingredient: "onion", include: /^cebola/i, exclude: /(frita|em p[oó]|pickle|conserva|crocante|picada|laminada|frasco|chalota)/i },
-  { query: "cenoura", ingredient: "carrots", include: /^cenoura/i, exclude: /(sumo|bolo|puré|ripada|palitos|creme|arroz)/i },
-  { query: "ovos", ingredient: "eggs", include: /^ovos/i, exclude: /(moles|cozidos|pasteurizados|l[ií]quid|chocolate|p[aá]scoa|codorniz|p[oó] )/i },
-  { query: "arroz", ingredient: "rice", include: /^arroz/i, exclude: /(leite|bolacha|tosta|massa|doce|snack|bebida|farinha|cake|de cenoura)/i },
-  { query: "grão de bico", ingredient: "chickpeas", include: /^gr[ãa]o de bico cozido/i, // cooked/canned only: recipes count cans, dried would be priced ~2.5x too cheap per gram
-     exclude: /(farinha|snack|húmus|hummus|massa)/i },
-  { query: "pimento", ingredient: "peppers", include: /^pimento/i, exclude: /(piri|mo[ií]do|colorau|doce em p[oó]|assad|piquillo|tiras|jalape|fatiado|misto|conserva|recheado)/i },
-  { query: "atum", ingredient: "tuna", include: /^atum/i, exclude: /(pat[eé]|salada|gato|cão|salsicha|hambúrguer)/i },
-  { query: "espinafre", ingredient: "spinach", include: /^espinafre/i, exclude: /(preparado|esparregado|pizza|sopa|salteado|creme)/i },
-  { query: "frango", ingredient: "chicken", include: /^(frango|peito|bifes? de frango|lombinhos? de frango|coxas?|sobrecoxas?|perna|perninhas?|asas?|asinhas?)/i,
-    exclude: /(pat[eé]|nugget|panado|fiambre|salsicha|sopa|cão|gato|ração|moelas|f[ií]gado|pescoço|strogonoff|almôndega|hambúrguer|assado.*preparado)/i,
-    byName: [[/peito/i, "chicken-breast"], [/sobrecoxa|coxa/i, "chicken-thighs"]] },
-  { query: "esparguete", ingredient: "spaghetti", include: /^(massa )?esparguete/i, exclude: /(shirataki|konjac|cozinha|carbonara|bolonhesa|molho|tricolor|picante|fresc|com ovo|noodle|instant)/i },
-  { query: "leite de coco", ingredient: "coconut-milk", include: /^leite de coco/i, exclude: /(condensado|creme de|bebida|iogurte)/i },
-  { query: "limão", ingredient: "lemon", include: /^lim[ãa]o/i, exclude: /(sumo|bebida|ch[aá]|gelado|doce|compota)/i },
-  { query: "molho de soja", ingredient: "soy-sauce", include: /^molho de soja/i, exclude: /(ponzu|yakitori|sushi|sashimi|tempura|teriyaki)/i },
-  { query: "azeite", ingredient: "olive-oil", include: /^azeite/i, exclude: /(spray|sabor|aromatizado)/i },
+// category: the shop's own category path (from each tile) must match. This is the main precision filter; include/exclude on the
+// name is a second check. usable: share of the pack weight that is usable (first matching regex wins; no match = whole pack).
+type Rule = { query: string; ingredient: string; category: RegExp; include: RegExp; exclude?: RegExp; byName?: [RegExp, string][]; usable?: [RegExp, number][] };
+export const RULES: Rule[] = [
+  { query: "batata", ingredient: "potatoes", category: /Frutas e Legumes\/Legumes\/Batata$/, include: /^batata/i, exclude: /(doce|airfryer|palitos|gomos|cubos|congelad)/i },
+  { query: "cebola", ingredient: "onion", category: /Frutas e Legumes\/Legumes\/Cebola e Alho$/, include: /^cebola/i, exclude: /(picada|laminada|frasco|chalota)/i },
+  { query: "cenoura", ingredient: "carrots", category: /Frutas e Legumes\/Legumes\/Cenoura e Abóbora$/, include: /^cenoura/i, exclude: /(ripada|palitos)/i },
+  { query: "ovos", ingredient: "eggs", category: /Laticínios e Ovos\/Ovos$/, include: /^ovos/i, exclude: /(pasteurizados|l[ií]quid|cozidos|codorniz)/i },
+  { query: "arroz", ingredient: "rice", category: /Arroz, Massa e Farinha\/Arroz$/, include: /^arroz/i },
+  // canned (cooked) chickpeas only: dried ones sit under "Leguminosas" and recipes count cooked chickpeas.
+  // The tile weight may already be the drained weight: usable share left at 1 until checked on a label.
+  { query: "grão de bico", ingredient: "chickpeas", category: /Conservas\/Feijão e Grão de Bico$/, include: /^gr[ãa]o de bico/i, exclude: /(estilo|tagine)/i },
+  { query: "pimento", ingredient: "peppers", category: /Frutas e Legumes\/Legumes\/Pepino e Pimento$/, include: /^pimento/i, exclude: /(assad|tiras|piquillo|jalape|fatiado|misto|conserva|frasco)/i },
+  { query: "atum", ingredient: "tuna", category: /Conservas\/Atum$/, include: /^atum/i, exclude: /(pat[eé]|salada)/i, usable: [[/./, 0.7]] }, // label weight includes oil/brine
+  { query: "espinafre", ingredient: "spinach", category: /(Frutas e Legumes\/Legumes\/Espinafres|Congelados\/Frutas e Legumes\/Legumes)$/, include: /^espinafre/i, exclude: /(preparado|esparregado|creme)/i },
+  { query: "frango", ingredient: "chicken", category: /Talho\/Frango$/, include: /^(frango|peito|bifes? de frango|lombinhos? de frango|coxas?|sobrecoxas?|perna|perninhas?|asas?|asinhas?)/i,
+    exclude: /(moelas|f[ií]gado|pescoço|strogonoff|almôndega|hambúrguer|miúdos de)/i,
+    byName: [[/peito/i, "chicken-breast"], [/sobrecoxa|coxa/i, "chicken-thighs"]],
+    usable: [[/(peito|bifes?|lombinhos?)/i, 1], [/./, 0.65]] }, // bone-in cuts: roughly 65% edible (placeholder)
+  { query: "esparguete", ingredient: "spaghetti", category: /Arroz, Massa e Farinha\/Massa$/, include: /^(massa )?esparguete/i, exclude: /(shirataki|konjac|tricolor|picante|com ovo|noodle)/i },
+  { query: "leite de coco", ingredient: "coconut-milk", category: /Leite Condensado e Leite de Coco$/, include: /^leite de coco/i, exclude: /(condensado|creme de)/i },
+  { query: "limão", ingredient: "lemon", category: /Frutas\/Limão e Lima$/, include: /^lim[ãa]o/i },
+  { query: "molho de soja", ingredient: "soy-sauce", category: /Molhos, Temperos e Sal\/Molhos$/, include: /^molho de soja/i, exclude: /(ponzu|yakitori|sushi|sashimi|tempura|teriyaki)/i },
+  { query: "azeite", ingredient: "olive-oil", category: /Azeite, Óleo e Vinagre\/Azeite$/, include: /^azeite/i, exclude: /(spray|sabor|aromatizado)/i },
 ];
 
 // Unit each ingredient is priced in (matches ingredient.base_unit in the database). grams_per_piece lets a product sold by
@@ -111,10 +115,16 @@ export function parseGrid(html: string): { items: Parsed[]; skipped: string[]; t
   return { items, skipped, total: total ? +total : null };
 }
 
-export function mapToIngredient(rule: Rule, name: string): string | null {
+export function mapToIngredient(rule: Rule, name: string, category: string | null): string | null {
+  if (!category || !rule.category.test(category)) return null;
   if (!rule.include.test(name) || (rule.exclude && rule.exclude.test(name))) return null;
   for (const [re, slug] of rule.byName ?? []) if (re.test(name)) return slug;
   return rule.ingredient;
+}
+
+export function usableFraction(rule: Rule, name: string): number | null {
+  for (const [re, f] of rule.usable ?? []) if (re.test(name)) return f < 1 ? f : null;
+  return null;
 }
 
 // ---------- fetching ----------
@@ -147,7 +157,7 @@ async function rest(env: { url: string; key: string }, path: string, init: Reque
   return res.status === 204 ? null : res.json().catch(() => null);
 }
 
-type Row = Parsed & { ingredientSlug: string };
+type Row = Parsed & { ingredientSlug: string; usableQty: number | null };
 
 async function save(rows: Row[], holdDays: number, touchedSlugs: string[]) {
   const env = loadEnv(); const today = lisbonToday();
@@ -155,8 +165,15 @@ async function save(rows: Row[], holdDays: number, touchedSlugs: string[]) {
   const idOf = new Map(ing.map((i) => [i.slug, i.id]));
 
   // 1) products (upsert on chain + external id)
+  // usable weights set from a label or by hand are never overwritten by rule values
+  const kept = new Map<string, { usable_qty: number; usable_source: string }>();
+  for (const b of chunk(rows.map((r) => r.id), 100)) {
+    const out: { external_id: string; usable_qty: number; usable_source: string }[] = await rest(env, `product?select=external_id,usable_qty,usable_source&chain_id=eq.continente&usable_source=in.(label,manual)&external_id=in.(${b.join(",")})`);
+    for (const o of out) kept.set(o.external_id, o);
+  }
   const prodRows = rows.map((r) => ({ chain_id: "continente", external_id: r.id, name: r.name, brand: r.brand, pack_qty: r.packQty,
-    pack_unit: r.packUnit, url: r.url, ingredient_id: idOf.get(r.ingredientSlug) ?? null, mapping_source: "rule", active: true }));
+    pack_unit: r.packUnit, url: r.url, ingredient_id: idOf.get(r.ingredientSlug) ?? null, mapping_source: "rule", active: true,
+    usable_qty: kept.get(r.id)?.usable_qty ?? r.usableQty, usable_source: kept.get(r.id)?.usable_source ?? (r.usableQty ? "rule" : null) }));
   const pid = new Map<string, string>();
   for (const b of chunk(prodRows, 200)) {
     const out: { id: string; external_id: string }[] = await rest(env, "product?on_conflict=chain_id,external_id&select=id,external_id",
@@ -227,34 +244,50 @@ async function save(rows: Row[], holdDays: number, touchedSlugs: string[]) {
 // ---------- main ----------
 async function main() {
   const a = process.argv.slice(2); const flag = (n: string) => a.includes(`--${n}`); const val = (n: string) => { const i = a.indexOf(`--${n}`); return i >= 0 ? a[i + 1] : undefined; };
-  const pages = +(val("pages") ?? 1); const only = val("query"); const file = val("from-file"); const hold = +(val("hold-days") ?? 3);
+  const maxPages = +(val("pages") ?? 8); const only = val("query"); const file = val("from-file"); const hold = +(val("hold-days") ?? 3);
+  mkdirSync("data/raw/continente", { recursive: true });
+
+  // Probe: does the shop list a whole category by id? e.g. --try-cgid mercearias-arroz-massa-arroz
+  const cg = val("try-cgid");
+  if (cg) {
+    const res = await fetch(`${BASE}?cgid=${encodeURIComponent(cg)}&start=0&sz=24`, { headers: { "User-Agent": UA, "Accept-Language": "pt-PT,pt;q=0.9" } });
+    const html = await res.text(); writeFileSync(`data/raw/continente/cgid_${cg}.html`, html);
+    const g = parseGrid(html); const cats = new Map<string, number>(); for (const it of g.items) cats.set(it.category ?? "?", (cats.get(it.category ?? "?") ?? 0) + 1);
+    console.log(`cgid=${cg}: HTTP ${res.status}, ${g.items.length} products on page, shop total ${g.total ?? "?"}`);
+    for (const [c, n] of [...cats].sort((x, y) => y[1] - x[1]).slice(0, 5)) console.log(`  ${String(n).padStart(2)}  ${c}`);
+    for (const it of g.items.slice(0, 4)) console.log(`  e.g. ${it.name}  €${it.price}`);
+    return;
+  }
+
   const rules = RULES.filter((r) => !only || r.query === only);
   if (!rules.length) throw new Error(`No rule for query "${only}". Known: ${RULES.map((r) => r.query).join(", ")}`);
-  mkdirSync("data/raw/continente", { recursive: true });
   const rows: Row[] = []; const seen = new Set<string>();
   for (const rule of rules) {
-    let kept = 0, dropped = 0, unitMismatch = 0, total: number | null = null;
-    for (let p = 0; p < pages; p++) {
+    let kept = 0, dropped = 0, unitMismatch = 0, pages = 0, total: number | null = null;
+    for (let p = 0; p < maxPages; p++) {
       const html = file ? readFileSync(file, "utf8") : await fetchGrid(rule.query, p * 24);
       if (!file) writeFileSync(`data/raw/continente/${rule.query.replace(/\W+/g, "_")}_p${p}.html`, html);
-      const g = parseGrid(html); total = g.total;
+      const g = parseGrid(html); total = g.total; pages++; let keptHere = 0;
       for (const it of g.items) {
-        const slug = mapToIngredient(rule, it.name);
+        const slug = mapToIngredient(rule, it.name, it.category);
         if (!slug) { dropped++; continue; }
         const fit = fitUnit(slug, it.packQty, it.packUnit);
         if (!fit) { unitMismatch++; continue; }
-        if (seen.has(it.id)) continue; seen.add(it.id); kept++; rows.push({ ...it, packQty: fit.qty, packUnit: fit.unit, ingredientSlug: slug });
+        if (seen.has(it.id)) continue; seen.add(it.id); kept++; keptHere++;
+        const uf = usableFraction(rule, it.name);
+        rows.push({ ...it, packQty: fit.qty, packUnit: fit.unit, ingredientSlug: slug, usableQty: uf ? Math.round(fit.qty * uf * 10) / 10 : null });
       }
       if (g.skipped.length) console.log(`  skipped ${g.skipped.length} (no pack size or price): ${g.skipped.slice(0, 3).join(" | ")}`);
-      if (file || (p + 1) * 24 >= (total ?? 0)) break;
+      // results come in relevance order: once a page has no product in the right category, the rest is noise
+      if (file || keptHere === 0 || (p + 1) * 24 >= (total ?? 0)) break;
       await sleep(2000);
     }
-    console.log(`${rule.query.padEnd(14)} -> ${rule.ingredient.padEnd(12)} kept ${kept}, not matched ${dropped}${unitMismatch ? `, unit mismatch ${unitMismatch}` : ""}, shop has ${total ?? "?"} results`);
+    console.log(`${rule.query.padEnd(14)} -> ${rule.ingredient.padEnd(12)} kept ${kept}, rejected ${dropped}${unitMismatch ? `, unit mismatch ${unitMismatch}` : ""}, ${pages} page${pages > 1 ? "s" : ""}, shop has ${total ?? "?"} results`);
     if (!file) await sleep(2000);
   }
-  const promo = rows.filter((r) => r.was && r.was > r.price);
-  console.log(`\n${rows.length} products, ${promo.length} with a strike-through "was" price.`);
-  for (const r of rows.slice(0, 8)) console.log(`  ${r.ingredientSlug.padEnd(14)} ${r.name.slice(0, 38).padEnd(38)} ${r.packQty}${r.packUnit === "piece" ? " pc" : " " + r.packUnit}  €${r.price.toFixed(2)}${r.was ? `  (was €${r.was.toFixed(2)})` : ""}`);
+  const promo = rows.filter((r) => r.was && r.was > r.price); const net = rows.filter((r) => r.usableQty);
+  console.log(`\n${rows.length} products, ${promo.length} with a strike-through "was" price, ${net.length} with a usable weight below the label weight.`);
+  for (const r of rows.slice(0, 8)) console.log(`  ${r.ingredientSlug.padEnd(14)} ${r.name.slice(0, 38).padEnd(38)} ${r.packQty}${r.packUnit === "piece" ? " pc" : " " + r.packUnit}${r.usableQty ? ` (usable ${r.usableQty})` : ""}  €${r.price.toFixed(2)}${r.was ? `  (was €${r.was.toFixed(2)})` : ""}`);
   if (!flag("write")) { console.log("\nDry run: nothing was saved. Add --write to save to the database."); return; }
   console.log("\nSaving…", JSON.stringify(await save(rows, hold, [...new Set(rules.flatMap((r) => [r.ingredient, ...(r.byName ?? []).map((b) => b[1])]))])));
 }

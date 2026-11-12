@@ -43,3 +43,5 @@ A wrong match is worse than a missing one: it can put a wine or a ready meal int
 3. **Same unit and same form.** A product only counts for an ingredient if it can be priced in the ingredient's unit (grams, millilitres or pieces) and is the same form (cooked and dried chickpeas, fresh and frozen, whole and processed are different ingredients).
 4. **Sanity-check prices per kg or per litre** per ingredient. Outliers usually mean a parsing or matching error.
 5. **Rule matches are provisional** (`mapping_source = 'rule'`). Allergen-relevant matches need a person's approval (section 2) before the app relies on them.
+6. **Use the shop's category as the first filter**, then the name pattern. Category separates real matches from look-alikes far better than names alone.
+7. **Price the usable weight, not the label weight.** Recipe quantities mean what ends up in the dish. Canned tuna includes oil and bone-in chicken includes bone, so `usable_qty` (per product) or `usable_fraction` (per ingredient) is used in `price_per_base_unit`. Placeholder yields must be checked against labels before the numbers are trusted.

@@ -1,5 +1,3 @@
-// Generated from the Sobra Supabase project (pjwepyjcahvascttlarc) with generate_typescript_types.
-// Regenerate after each migration in db/migrations/. Do not edit by hand.
 export type Json =
   | string
   | number
@@ -379,6 +377,8 @@ export type Database = {
           protein_g_per_100: number | null
           shelf_life_days: number | null
           slug: string
+          usable_fraction: number
+          usable_note: string | null
         }
         Insert: {
           base_unit: string
@@ -404,6 +404,8 @@ export type Database = {
           protein_g_per_100?: number | null
           shelf_life_days?: number | null
           slug: string
+          usable_fraction?: number
+          usable_note?: string | null
         }
         Update: {
           base_unit?: string
@@ -429,6 +431,8 @@ export type Database = {
           protein_g_per_100?: number | null
           shelf_life_days?: number | null
           slug?: string
+          usable_fraction?: number
+          usable_note?: string | null
         }
         Relationships: [
           {
@@ -641,6 +645,8 @@ export type Database = {
           pack_unit: string
           receipt_aliases: string[]
           url: string | null
+          usable_qty: number | null
+          usable_source: string | null
         }
         Insert: {
           active?: boolean
@@ -657,6 +663,8 @@ export type Database = {
           pack_unit: string
           receipt_aliases?: string[]
           url?: string | null
+          usable_qty?: number | null
+          usable_source?: string | null
         }
         Update: {
           active?: boolean
@@ -673,6 +681,8 @@ export type Database = {
           pack_unit?: string
           receipt_aliases?: string[]
           url?: string | null
+          usable_qty?: number | null
+          usable_source?: string | null
         }
         Relationships: [
           {

@@ -14,6 +14,7 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 | `004_security_and_views.sql` | row level security, signup trigger, and the views for today's prices, recipe cost, diets and allergens |
 | `005_seed_reference.sql` | chains, the 14 EU allergens, diets, 14 meal types, starter ingredients |
 | `006_storage_guidelines.sql` | USDA FoodKeeper rows and per-ingredient storage guidelines with a review status (the app reads approved rows only) |
+| `007_net_weight.sql` | usable (net) weight: `ingredient.usable_fraction`, `product.usable_qty` with `usable_source`; `product_price_today` prices per usable unit |
 
 **Read `METHODOLOGY.md` first**: free-plan principles (activity, size, batching, no backups, keys), the rule that a model proposes and a person approves food-safety data, and how we change the database.
 
@@ -28,7 +29,7 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 ## Scripts (run on your own machine with Bun)
 
 - `scripts/probe-continente.sh` saves a few raw Continente pages to `data/raw/` (git-ignored) so parsers can be written against real markup.
-- `scripts/continente.ts` fetches search results for the ingredient queries, maps products to ingredients by simple name rules (`mapping_source = 'rule'`, to be reviewed), and saves products, regular prices (a new row only on change) and strike-through promotions. It is a **dry run unless you pass `--write`**. Items sold by weight are stored with the price of the whole pack. The shop tile has no promotion end date, so a promotion window runs from the day it was seen to `--hold-days` (default 3) later and is extended whenever it is seen again.
+- `scripts/continente.ts` fetches search results for the ingredient queries, maps products to ingredients by simple name rules (`mapping_source = 'rule'`, to be reviewed), and saves products, regular prices (a new row only on change) and strike-through promotions. It is a **dry run unless you pass `--write`**. Items sold by weight are stored with the price of the whole pack (loose produce is priced per 1 kg). A product is kept only if its shop category path matches the rule's category and its name matches `include`. `--pages` is a maximum (default 8): paging stops at the first page with no kept product. Usable weight comes from the label, then from a rule (e.g. tuna 70 %, bone-in chicken 65 %), and is never overwritten when set manually. `--try-cgid <id>` probes whether the grid accepts a category id (unverified). The shop tile has no promotion end date, so a promotion window runs from the day it was seen to `--hold-days` (default 3) later and is extended whenever it is seen again.
 
 ## Rules of the model
 
@@ -42,6 +43,7 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 
 ## Still to do
 
+- Check the placeholder usable fractions (tuna 0.7, bone-in chicken 0.65) against labels; chickpeas are left unadjusted.
 - Load the FoodKeeper data into `foodkeeper_item`, let Ollama propose ingredient matches, review them, then approve into `storage_guideline`. The prototype's `ingredient.shelf_life_days` values stay placeholders until then. Protein per 100 g is empty.
 - Joining a household by invite needs an invite table and a server function (the user cannot read a household they are not in yet). Email delivery needs our own sender (see METHODOLOGY section 4).
 - Scrapers and the import step that fill `product`, `product_price`, `flyer`, `promotion`.
