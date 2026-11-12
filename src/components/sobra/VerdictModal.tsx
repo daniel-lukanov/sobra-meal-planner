@@ -78,7 +78,7 @@ export function VerdictModal({ open, onOpenChange }: { open: boolean; onOpenChan
                 <div className="flex flex-wrap gap-2">{pmfOptions.map((o) => <Pill key={o} on={pmf === o} onClick={() => setPmf(o)}>{o}</Pill>)}</div>
               </Q>
               <section className="rounded-sheet bg-basil-tint p-5" aria-labelledby="cta-t">
-                <span className="inline-flex rounded-[3px] bg-sheet px-3 py-1 text-[12.5px] font-semibold text-basil">{cta.badge}</span>
+                <span className="inline-flex rounded-[6px] bg-sheet px-3 py-1 text-[12.5px] font-semibold text-basil">{cta.badge}</span>
                 <h3 id="cta-t" className="mt-3 text-[20px] font-bold">{cta.title}</h3>
                 <p className="mt-1 text-[14px]">{cta.text}</p>
                 <label htmlFor="contact" className="mt-4 block text-[13px] font-medium">Your email or WhatsApp number (optional, to send your free month code)</label>
@@ -126,7 +126,7 @@ export function VerdictModal({ open, onOpenChange }: { open: boolean; onOpenChan
                   <p className="num mb-2 text-[13px] font-semibold" aria-live="polite">{100 - used} points left</p>
                   <ul className="space-y-2">
                     {featureKeys.map((k, i) => (
-                      <li key={k} className="flex items-center gap-3 rounded-[4px] bg-row p-3">
+                      <li key={k} className="flex items-center gap-3 rounded-[8px] bg-row p-3">
                         <span className="min-w-0 flex-1 text-[14px] font-medium">{i + 1}. {featureLabels[k]}</span>
                         <button type="button" aria-label={`Remove 20 points from ${featureLabels[k]}`} onClick={() => adjust(k, -20)} className="press flex size-9 items-center justify-center rounded-full bg-sheet-2"><Minus className="size-4" /></button>
                         <span className="num w-9 text-center text-[17px] font-bold">{pts[k]}</span>
@@ -156,6 +156,6 @@ export function VerdictModal({ open, onOpenChange }: { open: boolean; onOpenChan
 function Card({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button type="button" aria-pressed={on} onClick={onClick}
-      className={cn("press flex min-h-12 w-full items-center rounded-[4px] border px-3.5 py-2.5 text-left text-[14.5px]", on ? "border-basil bg-basil-tint font-semibold" : "border-rule bg-sheet hover:bg-sheet-2")}>{children}</button>
+      className={cn("press flex min-h-12 w-full items-center rounded-[8px] border px-3.5 py-2.5 text-left text-[14.5px]", on ? "border-basil bg-basil-tint font-semibold" : "border-rule bg-sheet hover:bg-sheet-2")}>{children}</button>
   );
 }

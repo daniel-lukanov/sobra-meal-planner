@@ -117,7 +117,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </main>
       {showMission && (tour ? <GuidedTour /> : <MissionBar />)}
       {ghost && (
-        <span className="fixed bottom-20 left-3 z-50 inline-flex items-center gap-1.5 rounded-[3px] bg-ink px-3 py-1.5 text-[12px] font-semibold text-sheet md:bottom-4">
+        <span className="fixed bottom-20 left-3 z-50 inline-flex items-center gap-1.5 rounded-[6px] bg-ink px-3 py-1.5 text-[12px] font-semibold text-sheet md:bottom-4">
           <Ghost className="size-3.5" aria-hidden />Ghost Mode (Not Recording)
         </span>
       )}
