@@ -37,7 +37,7 @@ function Deals() {
             <li key={d.name} data-tour={d.name === firstTrap ? "3" : undefined} className="flex flex-col overflow-hidden rounded-sheet bg-sheet">
               <div className="relative h-36 bg-sheet-2">
                 <img src={dealPhoto(d.name)} alt="" width={600} height={288} loading="lazy" className="size-full object-cover" />
-                <span className={cn("absolute left-3 top-3 inline-flex items-center gap-1 rounded-[6px] px-2.5 py-1 text-[12px] font-semibold", real ? "bg-sheet text-basil" : "bg-sheet text-tomato")}>
+                <span className={cn("absolute left-3 top-3 inline-flex items-center gap-1 rounded-[3px] px-2.5 py-1 text-[12px] font-semibold", real ? "bg-sheet text-basil" : "bg-sheet text-tomato")}>
                   {real ? <BadgeCheck className="size-3.5" aria-hidden /> : <ShieldAlert className="size-3.5" aria-hidden />}{real ? "Verified deal" : "Price trap"}
                 </span>
               </div>

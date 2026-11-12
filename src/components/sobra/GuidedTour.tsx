@@ -117,7 +117,7 @@ export function GuidedTour() {
             <div key={i} aria-hidden className="pointer-events-none fixed z-[46] rounded-sheet ring-4 ring-tape transition-all duration-300"
               style={{ left: r.left - pad, top: r.top - pad, width: r.width + pad * 2, height: r.height + pad * 2 }} />
           ))}
-          <span aria-hidden className="pointer-events-none fixed z-[47] flex animate-bounce items-center gap-1 rounded-[6px] bg-tape px-3 py-1 text-xs font-bold text-ink shadow-float"
+          <span aria-hidden className="pointer-events-none fixed z-[47] flex animate-bounce items-center gap-1 rounded-[3px] bg-tape px-3 py-1 text-xs font-bold text-ink shadow-float"
             style={{ left: rects[0]!.left, top: Math.max(4, rects[0]!.top - pad - 30) }}>
             <Hand className="size-3.5" aria-hidden />Tap here first
           </span>
@@ -133,7 +133,7 @@ export function GuidedTour() {
               <p className="mt-0.5 text-[14px] leading-snug text-sheet/90" aria-live="polite">{steps[active.step].guide}</p>
             </div>
             <div className="flex shrink-0 flex-col items-start gap-1.5 sm:items-end">
-              <button type="button" onClick={doForMe} className="press inline-flex items-center gap-1 rounded-[8px] bg-sheet/15 px-3 py-2 text-xs font-semibold text-sheet hover:bg-sheet/25">
+              <button type="button" onClick={doForMe} className="press inline-flex items-center gap-1 rounded-[4px] bg-sheet/15 px-3 py-2 text-xs font-semibold text-sheet hover:bg-sheet/25">
                 {pathname.startsWith(steps[active.step].to) ? "Do this for me" : "Take me there"}<ArrowRight className="size-3.5" aria-hidden />
               </button>
               <button type="button" onClick={() => setTour(null)} className="text-xs text-sheet/70 underline underline-offset-4 hover:text-sheet">Unlock free roam</button>
@@ -165,7 +165,7 @@ function Celebrate({ text, button, icon }: { text: ReactNode; button: ReactNode;
 }
 function GoldButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className={cn("press inline-flex shrink-0 animate-pulse items-center gap-1.5 rounded-[8px] bg-tape px-5 py-2.5 font-bold text-ink shadow-float transition-transform hover:bg-sheet active:scale-95 hover:animate-none")}>
+    <button type="button" onClick={onClick} className={cn("press inline-flex shrink-0 animate-pulse items-center gap-1.5 rounded-[4px] bg-tape px-5 py-2.5 font-bold text-ink shadow-float transition-transform hover:bg-sheet active:scale-95 hover:animate-none")}>
       {children}<ArrowRight className="size-4" aria-hidden />
     </button>
   );

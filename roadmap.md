@@ -2,4 +2,3 @@
 - [x] Borrow Dairy Food site palette (cloud white, royal navy, cheese yellow), design only
 - [x] Less AI: sharp corners, characterful fonts, stronger contrast
 - [x] Drop outlines, photos sit on white
-- [x] Restyle colours/style inspired by Instagram pratico.lisboa

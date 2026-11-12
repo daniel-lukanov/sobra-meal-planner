@@ -70,7 +70,7 @@ function Insights() {
           <h1 className="mt-6 flex items-center gap-2 text-[24px] font-bold"><Lock className="size-5 text-muted-foreground" aria-hidden />Founder insights</h1>
           <p className="mt-1 text-[14px] text-muted-foreground">Enter the team passcode to see the study results.</p>
           <label htmlFor="pass" className="sr-only">Passcode</label>
-          <input id="pass" type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="current-password" className="mt-4 min-h-11 w-full rounded-[8px] bg-sheet-2 px-3" />
+          <input id="pass" type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="current-password" className="mt-4 min-h-11 w-full rounded-[4px] bg-sheet-2 px-3" />
           {error && <p role="alert" className="mt-2 text-[13.5px] text-tomato">That passcode is not right.</p>}
           <Button type="submit" className="mt-4 w-full" disabled={busy || !pass}>{busy ? "Checking" : "Unlock"}</Button>
         </form>
@@ -159,7 +159,7 @@ function Dashboard({ live, setLive, passcode }: { live: ExperimentSession[]; set
           <h1 className="mt-1 text-[30px] font-bold md:text-[34px]">Founder insights</h1>
         </div>
         <div className="flex flex-col gap-3 md:items-end">
-          <label className="inline-flex items-center gap-2.5 rounded-[6px] bg-ink px-4 py-2 text-[13.5px] font-semibold text-sheet">
+          <label className="inline-flex items-center gap-2.5 rounded-[3px] bg-ink px-4 py-2 text-[13.5px] font-semibold text-sheet">
             <Ghost className="size-4" aria-hidden />Founder Ghost Mode (Do not record my visits)
             <Switch checked={ghost} onCheckedChange={toggleGhost} className="data-[state=checked]:bg-tape data-[state=unchecked]:bg-sheet/30" />
           </label>

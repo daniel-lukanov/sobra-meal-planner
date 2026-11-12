@@ -46,7 +46,7 @@ function Fridge() {
       <PageHeader small={`${fridge.length} items tracked`} title="Your fridge, filled from your receipts"
         sub="Scan the receipt after shopping. Cooking a planned meal takes its ingredients off the list, so nothing needs typing." />
       {spinach && spinach.daysLeft !== null && spinach.daysLeft <= 1 && (
-        <div role="status" className="mb-6 flex flex-col gap-3 rounded-[8px] bg-tomato-tint p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div role="status" className="mb-6 flex flex-col gap-3 rounded-[4px] bg-tomato-tint p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[15px]"><span className="font-semibold text-tomato">Spinach expires tomorrow.</span> Chicken and spinach rice uses it tonight.</p>
           <Button onClick={() => { set({ mode: "daily", pick: "rice" }); navigate({ to: "/plan" }); }}>Plan it for tonight</Button>
         </div>
@@ -63,7 +63,7 @@ function Fridge() {
               const src = sourceOf(f);
               return (
                 <li key={f.id + f.name} className={cn("card flex bg-sheet items-center gap-3 p-3.5", f.isNew && "slide-in", low && "border-tomato/40")}>
-                  <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-[8px]", low ? "bg-tomato-tint text-tomato" : "bg-sheet-2 text-ink")} title={cat.label}>
+                  <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-[4px]", low ? "bg-tomato-tint text-tomato" : "bg-sheet-2 text-ink")} title={cat.label}>
                     <Icon className="size-5" strokeWidth={1.7} aria-hidden /><span className="sr-only">{cat.label}</span>
                   </span>
                   <div className="min-w-0 flex-1">
@@ -75,7 +75,7 @@ function Fridge() {
                       <div className="flex flex-1 gap-1" aria-hidden>
                         {[0, 1, 2, 3, 4].map((k) => <span key={k} className={cn("h-2 flex-1 rounded-full", k < filled ? (low ? "bg-tomato" : "bg-basil") : "bg-sheet-2")} />)}
                       </div>
-                      <span className={cn("shrink-0 rounded-[6px] px-2 py-0.5 text-[11.5px] font-semibold", src.prep ? "bg-mustard-tint text-[var(--mustard-ink)]" : "bg-sheet-2 text-muted-foreground")}>{src.label}</span>
+                      <span className={cn("shrink-0 rounded-[3px] px-2 py-0.5 text-[11.5px] font-semibold", src.prep ? "bg-mustard-tint text-[var(--mustard-ink)]" : "bg-sheet-2 text-muted-foreground")}>{src.label}</span>
                     </div>
                   </div>
                 </li>
@@ -84,7 +84,7 @@ function Fridge() {
           </ul>
         }
         side={
-          <section aria-labelledby="rs" data-tour="5" className="thermal rounded-[8px] bg-paper px-5">
+          <section aria-labelledby="rs" data-tour="5" className="thermal rounded-[4px] bg-paper px-5">
             <h2 id="rs" className="flex items-center gap-2 pt-2 text-[19px] font-bold"><ReceiptText className="size-5 text-muted-foreground" aria-hidden />Receipt scan</h2>
             <div aria-hidden className="mt-2 border-t-2 border-dashed border-rule" />
             {step === "start" && (
@@ -104,7 +104,7 @@ function Fridge() {
             )}
             {step === "review" && (
               <div className="slide-in mt-4">
-                <pre className="overflow-x-auto rounded-[8px] bg-sheet-2 p-3 font-mono text-[12px] leading-relaxed">
+                <pre className="overflow-x-auto rounded-[4px] bg-sheet-2 p-3 font-mono text-[12px] leading-relaxed">
                   {receiptRaw.map(([a, b]) => `${a!.padEnd(22)}${b!.padStart(9)}`).join("\n")}
                 </pre>
                 <ul className="mt-4 divide-y divide-rule">

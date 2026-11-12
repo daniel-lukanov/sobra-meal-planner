@@ -31,7 +31,7 @@ export function MissionBar() {
               return (
                 <li key={k}>
                   <Link to={t.to} title={t.hint} aria-label={`Task ${i + 1}: ${t.hint}${on ? ", done" : ""}`}
-                    className={cn("press flex min-h-9 items-center gap-1 rounded-[6px] px-3 text-[13px] font-semibold", on ? "bg-basil text-basil-ink" : "bg-sheet/10 text-sheet hover:bg-sheet/20")}>
+                    className={cn("press flex min-h-9 items-center gap-1 rounded-[3px] px-3 text-[13px] font-semibold", on ? "bg-basil text-basil-ink" : "bg-sheet/10 text-sheet hover:bg-sheet/20")}>
                     {on ? <Check className="size-3.5" strokeWidth={3} aria-hidden /> : <span className="num">{i + 1}.</span>}{t.label}
                   </Link>
                 </li>
@@ -41,7 +41,7 @@ export function MissionBar() {
           </ol>
           <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={() => { useExp.getState().setTour({ step: 1, sub: "guided_focus" }); navigate({ to: "/plan" }); }} className="text-[13px] font-medium text-sheet/80 underline underline-offset-4 hover:text-sheet">Restart guided tour</button>
-          <button type="button" onClick={() => setOpen(true)} className="press min-h-10 rounded-[8px] bg-tape px-4 py-2 text-[14px] font-bold text-ink">
+          <button type="button" onClick={() => setOpen(true)} className="press min-h-10 rounded-[4px] bg-tape px-4 py-2 text-[14px] font-bold text-ink">
             {finished ? (s.bonus_completed ? "See my reward" : "Unlock bonus reward") : "Finish & Claim Free Month (25 sec) ->"}
           </button>
           </div>

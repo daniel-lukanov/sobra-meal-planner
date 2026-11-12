@@ -34,7 +34,7 @@ export function StoreDot({ name, className }: { name: StoreName; className?: str
 /** Brand pills keep fixed light tints, so text stays dark in both themes. */
 export function StoreBadge({ name, className }: { name: StoreName; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-[13px] font-semibold", className)} style={{ backgroundColor: storeBrand[name].pill, color: "#1D2A33" }}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-[3px] px-2.5 py-1 text-[13px] font-semibold", className)} style={{ backgroundColor: storeBrand[name].pill, color: "#1D2A33" }}>
       <StoreDot name={name} />
       <ShoppingBag className="size-3.5" strokeWidth={1.8} aria-hidden />
       {name}

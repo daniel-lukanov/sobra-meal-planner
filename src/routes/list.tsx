@@ -37,13 +37,13 @@ function List() {
           return (
             <section key={g.aisle} aria-labelledby={`a-${g.aisle}`} data-tour={g.aisle === "Fruit and veg" ? "4" : undefined} data-tour-auto className="card p-5">
               <h2 id={`a-${g.aisle}`} className="mb-3 flex items-center gap-2.5 text-[18px]">
-                <span className="flex size-9 items-center justify-center rounded-[8px] bg-basil-tint text-basil"><Icon className="size-[18px]" strokeWidth={1.7} aria-hidden /></span>{g.aisle}
+                <span className="flex size-9 items-center justify-center rounded-[4px] bg-basil-tint text-basil"><Icon className="size-[18px]" strokeWidth={1.7} aria-hidden /></span>{g.aisle}
               </h2>
               <ul>
                 {g.items.map((it) => {
                   const on = it.inFridge || !!checked[it.id];
                   return (
-                    <li key={it.id} className="mb-2 rounded-[8px] bg-row">
+                    <li key={it.id} className="mb-2 rounded-[4px] bg-row">
                       <label className={cn("flex min-h-12 items-center justify-between gap-3 p-3", it.inFridge ? "cursor-default" : "cursor-pointer")}>
                         <input type="checkbox" className="peer sr-only" checked={on} disabled={it.inFridge}
                           onChange={(e) => { set({ checked: { ...checked, [it.id]: e.target.checked } }); if (e.target.checked) useExp.getState().track("task_4_list"); }} />
