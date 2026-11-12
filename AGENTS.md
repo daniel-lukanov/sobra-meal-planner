@@ -30,6 +30,7 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
+- Our own Supabase data layer (products, prices, recipes, users, households) lives in `db/`, not in `supabase/migrations/`. Before touching it, scrapers or imports, read `db/METHODOLOGY.md` (free-plan limits, keys, and: models propose, people approve food-safety data).
 - pratico's app data lives in `src/data/*.ts` and app state in one zustand store (`src/lib/store.ts`, persisted to localStorage, rehydrated in the Shell after mount); only the customer-discovery experiment uses Lovable Cloud.
 - Study sessions live in `src/lib/experiment.ts` (zustand + localStorage) and sync as one jsonb `data` blob to `study_sessions` only through server functions in `src/lib/experiment.functions.ts`, so new questions need no schema change; `study_sessions`, `shared_plans` and `spend_log` have RLS with no policies so browsers never read them directly. `experiment_sessions` is deprecated.
 - Every tracked action goes through `applyEvent` in `src/lib/experiment-types.ts`, which stamps `in_tour` and `first_session` so insights can split guided from voluntary actions.

@@ -13,6 +13,9 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 | `003_users_households.sql` | profile, diet/allergy/store/meal-type choices, households, fridge, receipts, weekly plans, shopping list, price alerts, cook log |
 | `004_security_and_views.sql` | row level security, signup trigger, and the views for today's prices, recipe cost, diets and allergens |
 | `005_seed_reference.sql` | chains, the 14 EU allergens, diets, 14 meal types, starter ingredients |
+| `006_storage_guidelines.sql` | USDA FoodKeeper rows and per-ingredient storage guidelines with a review status (the app reads approved rows only) |
+
+**Read `METHODOLOGY.md` first**: free-plan principles (activity, size, batching, no backups, keys), the rule that a model proposes and a person approves food-safety data, and how we change the database.
 
 ## Rules of the model
 
@@ -25,8 +28,8 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 
 ## Still to do
 
-- Shelf-life values are placeholders from the prototype and need a food-safety review. Protein per 100 g is empty.
-- Joining a household by invite code needs a server function (the user cannot read a household they are not in yet).
+- Load the FoodKeeper data into `foodkeeper_item`, let Ollama propose ingredient matches, review them, then approve into `storage_guideline`. The prototype's `ingredient.shelf_life_days` values stay placeholders until then. Protein per 100 g is empty.
+- Joining a household by invite needs an invite table and a server function (the user cannot read a household they are not in yet). Email delivery needs our own sender (see METHODOLOGY section 4).
 - Scrapers and the import step that fill `product`, `product_price`, `flyer`, `promotion`.
 - Recipes, prep bases and tags (the prototype's sample meals are not loaded yet).
 - Connect the app: project URL and publishable key go into the app's environment, never the service key.

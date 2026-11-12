@@ -30,3 +30,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Sobra data layer: raw scrapes and local secrets
+data/raw/
+db/.env
