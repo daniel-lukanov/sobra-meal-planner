@@ -164,7 +164,7 @@ function SessionEditor({ initial, isNew, onClose, onSave, onDelete, busy }: { in
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-sheet border-[1.5px] border-ink bg-sheet p-6 sm:p-8">
+      <DialogContent className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-sheet bg-sheet p-6 sm:p-8">
         <DialogTitle className=" text-[24px] font-bold">{isNew ? "Add manual session" : "Session inspector & editor"}</DialogTitle>
         <DialogDescription className="font-mono text-[12.5px]">{s.session_id} · {isSeeded(s) ? "seeded sample (edits saved on this device)" : "live"}</DialogDescription>
         <UnderlineTabs label="Editor section" value={tab} onChange={setTab} options={tabs.map((t) => ({ ...t }))} />

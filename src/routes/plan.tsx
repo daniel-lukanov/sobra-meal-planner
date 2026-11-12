@@ -130,7 +130,7 @@ function WeeklyPrep() {
             {ch.days.map(({ i, day, meal, base }, k) => {
               const lit = !!filter && meal.uses.includes(filter);
               return (
-                <li key={i} className={cn("flex flex-col overflow-hidden rounded-sheet border-[1.5px] border-ink bg-sheet transition-all duration-200", lit && "border-tomato", filter && !lit && "opacity-50")}>
+                <li key={i} className={cn("flex flex-col overflow-hidden rounded-sheet bg-sheet transition-all duration-200", lit && "border-tomato", filter && !lit && "opacity-50")}>
                   <div className="relative h-48 bg-sheet-2">
                     <img src={mealPhoto[meal.title] ?? photo.prep} alt={meal.title} width={600} height={384} loading="lazy" className="size-full object-cover" />
                     <div className="absolute left-3 top-3"><Tape alt={k % 2 === 1}>{day}</Tape></div>
@@ -162,7 +162,7 @@ function WeeklyPrep() {
         </section>
       ))}
 
-      <section aria-labelledby="reel" className="flex flex-col gap-4 rounded-sheet border-[1.5px] border-ink bg-sheet p-5 md:flex-row md:items-center">
+      <section aria-labelledby="reel" className="flex flex-col gap-4 rounded-sheet bg-sheet p-5 md:flex-row md:items-center">
         <div className="md:w-[40%]">
           <h2 id="reel" className="text-[18px]">Add a recipe from an Instagram or TikTok reel</h2>
           <p className="mt-1 text-[13px] text-muted-foreground">Paste the link. We check how much it shares with your week.</p>
@@ -215,7 +215,7 @@ function DailyPick() {
           );
         })}
       </div>
-      <div className="mt-6 flex flex-col gap-4 rounded-sheet border-[1.5px] border-ink bg-sheet p-5 md:flex-row md:items-center md:justify-between">
+      <div className="mt-6 flex flex-col gap-4 rounded-sheet bg-sheet p-5 md:flex-row md:items-center md:justify-between">
         <div>
           <h3 className="text-[19px] font-bold">{sel.title}</h3>
           <p className="text-[14px] text-muted-foreground">{sel.summary} {store}.</p>

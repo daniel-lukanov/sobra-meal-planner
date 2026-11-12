@@ -46,7 +46,7 @@ export function PreSurvey() {
   };
 
   return (
-    <div className="mx-auto my-8 max-w-2xl rounded-sheet border-[1.5px] border-ink bg-sheet p-6 sm:p-8">
+    <div className="mx-auto my-8 max-w-2xl rounded-sheet bg-sheet p-6 sm:p-8">
       <div className="flex items-start justify-between gap-4">
         <SobraLogo />
         <button type="button" onClick={skip} className="min-h-11 text-[13.5px] font-medium text-muted-foreground underline-offset-4 hover:text-ink hover:underline">Skip to app</button>

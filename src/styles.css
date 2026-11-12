@@ -61,10 +61,10 @@
   --ground: #FFFFFF;
   --sheet: #F3F6FA;
   --sheet-2: #E1EAF3;
-  --sheet-hover: #13285C33;
+  --sheet-hover: #E3E8EF;
   --ink: #13285C;
   --muted: #536380;
-  --rule: #13285C33;
+  --rule: #E3E8EF;
   --basil: #1F7A3D;
   --basil-700: #155C2D;
   --basil-ink: #FFFFFF;
@@ -78,7 +78,7 @@
   --mustard-tint: #FDF1CC;
   --row: #F2F6FB;
   --paper: #F7FAFD;
-  --prep-rule: #13285C33;
+  --prep-rule: #E3E8EF;
   --shadow-sheet: none;
   --shadow-card: none;
   --shadow-tape: none;
@@ -146,9 +146,10 @@
 }
 
 @utility card {
-  background: var(--sheet);
-  border: 1.5px solid var(--ink);
+  background: transparent;
+  border: 0;
   border-radius: 6px;
+  padding: 0 !important;
   box-shadow: var(--shadow-card);
 }
 

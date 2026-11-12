@@ -21,7 +21,7 @@ function List() {
     <>
       <PageHeader small={`Monday to Wednesday · ${store}`} title="Shopping list sorted by aisle"
         sub="Only what is missing. Onions and rice are already in your fridge, so they are crossed out." />
-      <section aria-label="List total" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sheet border-[1.5px] border-ink bg-sheet p-5">
+      <section aria-label="List total" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sheet bg-sheet p-5">
         <div className="num">
           <p className=" text-[26px] font-bold leading-none">€14.23</p>
           <p className="mt-1 text-[13.5px] text-muted-foreground">8 items · <span className="font-semibold text-basil">€6.85 saved vs regular prices</span></p>

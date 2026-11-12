@@ -62,7 +62,7 @@ export function VerdictModal({ open, onOpenChange }: { open: boolean; onOpenChan
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-sheet border-[1.5px] border-ink bg-sheet p-6 sm:p-8">
+      <DialogContent className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-sheet bg-sheet p-6 sm:p-8">
         {!s.survey_post_completed ? (
           <>
             <DialogTitle className="text-[24px] font-bold">Your 25-second verdict</DialogTitle>
