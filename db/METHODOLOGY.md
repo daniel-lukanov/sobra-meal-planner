@@ -33,3 +33,13 @@ Shelf life and allergens decide what someone eats, so they follow stricter rules
 ## 4. Email
 
 Lovable's built-in emails work only with Lovable Cloud (and a paid plan). Because our data lives in our own Supabase project, email (invites, sign-up confirmation) is sent through our own sender, for example Resend with a verified domain, set up as custom SMTP in Supabase. Supabase's built-in sender is not for real users.
+
+## 5. Matching scraped products to ingredients
+
+A wrong match is worse than a missing one: it can put a wine or a ready meal into a recipe's price or allergens.
+
+1. **Precision over recall.** Rules start narrow (`include` the name pattern, `exclude` look-alikes). Missing a product only costs a price option; a wrong one corrupts costs and allergen data.
+2. **Check what was kept and what was dropped** after every new rule: list both, not just the matches.
+3. **Same unit and same form.** A product only counts for an ingredient if it can be priced in the ingredient's unit (grams, millilitres or pieces) and is the same form (cooked and dried chickpeas, fresh and frozen, whole and processed are different ingredients).
+4. **Sanity-check prices per kg or per litre** per ingredient. Outliers usually mean a parsing or matching error.
+5. **Rule matches are provisional** (`mapping_source = 'rule'`). Allergen-relevant matches need a person's approval (section 2) before the app relies on them.
