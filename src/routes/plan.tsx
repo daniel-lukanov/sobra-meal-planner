@@ -48,11 +48,11 @@ function WeekBanner() {
     <section aria-label="This week" data-tour="2" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sheet bg-basil p-5 text-basil-ink">
       <p className="num text-[15.5px] font-semibold">{weekSummary.dinners} dinners · {eur(weekSummary.total)} total · 70 min prep · Saves {eur(weekSummary.belowRegular)} vs regular prices</p>
       <div className="flex flex-wrap gap-2">
-        <button type="button" data-tour-trigger disabled={weekAccepted} className="press rounded-[12px] bg-sheet px-5 py-2.5 font-semibold text-basil disabled:opacity-80"
+        <button type="button" data-tour-trigger disabled={weekAccepted} className="press rounded-[4px] bg-sheet px-5 py-2.5 font-semibold text-basil disabled:opacity-80"
           onClick={() => { const e = useExp.getState(); e.track("accepted_week_clicked"); e.track("task_1_plan"); set({ weekAccepted: true }); addSavings(weekSummary.belowRegular); toast("Week accepted. Shopping list ready."); }}>
           {weekAccepted ? "Week accepted" : "Accept this week"}
         </button>
-        <button type="button" onClick={() => navigate({ to: "/list" })} className="press rounded-[12px] bg-sheet/15 px-4 py-2.5 font-medium text-basil-ink hover:bg-sheet/25">Shopping list (8)</button>
+        <button type="button" onClick={() => navigate({ to: "/list" })} className="press rounded-[4px] bg-sheet/15 px-4 py-2.5 font-medium text-basil-ink hover:bg-sheet/25">Shopping list (8)</button>
       </div>
     </section>
   );
@@ -116,7 +116,7 @@ function WeeklyPrep() {
           return (
             <button key={b.label} type="button" aria-pressed={on}
               onClick={() => { setFilter(b.id); if (b.id) { useExp.getState().track("synergy_filter_used"); useExp.getState().track("task_1_plan"); } }}
-              className={cn("press min-h-10 rounded-full border px-4 text-[13.5px] font-semibold", on ? "border-basil bg-basil text-basil-ink" : "border-rule bg-sheet text-ink hover:bg-sheet-2")}>
+              className={cn("press min-h-10 rounded-[3px] border px-4 text-[13.5px] font-semibold", on ? "border-basil bg-basil text-basil-ink" : "border-rule bg-sheet text-ink hover:bg-sheet-2")}>
               {b.label}
             </button>
           );
@@ -130,11 +130,11 @@ function WeeklyPrep() {
             {ch.days.map(({ i, day, meal, base }, k) => {
               const lit = !!filter && meal.uses.includes(filter);
               return (
-                <li key={i} className={cn("flex flex-col overflow-hidden rounded-sheet bg-sheet transition-all duration-200", lit && "border-tomato", filter && !lit && "opacity-50")}>
+                <li key={i} className={cn("flex flex-col overflow-hidden rounded-sheet border-[1.5px] border-ink bg-sheet transition-all duration-200", lit && "border-tomato", filter && !lit && "opacity-50")}>
                   <div className="relative h-48 bg-sheet-2">
                     <img src={mealPhoto[meal.title] ?? photo.prep} alt={meal.title} width={600} height={384} loading="lazy" className="size-full object-cover" />
                     <div className="absolute left-3 top-3"><Tape alt={k % 2 === 1}>{day}</Tape></div>
-                    <span className="num absolute right-3 top-3 rounded-full bg-sheet px-2.5 py-1 text-[15px] font-bold">{eur(meal.price)}</span>
+                    <span className="num absolute right-3 top-3 rounded-[3px] bg-sheet px-2.5 py-1 text-[15px] font-bold">{eur(meal.price)}</span>
                   </div>
                   <div className="flex flex-1 flex-col p-4">
                     <h3 className="text-[19px] font-bold">{meal.title}</h3>
@@ -162,7 +162,7 @@ function WeeklyPrep() {
         </section>
       ))}
 
-      <section aria-labelledby="reel" className="flex flex-col gap-4 rounded-sheet bg-sheet p-5 md:flex-row md:items-center">
+      <section aria-labelledby="reel" className="flex flex-col gap-4 rounded-sheet border-[1.5px] border-ink bg-sheet p-5 md:flex-row md:items-center">
         <div className="md:w-[40%]">
           <h2 id="reel" className="text-[18px]">Add a recipe from an Instagram or TikTok reel</h2>
           <p className="mt-1 text-[13px] text-muted-foreground">Paste the link. We check how much it shares with your week.</p>
@@ -209,13 +209,13 @@ function DailyPick() {
               <div className="p-4">
                 <h3 className="text-[19px] font-bold">{p.title}</h3>
                 <p className="num text-[13px] text-muted-foreground">{p.minutes} min · {eur(p.price)} per portion</p>
-                <span className={cn("mt-3 inline-flex rounded-full px-2.5 py-1 text-[12.5px] font-semibold", reasonTone[p.id])}>{reasons[p.id] ?? p.reason}</span>
+                <span className={cn("mt-3 inline-flex rounded-[3px] px-2.5 py-1 text-[12.5px] font-semibold", reasonTone[p.id])}>{reasons[p.id] ?? p.reason}</span>
               </div>
             </button>
           );
         })}
       </div>
-      <div className="mt-6 flex flex-col gap-4 rounded-sheet bg-sheet p-5 md:flex-row md:items-center md:justify-between">
+      <div className="mt-6 flex flex-col gap-4 rounded-sheet border-[1.5px] border-ink bg-sheet p-5 md:flex-row md:items-center md:justify-between">
         <div>
           <h3 className="text-[19px] font-bold">{sel.title}</h3>
           <p className="text-[14px] text-muted-foreground">{sel.summary} {store}.</p>

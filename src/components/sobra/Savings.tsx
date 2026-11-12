@@ -31,7 +31,7 @@ export function SavingsCounter() {
   const { v, bumped } = useCountUp(week);
   return (
     <span key={bumped} aria-live="polite" title={`Saved this week, ${eur(month)} this month. Compared with the cheapest regular price of each product.`}
-      className={`num flex shrink-0 items-center gap-2 rounded-full bg-basil-tint px-3.5 py-1.5 text-sm font-bold text-basil ${bumped ? "bump" : ""}`}>
+      className={`num flex shrink-0 items-center gap-2 rounded-[3px] bg-basil-tint px-3.5 py-1.5 text-sm font-bold text-basil ${bumped ? "bump" : ""}`}>
       <PiggyBank className="size-4" strokeWidth={1.8} aria-hidden />{eur(v)}<span className="hidden font-semibold sm:inline">saved</span>
     </span>
   );

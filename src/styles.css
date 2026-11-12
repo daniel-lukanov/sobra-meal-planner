@@ -3,18 +3,18 @@
 @import "tw-animate-css";
 
 @theme inline {
-  --font-sans: "Plus Jakarta Sans", Arial, sans-serif;
-  --font-serif: "Plus Jakarta Sans", Arial, sans-serif;
+  --font-sans: "Instrument Sans", Arial, sans-serif;
+  --font-serif: "Bricolage Grotesque", Arial, sans-serif;
   --font-hand: "Plus Jakarta Sans", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --ease-kitchen: cubic-bezier(.2, .8, .2, 1);
-  --radius-sheet: 20px;
-  --radius-block: 20px;
-  --radius-photo: 20px;
-  --radius-ctl: 9999px;
-  --radius-chip: 9999px;
-  --radius-input: 12px;
-  --radius-hero: 28px;
+  --radius-sheet: 6px;
+  --radius-block: 6px;
+  --radius-photo: 4px;
+  --radius-ctl: 4px;
+  --radius-chip: 3px;
+  --radius-input: 4px;
+  --radius-hero: 6px;
   --color-basil-700: var(--basil-700);
   --color-deal: var(--tomato);
   --color-ground: var(--ground);
@@ -58,13 +58,13 @@
 }
 
 :root {
-  --ground: #F7FAFD;
-  --sheet: #ECF2F8;
+  --ground: #FFFFFF;
+  --sheet: #F3F6FA;
   --sheet-2: #E1EAF3;
-  --sheet-hover: #DCE5EE;
+  --sheet-hover: #13285C33;
   --ink: #13285C;
   --muted: #536380;
-  --rule: #DCE5EE;
+  --rule: #13285C33;
   --basil: #1F7A3D;
   --basil-700: #155C2D;
   --basil-ink: #FFFFFF;
@@ -78,7 +78,7 @@
   --mustard-tint: #FDF1CC;
   --row: #F2F6FB;
   --paper: #F7FAFD;
-  --prep-rule: #DCE5EE;
+  --prep-rule: #13285C33;
   --shadow-sheet: none;
   --shadow-card: none;
   --shadow-tape: none;
@@ -130,7 +130,7 @@
     -webkit-font-smoothing: antialiased;
     font-variant-numeric: tabular-nums;
   }
-  h1, h2, h3 { font-family: var(--font-sans); font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; text-align: left; }
+  h1, h2, h3 { font-family: var(--font-serif); letter-spacing: -0.03em; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; text-align: left; }
   h1 { font-weight: 800; }
   :focus-visible { outline: 2px solid var(--basil); outline-offset: 2px; border-radius: 6px; }
 }
@@ -147,8 +147,8 @@
 
 @utility card {
   background: var(--sheet);
-  border: 0;
-  border-radius: 20px;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
   box-shadow: var(--shadow-card);
 }
 
@@ -168,7 +168,7 @@
   font-size: 13px;
   line-height: 1;
   padding: 6px 12px;
-  border-radius: 9999px;
+  border-radius: 3px;
   background: var(--tape);
   color: var(--tape-ink);
 }

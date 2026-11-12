@@ -21,7 +21,7 @@ export function Q({ title, children }: { title: string; children: ReactNode }) {
 export function Pill({ on, onClick, children, className }: { on: boolean; onClick: () => void; children: ReactNode; className?: string }) {
   return (
     <button type="button" aria-pressed={on} onClick={onClick}
-      className={cn("press min-h-11 rounded-full px-4 text-left text-[14.5px] font-medium", on ? "bg-basil text-basil-ink" : "bg-sheet-2 hover:bg-sheet-hover", className)}>{children}</button>
+      className={cn("press min-h-11 rounded-[3px] px-4 text-left text-[14.5px] font-medium", on ? "bg-basil text-basil-ink" : "bg-sheet-2 hover:bg-sheet-hover", className)}>{children}</button>
   );
 }
 
@@ -46,12 +46,12 @@ export function PreSurvey() {
   };
 
   return (
-    <div className="mx-auto my-8 max-w-2xl rounded-sheet bg-sheet p-6 sm:p-8">
+    <div className="mx-auto my-8 max-w-2xl rounded-sheet border-[1.5px] border-ink bg-sheet p-6 sm:p-8">
       <div className="flex items-start justify-between gap-4">
         <SobraLogo />
         <button type="button" onClick={skip} className="min-h-11 text-[13.5px] font-medium text-muted-foreground underline-offset-4 hover:text-ink hover:underline">Skip to app</button>
       </div>
-      <p className="mt-6 inline-flex rounded-full bg-mustard-tint px-3 py-1 text-[12.5px] font-semibold text-mustard-ink">Lisbon Food Study · 40 seconds · Get 1 Month Free</p>
+      <p className="mt-6 inline-flex rounded-[3px] bg-mustard-tint px-3 py-1 text-[12.5px] font-semibold text-mustard-ink">Lisbon Food Study · 40 seconds · Get 1 Month Free</p>
       <h1 className="mt-3 text-[26px] font-bold">How did dinner go for you this past week?</h1>
       <p className="mt-2 text-muted-foreground">Five quick taps. Your answers shape the plan on the next screen.</p>
 
@@ -62,7 +62,7 @@ export function PreSurvey() {
               const Icon = householdIcons[i]!; const on = h === o;
               return (
                 <button key={o} type="button" aria-pressed={on} onClick={() => setH(o)}
-                  className={cn("press flex min-h-14 items-center gap-3 rounded-[14px] border px-3.5 text-left text-[14.5px] font-medium", on ? "border-basil bg-basil-tint" : "border-rule bg-sheet hover:bg-sheet-2")}>
+                  className={cn("press flex min-h-14 items-center gap-3 rounded-[4px] border px-3.5 text-left text-[14.5px] font-medium", on ? "border-basil bg-basil-tint" : "border-rule bg-sheet hover:bg-sheet-2")}>
                   <Icon className={cn("size-5 shrink-0", on ? "text-basil" : "text-muted-foreground")} strokeWidth={1.7} aria-hidden />{o}
                 </button>
               );
@@ -78,11 +78,11 @@ export function PreSurvey() {
               const rank = pains.indexOf(o);
               return (
                 <button key={o} type="button" aria-pressed={rank >= 0} onClick={() => tapPain(o)}
-                  className={cn("press flex min-h-12 w-full items-center justify-between gap-3 rounded-[14px] border px-3.5 py-2.5 text-left text-[14.5px]",
+                  className={cn("press flex min-h-12 w-full items-center justify-between gap-3 rounded-[4px] border px-3.5 py-2.5 text-left text-[14.5px]",
                     rank === 0 ? "border-tomato bg-tomato-tint font-semibold" : rank === 1 ? "border-mustard bg-mustard-tint font-semibold" : "border-rule bg-sheet hover:bg-sheet-2")}>
                   {o}
-                  {rank === 0 && <span className="shrink-0 rounded-full bg-tomato px-2.5 py-0.5 text-[12px] font-bold text-sheet">#1 Biggest Pain</span>}
-                  {rank === 1 && <span className="shrink-0 rounded-full bg-mustard px-2.5 py-0.5 text-[12px] font-bold text-ink">#2 Runner-Up</span>}
+                  {rank === 0 && <span className="shrink-0 rounded-[3px] bg-tomato px-2.5 py-0.5 text-[12px] font-bold text-sheet">#1 Biggest Pain</span>}
+                  {rank === 1 && <span className="shrink-0 rounded-[3px] bg-mustard px-2.5 py-0.5 text-[12px] font-bold text-ink">#2 Runner-Up</span>}
                 </button>
               );
             })}
@@ -102,7 +102,7 @@ export function PreSurvey() {
           </div>
           <div className="mt-5 flex items-center justify-between gap-3">
             <label htmlFor="spend" className="text-[15px] font-semibold">Roughly how much do you spend on groceries per person per week?</label>
-            <span className="num shrink-0 rounded-full bg-basil-tint px-3 py-1 text-[16px] font-bold text-basil">€{spend}/week</span>
+            <span className="num shrink-0 rounded-[3px] bg-basil-tint px-3 py-1 text-[16px] font-bold text-basil">€{spend}/week</span>
           </div>
           <input id="spend" type="range" min={15} max={100} step={5} value={spend} onChange={(e) => setSpend(Number(e.target.value))} className="mt-3 w-full accent-[var(--basil)]" />
           <div className="num flex justify-between text-[12px] text-muted-foreground"><span>€15</span><span>€100</span></div>

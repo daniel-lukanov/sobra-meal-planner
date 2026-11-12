@@ -78,7 +78,7 @@ function Cook() {
     <>
       <PageHeader small={pace === "relaxed" ? "Tonight · 22 min" : "Tonight · 8 min"} title="Chicken and spinach rice"
         right={<UnderlineTabs label="Cooking pace" value={pace} onChange={setPace} options={[{ value: "relaxed", label: "Relaxed" }, { value: "fast", label: "Fast" }]} />} />
-      <div className="mb-6 aspect-[16/7] overflow-hidden rounded-[18px] bg-sheet-2">
+      <div className="mb-6 aspect-[16/7] overflow-hidden rounded-[4px] bg-sheet-2">
         <img src={photo.chickenRice} alt="Bowl of rice with pan-fried chicken and wilted spinach" width={1200} height={525} className="size-full object-cover" />
       </div>
       <TwoCol
@@ -112,7 +112,7 @@ function Cook() {
               </div>
             )}
             {step.meanwhile && (
-              <p className="mt-6 rounded-[14px] bg-mustard-tint px-4 py-3 text-[15px]"><span className="font-semibold text-[var(--mustard-ink)]">Meanwhile</span> · {step.meanwhile.replace(/^Meanwhile, /, "").replace(/^./, (c) => c.toUpperCase())}</p>
+              <p className="mt-6 rounded-[4px] bg-mustard-tint px-4 py-3 text-[15px]"><span className="font-semibold text-[var(--mustard-ink)]">Meanwhile</span> · {step.meanwhile.replace(/^Meanwhile, /, "").replace(/^./, (c) => c.toUpperCase())}</p>
             )}
             <div className="mt-8 flex flex-wrap gap-2">
               <Button variant="secondary" onClick={prev} disabled={i === 0}>Previous step</Button>
@@ -154,7 +154,7 @@ function PrepTimeline() {
   const total = 45;
   return (
     <section id="prep" aria-labelledby="pt" className="card mt-8 scroll-mt-6 p-5 md:p-6">
-      <div className="flex items-center gap-4"><img src={photo.prep} alt="" width={64} height={64} loading="lazy" className="size-16 rounded-[12px] object-cover" /><div><p className="text-[13px] font-medium text-muted-foreground">Sunday · prep session 1</p>
+      <div className="flex items-center gap-4"><img src={photo.prep} alt="" width={64} height={64} loading="lazy" className="size-16 rounded-[4px] object-cover" /><div><p className="text-[13px] font-medium text-muted-foreground">Sunday · prep session 1</p>
       <h2 id="pt" className="mt-1 text-[22px] font-bold">45 minutes, three things at once</h2></div></div>
       <div className="mt-5 overflow-x-auto pb-2">
         <div className="min-w-[640px]">

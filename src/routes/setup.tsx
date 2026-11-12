@@ -19,7 +19,7 @@ export const Route = createFileRoute("/setup")({
 function Toggle({ on, onClick, children, className }: { on: boolean; onClick: () => void; children: React.ReactNode; className?: string }) {
   return (
     <button type="button" aria-pressed={on} onClick={onClick}
-      className={cn("press min-h-11 rounded-full px-4 text-left text-[15px] font-medium", on ? "bg-ink text-sheet" : "bg-sheet-2 text-ink hover:bg-sheet-hover", className)}>
+      className={cn("press min-h-11 rounded-[3px] px-4 text-left text-[15px] font-medium", on ? "bg-ink text-sheet" : "bg-sheet-2 text-ink hover:bg-sheet-hover", className)}>
       {children}
     </button>
   );
@@ -63,7 +63,7 @@ function Setup() {
                 if (!on && s.meals.length >= 12) { toast("You have 12 meals. Remove one first."); return; }
                 s.set({ meals: toggleIn(s.meals, m) });
               }} className={cn("card press group relative overflow-hidden p-2 text-left", on && "border-basil")}>
-                <div className="aspect-[4/3] overflow-hidden rounded-[10px] bg-sheet-2">
+                <div className="aspect-[4/3] overflow-hidden rounded-[4px] bg-sheet-2">
                   <img src={categoryPhoto[m]} alt="" width={300} height={225} loading="lazy" className={cn("size-full object-cover transition", !on && "opacity-80 saturate-[.8]")} />
                 </div>
                 <span className={cn("absolute right-3.5 top-3.5 flex size-7 items-center justify-center rounded-full transition", on ? "bg-basil text-basil-ink" : "bg-sheet/90 text-muted-foreground")} aria-hidden>
@@ -92,11 +92,11 @@ function Setup() {
 
       <Block n={4} title="How do you want to cook?">
         <div className="grid gap-2 sm:grid-cols-2">
-          <Toggle className="rounded-[14px] py-3" on={s.mode === "prep"} onClick={() => s.set({ mode: "prep" })}>
+          <Toggle className="rounded-[4px] py-3" on={s.mode === "prep"} onClick={() => s.set({ mode: "prep" })}>
             <span className="block font-semibold">Weekly prep</span>
             <span className="block text-[13px] opacity-80">Cook a base twice a week, eat something different each day.</span>
           </Toggle>
-          <Toggle className="rounded-[14px] py-3" on={s.mode === "daily"} onClick={() => s.set({ mode: "daily" })}>
+          <Toggle className="rounded-[4px] py-3" on={s.mode === "daily"} onClick={() => s.set({ mode: "daily" })}>
             <span className="block font-semibold">Daily pick</span>
             <span className="block text-[13px] opacity-80">Choose 1 of 3 quick dinners each evening, about 20 to 30 min.</span>
           </Toggle>
