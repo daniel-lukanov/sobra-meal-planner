@@ -30,9 +30,11 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
-- Sobra's app data lives in `src/data/*.ts` and app state in one zustand store (`src/lib/store.ts`, persisted to localStorage, rehydrated in the Shell after mount); only the customer-discovery experiment uses Lovable Cloud.
-- Experiment sessions live in `src/lib/experiment.ts` (zustand + localStorage) and sync to `experiment_sessions` only through server functions in `src/lib/experiment.functions.ts`; the table has RLS with no policies so browsers can never read other testers' answers.
-- `/insights` reads (`getInsights`) and edits/deletes (`adminSaveSession`, `adminDeleteSessions`) all check the `INSIGHTS_PASSCODE` secret server-side; the table keeps no browser RLS policies so nobody without the passcode can read, change or delete answers. Seeded sample edits live only in localStorage.
-- The guided tour finds its spotlight targets through `data-tour="N"` attributes (`data-tour-trigger` limits what unlocks, `data-tour-auto` is what "Do this for me" clicks).
+- pratico's app data lives in `src/data/*.ts` and app state in one zustand store (`src/lib/store.ts`, persisted to localStorage, rehydrated in the Shell after mount); only the customer-discovery experiment uses Lovable Cloud.
+- Study sessions live in `src/lib/experiment.ts` (zustand + localStorage) and sync as one jsonb `data` blob to `study_sessions` only through server functions in `src/lib/experiment.functions.ts`, so new questions need no schema change; `study_sessions`, `shared_plans` and `spend_log` have RLS with no policies so browsers never read them directly. `experiment_sessions` is deprecated.
+- Every tracked action goes through `applyEvent` in `src/lib/experiment-types.ts`, which stamps `in_tour` and `first_session` so insights can split guided from voluntary actions.
+- Plan, Swap, shopping list and share text are derived from `chosen` meals via pure functions in `src/lib/week.ts`, so all screens stay in sync.
+- `/insights` reads (`getInsights`), edits/deletes and spend-log writes all check the `INSIGHTS_PASSCODE` secret server-side; the table keeps no browser RLS policies so nobody without the passcode can read, change or delete answers.
+- The 3-step tour places its coachmark under the element with `data-tour="N"`; it never overlays or locks the page.
 - Routing uses TanStack Router file routes (the brief's "React Router" is mapped onto it); the sticky top navbar and mobile tab bar live in `src/components/sobra/Shell.tsx`.
 - Colours are tokens in `src/styles.css` and light and dark palettes are both defined there via prefers-color-scheme, so never hardcode colours in components.
