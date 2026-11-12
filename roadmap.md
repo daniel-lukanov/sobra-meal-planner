@@ -3,3 +3,4 @@
 - [x] Less AI: sharp corners, characterful fonts, stronger contrast
 - [x] Drop outlines, photos sit on white
 - [x] Restyle colours/style inspired by Instagram pratico.lisboa
+- [x] Use pratico logo and name

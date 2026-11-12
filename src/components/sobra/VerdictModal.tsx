@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 export const ctaCopy: Record<CtaVariant, { badge: string; title: string; text: string; button: string }> = {
   C1_free_receipt_cashback: {
     badge: "Free Student Pilot · Cashback Reward",
-    title: "Join the Sobra Lisbon Pilot + Get €2.00 Receipt Cashback",
+    title: "Join the pratico Lisbon Pilot + Get €2.00 Receipt Cashback",
     text: "Get early access to Sobra for free and earn €2.00 cashback when you scan your first Pingo Doce, Continente or Lidl receipt.",
     button: "Claim Free Pilot + €2.00 Cashback",
   },

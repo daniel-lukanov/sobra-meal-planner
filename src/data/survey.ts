@@ -26,7 +26,7 @@ export const modeOptions = [
 ];
 export const receiptOptions = [
   "Snap a 5-second photo of my paper receipt after shopping",
-  "Auto-move checked items from my Sobra shopping list into my fridge with 1 tap",
+  "Auto-move checked items from my pratico shopping list into my fridge with 1 tap",
   "Only scan paper receipts if it gives me €0.50 to €2.00 cashback on brands",
   "I would not track my fridge",
 ];
@@ -49,6 +49,6 @@ export const wtpOptions = [
   "€0 — I would only use it if 100% free (funded by brand cashback & supermarket offers)",
   "Up to €1.99 / month (student coffee price)",
   "Up to €3.99 / month (if first month is free and savings are proven)",
-  "Free app, but I would order my groceries via Continente Online / Glovo inside Sobra",
+  "Free app, but I would order my groceries via Continente Online / Glovo inside pratico",
 ];
 export const shortLabel = (s: string) => painShort[s] ?? s.split(/ \(| —|:/)[0]!;

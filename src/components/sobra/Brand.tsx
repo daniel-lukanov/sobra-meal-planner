@@ -5,11 +5,10 @@ import { cn } from "@/lib/utils";
 export function SobraMark({ size = 34 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 34 34" aria-hidden className="shrink-0">
-      <rect width="34" height="34" rx="10" fill="#1E5631" />
-      <path d="M22.5 7.5c3.2-.6 4.8.4 5 1.2-.9 2.4-3.4 3.4-5.6 2.9.1-1.5.2-3 .6-4.1z" fill="#F2E3B6" />
-      <path d="M7 16.5h20c0 5.4-4.4 9.5-10 9.5S7 21.9 7 16.5z" fill="#FFFDF9" />
-      <rect x="12" y="26.4" width="10" height="1.8" rx=".9" fill="#FFFDF9" />
-      <rect x="3.5" y="5" width="11" height="4" rx=".6" fill="#C84B31" transform="rotate(-18 9 7)" />
+      <circle cx="17" cy="17" r="17" fill="#1E7B3E" />
+      <path d="M12.6 10.5h11.4a1.6 1.6 0 0 1 1.6 1.6v9.8a1.6 1.6 0 0 1-1.6 1.6H12.6L7.8 17z" fill="#FFFFFF" />
+      <circle cx="17.6" cy="17" r="2.6" fill="#1E7B3E" />
+      <circle cx="17.6" cy="17" r="1.2" fill="#FFFFFF" />
     </svg>
   );
 }
@@ -19,7 +18,7 @@ export function SobraLogo({ compact }: { compact?: boolean }) {
     <span className="flex items-center gap-2.5">
       <SobraMark />
       <span className="leading-none">
-        <span className={cn("block font-extrabold font-serif tracking-[-0.02em] text-ink", compact ? "text-[22px]" : "text-[24px]")}>sobra.</span>
+        <span className={cn("block font-extrabold font-serif tracking-[-0.02em] text-ink", compact ? "text-[22px]" : "text-[24px]")}>pratico</span>
         <span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">lisboa</span>
       </span>
     </span>

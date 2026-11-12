@@ -18,10 +18,10 @@ import { SobraLogo } from "@/components/sobra/Brand";
 export const Route = createFileRoute("/insights")({
   head: () => ({
     meta: [
-      { title: "Founder insights · Sobra Lisboa" },
-      { name: "description", content: "Private customer discovery and A/B test results for the Sobra team." },
-      { property: "og:title", content: "Founder insights · Sobra Lisboa" },
-      { property: "og:description", content: "Private customer discovery and A/B test results for the Sobra team." },
+      { title: "Founder insights · pratico" },
+      { name: "description", content: "Private customer discovery and A/B test results for the pratico team." },
+      { property: "og:title", content: "Founder insights · pratico" },
+      { property: "og:description", content: "Private customer discovery and A/B test results for the pratico team." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -258,9 +258,9 @@ function Dashboard({ live, setLive, passcode }: { live: ExperimentSession[]; set
             test={`3-way CTA split, ${C1!.n}/${C2!.n}/${C3!.n} visitors. Metric: CTA conversion.`}
             observation={`Free ${C1!.conversion}% · €1.99 ${C2!.conversion}% · €3.99 ${C3!.conversion}%. ${paidWtp}% state they would pay something (Q14).`}
             learning={`${ctaName[ctaBest.variant]} converts best. ${C2!.conversion >= 40 ? "Test a real €1.99 checkout next." : "Start free, funded by brand cashback."}`} />
-          <LearnCard n={3} hypothesis="Sobra reaches product-market fit with Lisbon students (40%+ very disappointed)."
+          <LearnCard n={3} hypothesis="Pratico reaches product-market fit with Lisbon students (40%+ very disappointed)."
             test={`Sean Ellis question (Q8), n = ${rows.filter((r) => r.q8_pmf_score).length}.`}
-            observation={`${k.pmf}% would be very disappointed without Sobra.`}
+            observation={`${k.pmf}% would be very disappointed without pratico.`}
             learning={k.pmf >= 40 ? "Above the 40% bar. Narrow to the very-disappointed segment and scale outreach." : "Below the 40% bar. Talk to the very-disappointed users to find what they love."} />
           <LearnCard n={4} hypothesis="Weekly synergy prep is the feature students value most."
             test="Buy-a-feature game (Q13) plus mode winner (Q6)."
