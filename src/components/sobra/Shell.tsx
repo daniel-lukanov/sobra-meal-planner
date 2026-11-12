@@ -1,9 +1,9 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { BookHeart, CalendarDays, ChefHat, ChevronDown, Lock, Refrigerator, ShoppingBag, ShoppingBasket, Tag } from "lucide-react";
+import { Check, BookHeart, CalendarDays, ChefHat, ChevronDown, Lock, Refrigerator, ShoppingBasket, Tag } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/lib/store";
-import { storeBrand, stores, type StoreName } from "@/data/stores";
+import { stores, type StoreName } from "@/data/stores";
 import { SobraLogo, StoreDot } from "./Brand";
 import { SavingsCounter } from "./Savings";
 import { useExp } from "@/lib/experiment";
@@ -14,6 +14,7 @@ import { isGhost } from "@/lib/experiment";
 import { Ghost } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const nav = [
   { to: "/plan", label: "Plan", icon: CalendarDays },
@@ -27,18 +28,25 @@ const topNav = [...nav, { to: "/setup" as const, label: "Your meals", icon: Book
 function StorePicker() {
   const store = useApp((s) => s.store);
   const set = useApp((s) => s.set);
+  const pick = (s: StoreName) => { if (s === store) return; set({ store: s, weekAccepted: false, swaps: {} }); toast(`Plan rebuilt from ${s} deals.`); };
   return (
-    <label className="relative inline-flex shrink-0 items-center rounded-full" style={{ backgroundColor: storeBrand[store].pill, color: "#1D2A33" }}>
-      <span className="sr-only">My store</span>
-      <StoreDot name={store} className="pointer-events-none absolute left-3" />
-      <ShoppingBag className="pointer-events-none absolute left-7 hidden size-4 sm:block" strokeWidth={1.8} aria-hidden />
-      <select value={store}
-        onChange={(e) => { const s = e.target.value as StoreName; set({ store: s, weekAccepted: false, swaps: {} }); toast(`Plan rebuilt from ${s} deals.`); }}
-        className="min-h-10 appearance-none rounded-full bg-transparent pl-8 pr-8 text-[14px] font-semibold sm:pl-[52px]">
-        {stores.map((s) => <option key={s}>{s}</option>)}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-3 size-4" aria-hidden />
-    </label>
+    <DropdownMenu>
+      <DropdownMenuTrigger aria-label="My store"
+        className="inline-flex min-h-10 shrink-0 items-center gap-2 border-b border-ink/30 px-1 text-[14px] font-semibold text-ink outline-none hover:border-ink focus-visible:border-ink">
+        <span className="hidden text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:inline">Store</span>
+        <span className="font-serif text-[17px] font-medium">{store}</span>
+        <ChevronDown className="size-4 text-muted-foreground" aria-hidden />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" sideOffset={8} className="min-w-[200px] border-rule bg-ground p-0 shadow-float">
+        {stores.map((s) => (
+          <DropdownMenuItem key={s} onSelect={() => pick(s)}
+            className={cn("flex cursor-pointer items-center justify-between border-b border-rule px-4 py-3 font-serif text-[16px] last:border-b-0 focus:bg-sheet-2", s === store && "bg-sheet-2")}>
+            <span className="flex items-center gap-3"><StoreDot name={s} />{s}</span>
+            {s === store && <Check className="size-4" aria-hidden />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
