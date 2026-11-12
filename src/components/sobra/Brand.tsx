@@ -1,6 +1,10 @@
-import { ShoppingBag } from "lucide-react";
 import { storeBrand, type StoreName } from "@/data/stores";
 import { cn } from "@/lib/utils";
+import pingoDoceLogo from "@/assets/pingo_doce.png.asset.json";
+import continenteLogo from "@/assets/continente.png.asset.json";
+import lidlLogo from "@/assets/lidl.png.asset.json";
+import aldiLogo from "@/assets/aldi.png.asset.json";
+import auchanLogo from "@/assets/auchan.png.asset.json";
 
 export function SobraMark({ size = 34 }: { size?: number }) {
   return (
@@ -25,6 +29,19 @@ export function SobraLogo({ compact }: { compact?: boolean }) {
   );
 }
 
+/** Official supermarket logos, published to the app's media storage. */
+const storeLogos: Record<StoreName, string> = {
+  "Pingo Doce": pingoDoceLogo.url,
+  Continente: continenteLogo.url,
+  Lidl: lidlLogo.url,
+  Aldi: aldiLogo.url,
+  Auchan: auchanLogo.url,
+};
+
+export function StoreLogo({ name, className }: { name: StoreName; className?: string }) {
+  return <img src={storeLogos[name]} alt="" aria-hidden className={cn("h-5 w-auto shrink-0 object-contain", className)} />;
+}
+
 export function StoreDot({ name, className }: { name: StoreName; className?: string }) {
   const b = storeBrand[name];
   return <span aria-hidden className={cn("inline-block size-2.5 shrink-0 rounded-full", className)} style={{ backgroundColor: b.dot, boxShadow: b.ring ? `0 0 0 2px ${b.ring}` : undefined }} />;
@@ -33,9 +50,8 @@ export function StoreDot({ name, className }: { name: StoreName; className?: str
 /** Brand pills keep fixed light tints, so text stays dark in both themes. */
 export function StoreBadge({ name, className }: { name: StoreName; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-[13px] font-semibold", className)} style={{ backgroundColor: storeBrand[name].pill, color: "#1D2A33" }}>
-      <StoreDot name={name} />
-      <ShoppingBag className="size-3.5" strokeWidth={1.8} aria-hidden />
+    <span className={cn("inline-flex items-center gap-2 rounded-[6px] px-2.5 py-1 text-[13px] font-semibold", className)} style={{ backgroundColor: storeBrand[name].pill, color: "#1D2A33" }}>
+      <StoreLogo name={name} />
       {name}
     </span>
   );

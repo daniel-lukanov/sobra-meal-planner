@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/lib/store";
 import { stores, type StoreName } from "@/data/stores";
-import { SobraLogo, StoreDot } from "./Brand";
+import { SobraLogo, StoreLogo } from "./Brand";
 import { SavingsCounter } from "./Savings";
 import { useExp } from "@/lib/experiment";
 import { PreSurvey } from "./PreSurvey";
@@ -43,6 +43,7 @@ function StorePicker() {
       <button type="button" aria-label="My store" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}
         className="inline-flex min-h-10 items-center gap-2 border-b border-ink/30 px-1 text-[14px] font-semibold text-ink outline-none hover:border-ink focus-visible:border-ink">
         <span className="hidden text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:inline">Store</span>
+        <StoreLogo name={store} className="h-5" />
         <span className="font-serif text-[17px] font-medium">{store}</span>
         <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
       </button>
@@ -52,7 +53,7 @@ function StorePicker() {
             <li key={s} role="option" aria-selected={s === store}>
               <button type="button" onClick={() => { pick(s); setOpen(false); }}
                 className={cn("flex w-full items-center justify-between border-b border-rule px-4 py-3 text-left font-serif text-[16px] hover:bg-sheet-2", s === store && "bg-sheet-2")}>
-                <span className="flex items-center gap-3"><StoreDot name={s} />{s}</span>
+                <span className="flex items-center gap-3"><StoreLogo name={s} className="h-5" />{s}</span>
                 {s === store && <Check className="size-4" aria-hidden />}
               </button>
             </li>
