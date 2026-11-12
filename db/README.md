@@ -16,6 +16,7 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 | `006_storage_guidelines.sql` | USDA FoodKeeper rows and per-ingredient storage guidelines with a review status (the app reads approved rows only) |
 | `007_net_weight.sql` | usable (net) weight: `ingredient.usable_fraction`, `product.usable_qty` with `usable_source`; `product_price_today` prices per usable unit |
 | `008_image_storage.sql` | public Storage bucket `recipe-images` (1 MB, jpeg/png/webp) for recipe photos; readable by URL, writable only with the secret key |
+| `009_translations.sql`, `010_translation_terms.sql` | English product names kept in the database: table `term_translation` (Portuguese term, English term), function `translate_pt_en()`, a trigger that fills `product.name_en`, and `ingredient.name_pt` |
 
 **Read `METHODOLOGY.md` first**: free-plan principles (activity, size, batching, no backups, keys), the rule that a model proposes and a person approves food-safety data, and how we change the database.
 
@@ -41,6 +42,10 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 - Diets and allergens are **computed** from ingredient flags (`recipe_diets`, `recipe_allergen`), never labelled by hand.
 - Catalog tables are public read, service-role write. Personal data is owner-only, household data is member-only.
 - "Today" in the price views is the Lisbon date.
+
+## English names
+
+Product names from the shops are Portuguese (`product.name`). The database adds the English name itself: `product.name_en` is filled by a trigger from the table `term_translation` (whole words and phrases, longest first; brands and unknown words stay). To improve a translation, add or change a row in `term_translation` and run `select public.retranslate_products();` in the SQL editor, or fix one product by hand with `update product set name_en = '...', name_en_source = 'manual' where id = '...'` (manual names are never overwritten). The app shows `name_en` and falls back to `name`.
 
 ## Images
 

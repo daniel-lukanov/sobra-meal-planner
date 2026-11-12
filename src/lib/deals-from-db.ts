@@ -66,7 +66,7 @@ export function buildLiveDeals(rows: PriceRow[], ingredients: IngredientRef[]): 
       const slug = slugOf.get(r.ingredient_id) ?? "";
       deals.push({
         ...(r.product_id ? { id: r.product_id } : {}),
-        name: `${r.name} ${formatPack(Number(r.pack_qty), r.pack_unit ?? "g")}`,
+        name: `${r.name_en ?? r.name} ${formatPack(Number(r.pack_qty), r.pack_unit ?? "g")}`,
         ingredient: (KNOWN as string[]).includes(slug) ? (slug as IngredientId) : null,
         price: r.promo_price, was: r.regular_price,
         cheapestRegular: u && best !== undefined ? round2(best * u) : r.regular_price,

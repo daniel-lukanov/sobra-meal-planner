@@ -379,6 +379,7 @@ export type Database = {
           slug: string
           usable_fraction: number
           usable_note: string | null
+          name_pt: string | null
         }
         Insert: {
           base_unit: string
@@ -406,6 +407,7 @@ export type Database = {
           slug: string
           usable_fraction?: number
           usable_note?: string | null
+          name_pt?: string | null
         }
         Update: {
           base_unit?: string
@@ -433,6 +435,7 @@ export type Database = {
           slug?: string
           usable_fraction?: number
           usable_note?: string | null
+          name_pt?: string | null
         }
         Relationships: [
           {
@@ -647,6 +650,8 @@ export type Database = {
           url: string | null
           usable_qty: number | null
           usable_source: string | null
+          name_en: string | null
+          name_en_source: string | null
         }
         Insert: {
           active?: boolean
@@ -665,6 +670,8 @@ export type Database = {
           url?: string | null
           usable_qty?: number | null
           usable_source?: string | null
+          name_en?: string | null
+          name_en_source?: string | null
         }
         Update: {
           active?: boolean
@@ -683,6 +690,8 @@ export type Database = {
           url?: string | null
           usable_qty?: number | null
           usable_source?: string | null
+          name_en?: string | null
+          name_en_source?: string | null
         }
         Relationships: [
           {
@@ -1463,6 +1472,24 @@ export type Database = {
           },
         ]
       }
+      term_translation: {
+        Row: {
+          en: string
+          note: string | null
+          pt: string
+        }
+        Insert: {
+          en: string
+          note?: string | null
+          pt: string
+        }
+        Update: {
+          en?: string
+          note?: string | null
+          pt?: string
+        }
+        Relationships: []
+      }
       week_plan: {
         Row: {
           accepted_at: string | null
@@ -1544,6 +1571,7 @@ export type Database = {
           effective_price: number | null
           ingredient_id: string | null
           name: string | null
+          name_en: string | null
           pack_qty: number | null
           pack_unit: string | null
           price_per_base_unit: number | null
