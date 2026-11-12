@@ -41,6 +41,10 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 - Catalog tables are public read, service-role write. Personal data is owner-only, household data is member-only.
 - "Today" in the price views is the Lisbon date.
 
+## App reads
+
+The deals screen reads `product_price_today` through `src/lib/live-deals.ts` (pure logic in `src/lib/deals-from-db.ts`, tested in `src/test/deals-from-db.test.ts`). A deal is "real" only if it beats the cheapest regular price per usable unit for the same ingredient and the same kind (organic, extra virgin, fillet, rice variety and so on, detected from the product name). A kind with only one product compares the deal with that product's own regular price. Stores without promotions in the database fall back to the sample deals.
+
 ## Still to do
 
 - Check the placeholder usable fractions (tuna 0.7, bone-in chicken 0.65) against labels; chickpeas are left unadjusted.

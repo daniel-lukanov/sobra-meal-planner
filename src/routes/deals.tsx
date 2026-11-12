@@ -8,6 +8,7 @@ import { dealPhoto } from "@/data/photos";
 import { Button, PageHeader } from "@/components/sobra/ui";
 import { Switch } from "@/components/ui/switch";
 import { useExp } from "@/lib/experiment";
+import { useLiveDeals } from "@/lib/live-deals";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/deals")({
@@ -23,20 +24,23 @@ const alertItems = [
 
 function Deals() {
   const { store, alerts, set, addedDeals } = useApp();
-  const deals = [...dealsByStore[store]].sort((a, b) => Number(isRealDeal(b)) - Number(isRealDeal(a)));
+  const live = useLiveDeals().data?.[store];
+  const isLive = !!live?.length;
+  const endsOn = isLive ? live!.map((d) => d.endsOn).filter(Boolean).sort()[0] : undefined;
+  const deals = [...(isLive ? live! : dealsByStore[store])].sort((a, b) => Number(isRealDeal(b)) - Number(isRealDeal(a)));
   const traps = deals.filter((d) => !isRealDeal(d)).length;
   return (
     <>
       <PageHeader small={`Deals at ${store}`} title="Which deals are actually cheaper"
         sub={`We compare each deal with the cheapest regular price for the same thing. ${traps} of ${deals.length} this week ${traps === 1 ? "is a price trap" : "are price traps"}.`} />
-      <p className="-mt-3 mb-6 text-[12.5px] text-muted-foreground">Sample prices, no guarantee.</p>
+      <p className="-mt-3 mb-6 text-[12.5px] text-muted-foreground">{isLive ? `Prices read from ${store}'s website${endsOn ? `, promotions shown until about ${endsOn}` : ""}. Check the shelf before you buy.` : "Sample prices, no guarantee."}</p>
       <ul className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-3">
         {deals.map((d, i) => {
           const real = isRealDeal(d);
           return (
-            <li key={d.name} data-tour={i === 0 ? "2" : undefined} className="flex flex-col overflow-hidden rounded-sheet bg-sheet">
+            <li key={d.id ?? d.name} data-tour={i === 0 ? "2" : undefined} className="flex flex-col overflow-hidden rounded-sheet bg-sheet">
               <div className="relative h-36 bg-sheet-2">
-                <img src={dealPhoto(d.name)} alt="" width={600} height={288} loading="lazy" className="size-full object-cover" />
+                <img src={dealPhoto(d.photoKey ?? d.name)} alt="" width={600} height={288} loading="lazy" className="size-full object-cover" />
                 <span className={cn("absolute left-3 top-3 inline-flex items-center gap-1 rounded-[6px] px-2.5 py-1 text-[12px] font-semibold", real ? "bg-sheet text-basil" : "bg-sheet text-tomato")}>
                   {real ? <BadgeCheck className="size-3.5" aria-hidden /> : <ShieldAlert className="size-3.5" aria-hidden />}{real ? "Cheaper than the regular price" : "Price trap"}
                 </span>
