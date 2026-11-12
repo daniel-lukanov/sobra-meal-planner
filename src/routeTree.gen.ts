@@ -17,6 +17,7 @@ import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ListRouteImport } from './routes/list'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as PIdRouteImport } from './routes/p/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PIdRoute = PIdRouteImport.update({
+  id: '/p/$id',
+  path: '/p/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
+  '/p/$id': typeof PIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
+  '/p/$id': typeof PIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
+  '/p/$id': typeof PIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/list'
     | '/plan'
     | '/setup'
+    | '/p/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/list'
     | '/plan'
     | '/setup'
+    | '/p/$id'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/list'
     | '/plan'
     | '/setup'
+    | '/p/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   ListRoute: typeof ListRoute
   PlanRoute: typeof PlanRoute
   SetupRoute: typeof SetupRoute
+  PIdRoute: typeof PIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$id': {
+      id: '/p/$id'
+      path: '/p/$id'
+      fullPath: '/p/$id'
+      preLoaderRoute: typeof PIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   ListRoute: ListRoute,
   PlanRoute: PlanRoute,
   SetupRoute: SetupRoute,
+  PIdRoute: PIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -35,7 +35,6 @@ export const weekPlan: PlanRow[] = [
   ] },
 ];
 
-export const weekSummary = { dinners: 6, total: 11.85, time: "70 min prep + 72 min", belowRegular: 6.85 };
 
 export type Pick = { id: string; title: string; minutes: number; price: number; reason: string; tone: "basil" | "mustard" | "neutral"; image: string; alt: string; summary: string };
 
@@ -47,3 +46,11 @@ export const dailyPicks: Pick[] = [
 
 export const dietOptions = ["Meat", "Fish", "Vegetarian", "Vegan", "High protein", "No pork"];
 export const mealOptions = ["Tortilla", "Curry", "Rice bowls", "Pasta", "Roast chicken", "Potato salad", "Stir fry", "Soups", "Wraps", "Omelette", "Bacalhau à Brás", "Chilli", "Salads", "Gnocchi"];
+
+/** Extra dinners Swap can offer, built from the same prepped bases. */
+export const extraMeals: Meal[] = [
+  { title: "Chicken fried rice", how: "Stir fry with an egg, 12 min", uses: ["chicken", "rice", "eggs"], price: 2.2 },
+  { title: "Tuna and chickpea salad", how: "Mix, dress, 8 min", uses: ["tuna", "chickpeas", "onion"], price: 1.9 },
+  { title: "Carrot and chickpea soup", how: "Blend with stock, 15 min", uses: ["carrots", "chickpeas", "onion"], price: 1.5 },
+  { title: "Spinach omelette", how: "Wilt, add eggs, 10 min", uses: ["eggs", "spinach", "onion"], price: 1.6 },
+];

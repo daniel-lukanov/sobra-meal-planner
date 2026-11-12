@@ -1,22 +1,25 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { newSession, referralFrom, type ExperimentSession, type TrackFlag } from "./experiment-types";
+import { applyEvent, newSession, type EventName, type ExperimentSession } from "./experiment-types";
 import { saveExperimentSession } from "./experiment.functions";
 
-export type TourState = { step: 1 | 2 | 3 | 4 | 5; sub: "guided_focus" | "step_unlocked_explore" } | "done" | null;
+/** Tour steps 1 to 3 point at a feature, step 4 is the closing card. */
+export type TourStep = 1 | 2 | 3 | 4;
 export const GHOST_KEY = "sobra_admin_ghost_mode";
 export const isGhost = () => typeof window !== "undefined" && window.localStorage.getItem(GHOST_KEY) === "1";
 
 type S = {
   hydrated: boolean;
-  tour: TourState;
-  setTour: (t: TourState) => void;
+  tour: TourStep | null;
+  tourEnded: boolean;
+  feedbackOpen: boolean;
   session: ExperimentSession | null;
-  skipped: boolean;
+  setTour: (t: TourStep | null) => void;
+  endTour: (how: "skipped" | "completed") => void;
+  setFeedbackOpen: (v: boolean) => void;
   ensure: () => ExperimentSession;
   update: (p: Partial<ExperimentSession>, now?: boolean) => void;
-  track: (flag: TrackFlag) => void;
-  skip: () => void;
+  track: (e: EventName) => void;
   reset: () => void;
 };
 
@@ -36,14 +39,18 @@ export const useExp = create<S>()(
     (set, get) => ({
       hydrated: false,
       session: null,
-      skipped: false,
       tour: null,
+      tourEnded: false,
+      feedbackOpen: false,
       setTour: (tour) => set({ tour }),
+      endTour: (how) => { get().track(how === "skipped" ? "tour_skipped" : "tour_completed"); set({ tour: null, tourEnded: true }); },
+      setFeedbackOpen: (feedbackOpen) => set({ feedbackOpen }),
       ensure: () => {
         const cur = get().session;
         if (cur) return cur;
-        const s = newSession(referralFrom(window.location.search));
+        const s = newSession(window.location.search);
         set({ session: s });
+        if (s.ref && s.utm_source === "whatsapp_share") get().track("referral_visit");
         sync(800);
         return s;
       },
@@ -53,18 +60,18 @@ export const useExp = create<S>()(
         set({ session: { ...cur, ...p } });
         sync(now ? 0 : 1200);
       },
-      track: (flag) => {
+      track: (e) => {
         const cur = get().session;
-        if (!cur || cur[flag]) return;
-        get().update({ [flag]: true });
+        if (!cur) return;
+        set({ session: applyEvent(cur, e, get().tour) });
+        sync(600);
       },
-      skip: () => set({ skipped: true }),
-      reset: () => set({ session: null, skipped: false, tour: null }),
+      reset: () => set({ session: null, tour: null, tourEnded: false }),
     }),
     {
-      name: "sobra-experiment-v2",
+      name: "pratico-study-v3",
       skipHydration: true,
-      partialize: ({ session, skipped, tour }) => ({ session, skipped, tour }),
+      partialize: ({ session, tour, tourEnded }) => ({ session, tour, tourEnded }),
       onRehydrateStorage: () => () => useExp.setState({ hydrated: true }),
     },
   ),

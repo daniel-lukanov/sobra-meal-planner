@@ -1,14 +1,13 @@
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { Check, BookHeart, CalendarDays, ChefHat, ChevronDown, Lock, Refrigerator, ShoppingBasket, Tag } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/lib/store";
 import { stores, type StoreName } from "@/data/stores";
 import { SobraLogo, StoreLogo } from "./Brand";
-import { SavingsCounter } from "./Savings";
 import { useExp } from "@/lib/experiment";
 import { PreSurvey } from "./PreSurvey";
-import { MissionBar } from "./MissionBar";
+import { FeedbackPill } from "./VerdictModal";
 import { GuidedTour } from "./GuidedTour";
 import { isGhost } from "@/lib/experiment";
 import { Ghost } from "lucide-react";
@@ -27,7 +26,7 @@ const topNav = [...nav, { to: "/setup" as const, label: "Your meals", icon: Book
 function StorePicker() {
   const store = useApp((s) => s.store);
   const set = useApp((s) => s.set);
-  const pick = (s: StoreName) => { if (s === store) return; set({ store: s, weekAccepted: false, swaps: {} }); toast(`Plan rebuilt from ${s} deals.`); };
+  const pick = (s: StoreName) => { if (s === store) return; set({ store: s, weekAccepted: false }); useExp.getState().update({ store: s }); toast(`Prices now from ${s}.`); };
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -40,7 +39,7 @@ function StorePicker() {
   }, [open]);
   return (
     <div ref={ref} className="relative shrink-0">
-      <button type="button" aria-label="My store" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}
+      <button type="button" aria-label="Pick your store" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}
         className="inline-flex min-h-10 items-center gap-2 border-b border-ink/30 px-1 text-[14px] font-semibold text-ink outline-none hover:border-ink focus-visible:border-ink">
         <span className="hidden text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:inline">Store</span>
         <StoreLogo name={store} className="h-5" />
@@ -67,7 +66,7 @@ function TopNav({ minimal }: { minimal: boolean }) {
   const { pathname } = useLocation();
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-rule bg-ground px-4 sm:px-8">
-      <Link to="/plan" aria-label="sobra, go to plan" className="shrink-0"><SobraLogo compact /></Link>
+      <Link to="/plan" aria-label="pratico, go to plan" className="shrink-0"><SobraLogo compact /></Link>
       {!minimal && (
         <nav aria-label="Main" className="hidden h-full items-center gap-1 md:flex">
           {topNav.map(({ to, label }) => {
@@ -82,7 +81,7 @@ function TopNav({ minimal }: { minimal: boolean }) {
         </nav>
       )}
       <div className="flex items-center gap-2">
-        {!minimal && <><StorePicker /><SavingsCounter /></>}
+        {!minimal && <StorePicker />}
         <Link to="/insights" aria-label="Founder insights" className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-sheet-2 hover:text-ink">
           <Lock className="size-4" aria-hidden />
         </Link>
@@ -93,17 +92,13 @@ function TopNav({ minimal }: { minimal: boolean }) {
 
 export function Shell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   const hydrated = useApp((s) => s.hydrated);
-  const setupDone = useApp((s) => s.setupDone);
-  const isSetup = pathname.startsWith("/setup");
   const isInsights = pathname.startsWith("/insights");
   const expHydrated = useExp((s) => s.hydrated);
   const session = useExp((s) => s.session);
-  const skipped = useExp((s) => s.skipped);
-  const showSurvey = !isInsights && expHydrated && !!session && !session.survey_pre_completed && !skipped;
-  const tour = useExp((s) => s.tour);
-  const showMission = !isInsights && !isSetup && !showSurvey && !!session && (session.survey_pre_completed || skipped);
+  const isShared = pathname.startsWith("/p/");
+  const showSurvey = !isInsights && !isShared && expHydrated && !!session && !session.survey_pre_completed;
+  const showStudy = !isInsights && !isShared && !showSurvey && !!session?.survey_pre_completed;
   const [ghost, setGhost] = useState(false);
   useEffect(() => { setGhost(isGhost()); }, [pathname]);
 
@@ -113,14 +108,15 @@ export function Shell({ children }: { children: ReactNode }) {
     if (!hydrated || !expHydrated || isInsights || useExp.getState().session) return;
     const s = useExp.getState().ensure();
     useApp.getState().set({ mode: s.ab_plan_variant === "A_weekly_prep" ? "prep" : "daily" });
+    sessionStorage.setItem("pratico-visit", "1");
   }, [hydrated, expHydrated, isInsights, session]);
+  // A returning visitor in a new browser session counts as a new visit, so later actions are not first-session.
   useEffect(() => {
-    if (hydrated && expHydrated && !setupDone && !isSetup && !isInsights && !showSurvey) navigate({ to: "/setup" });
-  }, [hydrated, expHydrated, setupDone, isSetup, isInsights, showSurvey, navigate]);
-  useEffect(() => {
-    if (pathname.startsWith("/deals")) useExp.getState().track("deals_tab_visited");
-    if (pathname.startsWith("/cook")) useExp.getState().track("cook_tab_visited");
-  }, [pathname, session?.session_id]);
+    if (!expHydrated || isInsights || sessionStorage.getItem("pratico-visit")) return;
+    const cur = useExp.getState().session;
+    sessionStorage.setItem("pratico-visit", "1");
+    if (cur) useExp.getState().update({ visits: cur.visits + 1, first_session: false });
+  }, [expHydrated, isInsights]);
   useEffect(() => {
     if (isInsights || !session) return;
     const id = setInterval(() => {
@@ -132,17 +128,17 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <TopNav minimal={showSurvey || isInsights} />
+      <TopNav minimal={showSurvey || isInsights || isShared} />
       <main className="mx-auto max-w-6xl px-4 pb-32 pt-7 sm:px-8">
         {showSurvey ? <PreSurvey /> : <div key={pathname} className="fade-route">{children}</div>}
       </main>
-      {showMission && (tour ? <GuidedTour /> : <MissionBar />)}
+      {showStudy && <><GuidedTour /><FeedbackPill /></>}
       {ghost && (
         <span className="fixed bottom-20 left-3 z-50 inline-flex items-center gap-1.5 rounded-[6px] bg-ink px-3 py-1.5 text-[12px] font-semibold text-sheet md:bottom-4">
           <Ghost className="size-3.5" aria-hidden />Ghost Mode (Not Recording)
         </span>
       )}
-      {!showSurvey && !isInsights && (
+      {!showSurvey && !isInsights && !isShared && (
         <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-rule bg-sheet pb-[env(safe-area-inset-bottom)] md:hidden">
           {nav.map(({ to, label, icon: Icon }) => {
             const active = pathname.startsWith(to);

@@ -1,54 +1,69 @@
 import type { StoreName } from "./stores";
 
-export const householdOptions = ["Just myself (1 person)", "Me + partner (2 people)", "Me + flatmates (2–4 people)", "I rarely cook"];
-export const fallbackOptions = ["0 nights", "1 night", "2 nights", "3 nights", "4 nights", "5+ nights"];
-export const painOptions = [
-  "Deciding what to cook every single night (decision fatigue)",
-  "Cooking from scratch and cleaning takes too long after class/work",
-  "Finding half-used packs (spinach, meat, veg) expired in the fridge",
-  "Spending too much at checkout or buying impulse items",
-  "Eating the exact same meal-prep leftover 3 days in a row",
-];
-export const painShort: Record<string, string> = {
-  [painOptions[0]!]: "Deciding what to cook",
-  [painOptions[1]!]: "Cooking and cleaning time",
-  [painOptions[2]!]: "Food expiring in the fridge",
-  [painOptions[3]!]: "Overspending at checkout",
-  [painOptions[4]!]: "Leftover boredom",
-};
-export const workaroundOptions = ["No list, decide in store", "Apple Notes / WhatsApp list", "Saved TikTok / IG reels", "Cook one big pot for 3 days", "ChatGPT or a meal app"];
 export const storeOptions: StoreName[] = ["Pingo Doce", "Continente", "Lidl", "Aldi", "Auchan"];
 
-export const modeOptions = [
-  "Weekly Prep (Cook base Sunday & Wednesday, 10-min dinners)",
-  "Daily Pick (Pick 1 of 3 quick 20-min meals on the night)",
-  "Both: Weekly Prep on normal weeks, Daily Pick during busy exam weeks",
+/** Block 1 */
+export const fallbackOptions = ["0", "1–2", "3–4", "5 or more", "I don't cook at home"];
+export const painShuffled = [
+  "Deciding what to make",
+  "Cooking takes too long after uni or work",
+  "Groceries cost too much",
+  "Not knowing which deals are actually good",
+  "Food goes off before I use it",
+  "Eating the same thing again and again",
 ];
-export const receiptOptions = [
-  "Snap a 5-second photo of my paper receipt after shopping",
-  "Auto-move checked items from my pratico shopping list into my fridge with 1 tap",
-  "Only scan paper receipts if it gives me €0.50 to €2.00 cashback on brands",
-  "I would not track my fridge",
+export const PAIN_NONE = "None of these";
+export const painOptions = [...painShuffled, PAIN_NONE];
+export const WORK_NONE = "Nothing, I decide in the shop";
+export const workaroundOptions = [
+  WORK_NONE,
+  "A shopping list on my phone",
+  "Save recipes from TikTok or Instagram",
+  "Cook a big batch for a few days",
+  "Ask ChatGPT or use a meal app",
+  "Check the supermarket app or flyer for deals",
 ];
-export const pmfOptions = ["Very disappointed (I really want this)", "Somewhat disappointed", "Not disappointed"];
 
-export const timingOptions = ["After 19:00 when already hungry", "Same day at the store", "1–2 days ahead", "Start of the week"];
-export const switchOptions = ["Never, I only use my closest store", "To save €3–€5", "To save €6+", "I already shop at 2+ stores"];
-export const wasteOptions = ["Spinach / salad / herbs", "Fresh meat / chicken / fish", "Vegetables", "Cooked leftovers", "Dairy / sauces", "None"];
-export const synergyOptions = ["Love it — saves time without leftover boredom", "Good if Sunday prep is under 45 min", "Prefer cooking fresh every night", "Don't want the same base 3 days"];
-export const featureKeys = ["synergy_prep", "verified_deals", "receipt_fridge", "reel_checker", "cook_mode"] as const;
-export type FeatureKey = (typeof featureKeys)[number];
-export const featureLabels: Record<FeatureKey, string> = {
-  synergy_prep: "Synergy Weekly Prep",
-  verified_deals: "Verified Real Deals (Fake Deal Filter)",
-  receipt_fridge: "Receipt Smart Fridge",
-  reel_checker: "Instagram/TikTok Reel Checker",
-  cook_mode: "Step-by-Step Cook Mode & Timers",
-};
-export const wtpOptions = [
-  "€0 — I would only use it if 100% free (funded by brand cashback & supermarket offers)",
-  "Up to €1.99 / month (student coffee price)",
-  "Up to €3.99 / month (if first month is free and savings are proven)",
-  "Free app, but I would order my groceries via Continente Online / Glovo inside pratico",
+/** Block 2 */
+export const modeOptions = [
+  "Weekly prep (cook twice, eat something different every night)",
+  "Daily pick (choose tonight, cook fresh)",
+  "Both, depending on the week",
+  "Neither",
 ];
-export const shortLabel = (s: string) => painShort[s] ?? s.split(/ \(| —|:/)[0]!;
+export const prepBlockerOptions = [
+  "Prepping takes too long",
+  "I don't want the same ingredients all week",
+  "I don't know my week in advance",
+  "Reheated food isn't great",
+  "No space or containers for it",
+];
+export const needsPrepBlockers = (mode: string | null) => mode === modeOptions[1] || mode === modeOptions[3];
+
+/** Block 3 */
+export const receiptOptions = ["Yes, every time", "Only if I get cashback", "I'd rather tick items off my shopping list", "No"];
+export const receiptBlockerOptions = ["Too much effort", "I don't keep receipts", "I don't need to track what's in my fridge", "I don't want to share what I buy"];
+export const keepOneOptions = ["Weekly prep plan", "Daily pick", "Deals checked against the regular price", "Receipt scan for your fridge"];
+export const dealBrandOptions = ["Yes", "Only if it's clearly cheaper", "No, I'd stick to my usual brand", "I don't have a usual brand"];
+export const pmfOptions = ["Very disappointed", "Somewhat disappointed", "Not disappointed"];
+export const STOP_NONE = "Nothing, I'd use it";
+export const stopperOptions = ["I don't cook often enough", "Setting it up takes too long", "I don't trust the prices", "I'd forget about it", "What I do now works fine", STOP_NONE];
+
+/**
+ * Multi-select rule shared by every question: an exclusive option clears the rest,
+ * any other option clears the exclusive one, and `max` caps the non-exclusive picks.
+ */
+export function toggleMulti(cur: string[], opt: string, rules: { exclusive?: string; max?: number } = {}): { next: string[]; limited: boolean } {
+  const { exclusive, max } = rules;
+  if (cur.includes(opt)) return { next: cur.filter((x) => x !== opt), limited: false };
+  if (opt === exclusive) return { next: [opt], limited: false };
+  const rest = cur.filter((x) => x !== exclusive);
+  if (max !== undefined && rest.length >= max) return { next: cur, limited: true };
+  return { next: [...rest, opt], limited: false };
+}
+
+export function shuffle<T>(xs: readonly T[], rand: () => number = Math.random): T[] {
+  const a = [...xs];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j]!, a[i]!]; }
+  return a;
+}

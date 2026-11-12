@@ -13,19 +13,18 @@ type State = {
   diet: string[];
   meals: string[];
   weekAccepted: boolean;
-  savingsWeek: number;
-  savingsMonth: number;
   fridge: FridgeItem[];
   alerts: Record<string, boolean>;
   pick: string;
-  swaps: Record<number, number>;
-  reelAdded: boolean;
+  /** Day row index to the dinner title picked through Swap. */
+  chosen: Record<string, string>;
+  addedDeals: string[];
+  /** Ingredients the tester confirmed they already have for tonight. */
+  have: string[];
+  people: number;
   checked: Record<string, boolean>;
   set: (p: Partial<State>) => void;
-  addSavings: (amount: number) => void;
 };
-
-const round = (n: number) => Math.round(n * 100) / 100;
 
 export const useApp = create<State>()(
   persist(
@@ -37,22 +36,20 @@ export const useApp = create<State>()(
       diet: ["Meat", "Fish"],
       meals: ["Tortilla", "Curry", "Rice bowls", "Pasta", "Roast chicken", "Potato salad"],
       weekAccepted: false,
-      savingsWeek: 18.4,
-      savingsMonth: 61.2,
       fridge: initialFridge,
       alerts: { potatoes: true, chicken: false, eggs: true },
       pick: "rice",
-      swaps: {},
-      reelAdded: false,
+      chosen: {},
+      addedDeals: [],
+      have: [],
+      people: 2,
       checked: {},
       set: (p) => set(p),
-      addSavings: (amount) =>
-        set((s) => ({ savingsWeek: round(s.savingsWeek + amount), savingsMonth: round(s.savingsMonth + amount) })),
     }),
     {
-      name: "sobra-v1",
+      name: "pratico-app-v2",
       skipHydration: true,
-      partialize: ({ hydrated: _h, set: _s, addSavings: _a, ...rest }) => rest,
+      partialize: ({ hydrated: _h, set: _s, ...rest }) => rest,
       onRehydrateStorage: () => () => useApp.setState({ hydrated: true }),
     },
   ),

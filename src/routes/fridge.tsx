@@ -35,8 +35,7 @@ function Fridge() {
   const spinach = fridge.find((f) => f.id === "spinach");
 
   const startScan = () => {
-    useExp.getState().track("fridge_receipt_scanned");
-    useExp.getState().track("task_5_fridge");
+    useExp.getState().track("receipt_scan_tried");
     setStep("reading");
     setTimeout(() => setStep("review"), 1200);
   };
@@ -44,7 +43,7 @@ function Fridge() {
   return (
     <>
       <PageHeader small={`${fridge.length} items tracked`} title="Your fridge, filled from your receipts"
-        sub="Scan the receipt after shopping. Cooking a planned meal takes its ingredients off the list, so nothing needs typing." />
+        sub="Snap your receipt after shopping and we add what you bought. When you cook a planned dinner, we take its ingredients off." />
       {spinach && spinach.daysLeft !== null && spinach.daysLeft <= 1 && (
         <div role="status" className="mb-6 flex flex-col gap-3 rounded-[8px] bg-tomato-tint p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[15px]"><span className="font-semibold text-tomato">Spinach expires tomorrow.</span> Chicken and spinach rice uses it tonight.</p>
@@ -84,7 +83,7 @@ function Fridge() {
           </ul>
         }
         side={
-          <section aria-labelledby="rs" data-tour="5" className="thermal rounded-[8px] bg-paper px-5">
+          <section aria-labelledby="rs" data-tour="3" className="thermal rounded-[8px] bg-paper px-5">
             <h2 id="rs" className="flex items-center gap-2 pt-2 text-[19px] font-bold"><ReceiptText className="size-5 text-muted-foreground" aria-hidden />Receipt scan</h2>
             <div aria-hidden className="mt-2 border-t-2 border-dashed border-rule" />
             {step === "start" && (
@@ -92,8 +91,8 @@ function Fridge() {
                 <p className="mt-1 text-[13px] text-muted-foreground">Take a photo of the receipt. We read the abbreviations and you confirm in a few seconds.</p>
                 <label htmlFor="receipt" className="sr-only">Receipt photo</label>
                 <input id="receipt" ref={fileRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={startScan} />
-                <Button className="mt-4" onClick={() => { useExp.getState().track("task_5_fridge"); fileRef.current?.click(); }}>Scan a receipt</Button>
-                <button type="button" data-tour-auto onClick={startScan} className="ml-3 min-h-11 text-[13px] font-medium text-muted-foreground underline underline-offset-4">Use the sample receipt</button>
+                <Button className="mt-4" onClick={() => fileRef.current?.click()}>Scan a receipt</Button>
+                <button type="button" onClick={startScan} className="ml-3 min-h-11 text-[13px] font-medium text-muted-foreground underline underline-offset-4">Use the sample receipt</button>
               </>
             )}
             {step === "reading" && (
@@ -121,7 +120,7 @@ function Fridge() {
                     </li>
                   ))}
                 </ul>
-                <Button data-tour-trigger data-tour-auto className="mt-4 w-full" onClick={() => {
+                <Button className="mt-4 w-full" onClick={() => {
                   const existing = new Set(fridge.map((f) => f.id));
                   set({ fridge: [...receiptRead.filter((r) => !existing.has(r.item.id)).map((r) => ({ ...r.item, isNew: true })), ...fridge] });
                   setStep("done");
@@ -130,7 +129,7 @@ function Fridge() {
             )}
             {step === "done" && (
               <div className="slide-in mt-3">
-                <p className="text-[15px]">4 items added. The real prices from this receipt also correct our price data for Lidl.</p>
+                <p className="text-[15px]">4 items added. This is a demo with a sample receipt.</p>
                 <Button variant="secondary" className="mt-4" onClick={() => setStep("start")}>Scan another receipt</Button>
               </div>
             )}

@@ -1,17 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Download, Ghost, Lock, RotateCcw } from "lucide-react";
+import { Download, Ghost, Lock, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { adminDeleteSessions, adminSaveSession, getInsights } from "@/lib/experiment.functions";
+import { addSpend, adminDeleteSessions, adminSaveSession, deleteSpend, getInsights, type SpendRow } from "@/lib/experiment.functions";
 import type { ExperimentSession } from "@/lib/experiment-types";
 import { GHOST_KEY, useExp } from "@/lib/experiment";
 import { Switch } from "@/components/ui/switch";
 import { SessionExplorer } from "@/components/sobra/SessionExplorer";
-import { tasksDone } from "@/lib/experiment-types";
-import { getMockExperimentData } from "@/data/mockExperimentData";
-import { fallbackOptions, featureLabels, modeOptions, painOptions, receiptOptions, shortLabel, wasteOptions, wtpOptions } from "@/data/survey";
-import { isBounce, isSeeded, ctaTable, distribution, featureAverages, framingTable, kpis, painRanking, pct, planTable, referrals, toCSV } from "@/lib/insights";
+import {
+  dealBrandOptions, fallbackOptions, keepOneOptions, modeOptions, painOptions, pmfOptions, prepBlockerOptions, receiptBlockerOptions, receiptOptions, stopperOptions, workaroundOptions,
+} from "@/data/survey";
+import { activation, behaviour, costPerTester, ctaTable, distribution, funnel, groupBy, isBounce, pct, planTable, plansPerWeek, referralEntries, toCSV } from "@/lib/insights";
 import { Button, UnderlineTabs } from "@/components/sobra/ui";
 import { SobraLogo } from "@/components/sobra/Brand";
 
@@ -36,7 +36,7 @@ function Insights() {
   const fetchInsights = useServerFn(getInsights);
   const deleteFn = useServerFn(adminDeleteSessions);
   const [pass, setPass] = useState("");
-  const [rows, setRows] = useState<ExperimentSession[] | null>(null);
+  const [data, setData] = useState<{ rows: ExperimentSession[]; spend: SpendRow[] } | null>(null);
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -49,106 +49,65 @@ function Insights() {
         // A founder who opened the app by accident leaves an empty session behind: clean it up.
         const mine = useExp.getState().session;
         let list = res.rows;
-        if (mine && !mine.survey_pre_completed && tasksDone(mine) === 0) {
+        if (mine && isBounce(mine)) {
           await deleteFn({ data: { passcode: code, ids: [mine.session_id] } }).catch(() => {});
           useExp.getState().reset();
           list = list.filter((r) => r.session_id !== mine.session_id);
         }
-        setRows(list);
-      }
-      else { sessionStorage.removeItem(KEY); if (!silent) setError(true); }
+        setData({ rows: list, spend: res.spend });
+      } else { sessionStorage.removeItem(KEY); if (!silent) setError(true); }
     } catch { if (!silent) toast("Could not load responses. Try again in a moment."); }
     finally { setBusy(false); }
   };
-  useEffect(() => { const saved = sessionStorage.getItem(KEY); if (saved) void unlock(saved, true); }, []);
+  useEffect(() => { const saved = sessionStorage.getItem(KEY); if (saved) void unlock(saved, true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!rows) {
+  if (!data) {
     return (
       <div className="mx-auto mt-10 max-w-[420px]">
-        <form className="card p-6" onSubmit={(e) => { e.preventDefault(); void unlock(pass); }}>
+        <form className="card p-6" onSubmit={(e) => { e.preventDefault(); if (!pass) { setError(true); return; } void unlock(pass); }}>
           <SobraLogo />
           <h1 className="mt-6 flex items-center gap-2 text-[24px] font-bold"><Lock className="size-5 text-muted-foreground" aria-hidden />Founder insights</h1>
           <p className="mt-1 text-[14px] text-muted-foreground">Enter the team passcode to see the study results.</p>
           <label htmlFor="pass" className="sr-only">Passcode</label>
           <input id="pass" type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="current-password" className="mt-4 min-h-11 w-full rounded-[8px] bg-sheet-2 px-3" />
-          {error && <p role="alert" className="mt-2 text-[13.5px] text-tomato">That passcode is not right.</p>}
-          <Button type="submit" className="mt-4 w-full" disabled={busy || !pass}>{busy ? "Checking" : "Unlock"}</Button>
+          {error && <p role="alert" className="mt-2 text-[13.5px] text-tomato">{pass ? "That passcode is not right." : "Enter the passcode to continue"}</p>}
+          <Button type="submit" className="mt-4 w-full" disabled={busy}>{busy ? "Checking" : "Unlock"}</Button>
         </form>
       </div>
     );
   }
-  return <Dashboard live={rows} setLive={setRows} passcode={sessionStorage.getItem(KEY) ?? pass} />;
+  return <Dashboard live={data.rows} spend={data.spend} setLive={(rows) => setData({ ...data, rows })} setSpend={(spend) => setData({ ...data, spend })} passcode={sessionStorage.getItem(KEY) ?? pass} />;
 }
 
-const EDITS = "sobra_mock_edits", DELETED = "sobra_mock_deleted_ids";
-const readJSON = <T,>(k: string, fallback: T): T => { try { return JSON.parse(localStorage.getItem(k) ?? "") as T; } catch { return fallback; } };
+type View = "overview" | "questions" | "why" | "explorer";
 
-function Dashboard({ live, setLive, passcode }: { live: ExperimentSession[]; setLive: (r: ExperimentSession[]) => void; passcode: string }) {
+function Dashboard({ live, spend, setLive, setSpend, passcode }: { live: ExperimentSession[]; spend: SpendRow[]; setLive: (r: ExperimentSession[]) => void; setSpend: (s: SpendRow[]) => void; passcode: string }) {
   const saveFn = useServerFn(adminSaveSession);
   const deleteFn = useServerFn(adminDeleteSessions);
-  const [mode, setMode] = useState<"live" | "combined">("combined");
-  const [view, setView] = useState<"overview" | "explorer">("overview");
+  const [view, setView] = useState<View>("overview");
   const [excludeBounces, setExcludeBounces] = useState(true);
   const [ghost, setGhost] = useState(false);
-  const [mockEdits, setMockEdits] = useState<Record<string, ExperimentSession>>({});
-  const [mockDeleted, setMockDeleted] = useState<string[]>([]);
-  useEffect(() => {
-    setGhost(localStorage.getItem(GHOST_KEY) === "1");
-    setMockEdits(readJSON(EDITS, {})); setMockDeleted(readJSON(DELETED, []));
-  }, []);
+  useEffect(() => { setGhost(localStorage.getItem(GHOST_KEY) === "1"); }, []);
   const toggleGhost = (v: boolean) => { setGhost(v); if (v) localStorage.setItem(GHOST_KEY, "1"); else localStorage.removeItem(GHOST_KEY); toast(v ? "Ghost mode on. Your visits on this device are not recorded." : "Ghost mode off."); };
-  const seeded = useMemo(() => getMockExperimentData().filter((r) => !mockDeleted.includes(r.session_id)).map((r) => mockEdits[r.session_id] ?? r), [mockEdits, mockDeleted]);
-  const all = useMemo(() => (mode === "live" ? live : [...live, ...seeded]), [mode, live, seeded]);
-  const rows = useMemo(() => (excludeBounces ? all.filter((r) => !isBounce(r)) : all), [all, excludeBounces]);
+  const rows = useMemo(() => (excludeBounces ? live.filter((r) => !isBounce(r)) : live), [live, excludeBounces]);
 
   const saveSession = async (s: ExperimentSession) => {
-    if (isSeeded(s)) {
-      const next = { ...mockEdits, [s.session_id]: s }; setMockEdits(next); localStorage.setItem(EDITS, JSON.stringify(next));
-    } else {
-      await saveFn({ data: { passcode, session: s } });
-      setLive(live.some((r) => r.session_id === s.session_id) ? live.map((r) => (r.session_id === s.session_id ? s : r)) : [s, ...live]);
-    }
+    await saveFn({ data: { passcode, session: s } });
+    setLive(live.some((r) => r.session_id === s.session_id) ? live.map((r) => (r.session_id === s.session_id ? s : r)) : [s, ...live]);
   };
-  const deleteSessions = async (ids: string[]) => {
-    const seededIds = ids.filter((id) => id.startsWith("00000000-0000-4000-8000-"));
-    const liveIds = ids.filter((id) => !seededIds.includes(id));
-    if (liveIds.length) await deleteFn({ data: { passcode, ids: liveIds } });
-    if (seededIds.length) { const next = [...new Set([...mockDeleted, ...seededIds])]; setMockDeleted(next); localStorage.setItem(DELETED, JSON.stringify(next)); }
-    setLive(live.filter((r) => !liveIds.includes(r.session_id)));
-  };
-  const restoreSeeded = () => { setMockEdits({}); setMockDeleted([]); localStorage.removeItem(EDITS); localStorage.removeItem(DELETED); toast("Sample responses restored."); };
-  const explorer = <SessionExplorer rows={all} excludeBounces={excludeBounces} setExcludeBounces={setExcludeBounces} onSave={saveSession} onDelete={deleteSessions} onRestoreSeeded={mode === "combined" && (mockDeleted.length > 0 || Object.keys(mockEdits).length > 0) ? restoreSeeded : undefined} />;
-  const k = kpis(rows);
-  const plan = planTable(rows); const frame = framingTable(rows); const cta = ctaTable(rows);
-  const pains = painRanking(rows, painOptions);
-  const fallback = distribution(rows, "q2_fallback_nights", fallbackOptions);
-  const modeWin = distribution(rows, "q6_mode_winner", modeOptions);
-  const rec = distribution(rows, "q7_receipt_habit", receiptOptions);
-  const wtp = distribution(rows, "q14_stated_wtp", wtpOptions);
-  const waste = distribution(rows, "q11_wasted_items", wasteOptions);
-  const feats = featureAverages(rows);
-  const refs = referrals(rows);
-  const heavy = fallback.filter((f) => ["3 nights", "4 nights", "5+ nights"].includes(f.label)).reduce((a, f) => a + f.count, 0);
-  const heavyPct = pct(heavy, fallback.reduce((a, f) => a + f.count, 0));
-  const [A, B] = plan; const [F1, F2] = frame; const [C1, C2, C3] = cta;
-  const ctaBest = [...cta].sort((a, b) => b.conversion - a.conversion)[0]!;
-  const paidWtp = wtp.filter((w) => w.label.startsWith("Up to")).reduce((a, w) => a + w.pct, 0);
-  const topFeat = [...feats].sort((a, b) => b.avg - a.avg)[0]!;
-  const ctaName = { C1_free_receipt_cashback: "Free + €2 cashback", C2_paid_199_student: "€1.99/mo Student Pro", C3_paid_399_household: "€3.99/mo Household Pro" } as const;
-
+  const deleteSessions = async (ids: string[]) => { await deleteFn({ data: { passcode, ids } }); setLive(live.filter((r) => !ids.includes(r.session_id))); };
   const download = () => {
     const blob = new Blob([toCSV(rows)], { type: "text/csv" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `sobra-15q-${mode}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `pratico-study-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
   const resetMine = () => {
     useExp.getState().reset();
-    localStorage.removeItem("sobra-experiment-v2");
-    localStorage.removeItem("sobra-v1");
-    toast("Your test session is cleared. Open the app to take the survey again.");
+    localStorage.removeItem("pratico-study-v3"); localStorage.removeItem("pratico-app-v2"); sessionStorage.removeItem("pratico-visit");
+    toast("Your test session is cleared. Open the app to start again.");
   };
 
   return (
@@ -157,127 +116,213 @@ function Dashboard({ live, setLive, passcode }: { live: ExperimentSession[]; set
         <div>
           <p className="text-[13px] font-medium text-muted-foreground">Católica Lisbon NVC · Team V6 Ventures · private</p>
           <h1 className="mt-1 text-[30px] font-bold md:text-[34px]">Founder insights</h1>
+          <p className="mt-1 text-[14px] text-muted-foreground">{rows.length} sessions{excludeBounces ? ", bounces left out" : ""}.</p>
         </div>
-        <div className="flex flex-col gap-3 md:items-end">
-          <label className="inline-flex items-center gap-2.5 rounded-[6px] bg-ink px-4 py-2 text-[13.5px] font-semibold text-sheet">
-            <Ghost className="size-4" aria-hidden />Founder Ghost Mode (Do not record my visits)
-            <Switch checked={ghost} onCheckedChange={toggleGhost} className="data-[state=checked]:bg-tape data-[state=unchecked]:bg-sheet/30" />
-          </label>
-          <UnderlineTabs label="Data mode" value={mode} onChange={setMode} options={[
-            { value: "live", label: "Live Supabase Only" },
-            { value: "combined", label: `Combined (${seeded.length} Pre-Seeded + Live)` },
-          ]} />
-        </div>
+        <label className="inline-flex items-center gap-2.5 rounded-[6px] bg-ink px-4 py-2 text-[13.5px] font-semibold text-sheet">
+          <Ghost className="size-4" aria-hidden />Founder Ghost Mode (do not record my visits)
+          <Switch checked={ghost} onCheckedChange={toggleGhost} className="data-[state=checked]:bg-tape data-[state=unchecked]:bg-sheet/30" />
+        </label>
       </header>
 
       <UnderlineTabs label="View" value={view} onChange={setView} options={[
-        { value: "overview", label: "Overview & Charts" },
-        { value: "explorer", label: `Session Explorer & Editor (${all.length})` },
+        { value: "overview", label: "Funnel and metrics" },
+        { value: "questions", label: "Answers" },
+        { value: "why", label: "Why we ask" },
+        { value: "explorer", label: `Sessions (${live.length})` },
       ]} />
 
-      {view === "explorer" ? explorer : <>
-
-      <section aria-label="Summary" className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Kpi label="Total sessions" value={`${k.n}`} />
-        <Kpi label="Stage 1 completion" value={`${k.stage1}%`} />
-        <Kpi label="Stage 2 bonus completion" value={`${k.stage2}%`} />
-        <Kpi label="Sean Ellis PMF score" value={`${k.pmf}%`} sub="very disappointed · 40% = PMF" />
-        <Kpi label="Overall CTA conversion" value={`${k.ctaConversion}%`} />
-        <Kpi label="Avg tasks completed" value={`${k.avgTasks}/5`} />
-      </section>
-
-      <Section title="Willingness to pay: 3-way split" sub="Each visitor saw one of three offers at the end of Stage 1, split 33/33/33.">
-        <Table title="Business model A/B/C" head={["", "C1: Free + €2 Cashback", "C2: €1.99/mo Student Pass (1st Mo Free)", "C3: €3.99/mo Household Pass (1st Mo Free)"]} highlight={cta.indexOf(ctaBest) + 1} rows={[
-          ["Visitors (n)", `${C1!.n}`, `${C2!.n}`, `${C3!.n}`],
-          ["CTA conversion rate", `${C1!.conversion}%`, `${C2!.conversion}%`, `${C3!.conversion}%`],
-          ["Email / WhatsApp left", `${C1!.contact}%`, `${C2!.contact}%`, `${C3!.contact}%`],
-          ["Stage 2 bonus completion", `${C1!.bonus}%`, `${C2!.bonus}%`, `${C3!.bonus}%`],
-        ]} />
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <Table title="Product mode A/B" head={["", "Variant A (Weekly Prep)", "Variant B (Daily Pick)"]} rows={[
-            ["Visitors (n)", `${A!.n}`, `${B!.n}`],
-            ["Plan acceptance", `${A!.acceptance}%`, `${B!.acceptance}%`],
-            ["Mode switch rate", `${A!.switched}%`, `${B!.switched}%`],
-            ["CTA conversion", `${A!.conversion}%`, `${B!.conversion}%`],
-          ]} />
-          <Table title="Headline framing A/B" head={["", "Frame 1 (Money Saver)", "Frame 2 (Time & Mental Load)"]} rows={[
-            ["Visitors (n)", `${F1!.n}`, `${F2!.n}`],
-            ["Plan acceptance", `${F1!.acceptance}%`, `${F2!.acceptance}%`],
-            ["CTA conversion", `${F1!.conversion}%`, `${F2!.conversion}%`],
-            ["PMF score", `${F1!.pmf}%`, `${F2!.pmf}%`],
-          ]} />
-        </div>
-      </Section>
-
-      <Section title="Stage 1 core answers (Q1–Q8)" sub="Everyone who finished the 8 core questions.">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="card p-5">
-            <h3 className="text-[17px] font-bold">Speedboat pain ranking (Q3)</h3>
-            <ul className="mt-3 space-y-3">
-              {pains.map((p) => {
-                const max = Math.max(1, ...pains.map((x) => x.first + x.second));
-                return (
-                  <li key={p.label}>
-                    <div className="flex justify-between gap-3 text-[13.5px]"><span>{shortLabel(p.label)}</span><span className="num shrink-0"><b className="text-tomato">#1: {p.first}</b> · <b className="text-mustard-ink">#2: {p.second}</b></span></div>
-                    <div className="mt-1 flex h-2 overflow-hidden rounded-full bg-sheet-2">
-                      <div className="bg-tomato" style={{ width: `${(p.first / max) * 100}%` }} /><div className="bg-mustard" style={{ width: `${(p.second / max) * 100}%` }} />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-          <Bars title="Fallback nights last week (Q2)" items={fallback} tone="mustard" />
-          <Bars title="Mode winner (Q6)" items={modeWin.map((m) => ({ ...m, label: shortLabel(m.label) }))} tone="basil" />
-          <Bars title="Fridge tracking friction (Q7)" items={rec} tone="mustard" />
-        </div>
-      </Section>
-
-      <Section title="Stage 2 deep dive (Q9–Q15)" sub="Only people who unlocked the bonus questions.">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Bars title="Stated willingness to pay (Q14)" items={wtp.map((w) => ({ ...w, label: shortLabel(w.label) }))} tone="basil" />
-          <Bars title="Buy-a-feature, average of 100 points (Q13)" items={feats.map((f) => ({ label: featureLabels[f.key], count: f.avg, pct: f.avg }))} tone="basil" unit="pts" />
-          <Bars title="Pack-size waste, last 14 days (Q11)" items={waste} tone="tomato" />
-          <div className="card p-5">
-            <h3 className="text-[17px] font-bold">Teammate referral leaderboard</h3>
-            <table className="num mt-3 w-full text-[13.5px]">
-              <thead><tr className="border-b border-rule text-left text-muted-foreground"><th className="py-2 font-medium">?ref=</th><th className="py-2 font-medium">Sessions</th><th className="py-2 font-medium">Stage 1 done</th></tr></thead>
-              <tbody>{refs.map((r) => <tr key={r.ref} className="border-b border-rule last:border-0"><td className="py-2 font-semibold">{r.ref}</td><td className="py-2">{r.n}</td><td className="py-2">{r.stage1}</td></tr>)}</tbody>
-            </table>
-          </div>
-        </div>
-      </Section>
-
-      <Section title="Strategyzer test cards and learning cards" sub="Filled in from the numbers above, ready to screenshot into the slides.">
-        <div className="grid gap-4 md:grid-cols-2">
-          <LearnCard n={1} hypothesis="We believe Lisbon students fall back to emergency food because they have no plan for the week."
-            test={`Pre-app survey, n = ${k.preCount}. Metric: share with 3+ fallback nights.`}
-            observation={`${heavyPct}% fell back 3+ nights. Top #1 pain: ${shortLabel(pains[0]?.label ?? "")} (${pains[0]?.first ?? 0} first picks).`}
-            learning={heavyPct >= 40 ? "The problem is frequent. Lead the pitch with the no-plan pain." : "Fallback nights are rarer than assumed. Interview more students first."} />
-          <LearnCard n={2} hypothesis="Students will commit to a paid plan if the first month is free."
-            test={`3-way CTA split, ${C1!.n}/${C2!.n}/${C3!.n} visitors. Metric: CTA conversion.`}
-            observation={`Free ${C1!.conversion}% · €1.99 ${C2!.conversion}% · €3.99 ${C3!.conversion}%. ${paidWtp}% state they would pay something (Q14).`}
-            learning={`${ctaName[ctaBest.variant]} converts best. ${C2!.conversion >= 40 ? "Test a real €1.99 checkout next." : "Start free, funded by brand cashback."}`} />
-          <LearnCard n={3} hypothesis="Pratico reaches product-market fit with Lisbon students (40%+ very disappointed)."
-            test={`Sean Ellis question (Q8), n = ${rows.filter((r) => r.q8_pmf_score).length}.`}
-            observation={`${k.pmf}% would be very disappointed without pratico.`}
-            learning={k.pmf >= 40 ? "Above the 40% bar. Narrow to the very-disappointed segment and scale outreach." : "Below the 40% bar. Talk to the very-disappointed users to find what they love."} />
-          <LearnCard n={4} hypothesis="Weekly synergy prep is the feature students value most."
-            test="Buy-a-feature game (Q13) plus mode winner (Q6)."
-            observation={`${featureLabels[topFeat.key]} gets ${topFeat.avg} of 100 points on average. Top mode: ${shortLabel(modeWin.slice().sort((a, b) => b.count - a.count)[0]?.label ?? "")}.`}
-            learning={`Put ${featureLabels[topFeat.key]} first in onboarding and the pitch.`} />
-        </div>
-      </Section>
-
-      {explorer}
-      </>}
+      {view === "overview" && <Overview rows={rows} spend={spend} setSpend={setSpend} passcode={passcode} />}
+      {view === "questions" && <Questions rows={rows} />}
+      {view === "why" && <WhyWeAsk />}
+      {view === "explorer" && <SessionExplorer rows={live} excludeBounces={excludeBounces} setExcludeBounces={setExcludeBounces} onSave={saveSession} onDelete={deleteSessions} />}
 
       <div className="card flex flex-wrap gap-2 p-4">
-        <Button onClick={download}><Download className="size-4" aria-hidden />Download Full 15-Question CSV for R / Python</Button>
-        <Button variant="secondary" onClick={resetMine}><RotateCcw className="size-4" aria-hidden />Reset My Local Test Session</Button>
+        <Button onClick={download}><Download className="size-4" aria-hidden />Download CSV</Button>
+        <Button variant="secondary" onClick={resetMine}><RotateCcw className="size-4" aria-hidden />Reset my local test session</Button>
       </div>
     </div>
   );
+}
+
+function FunnelTable({ title, groups }: { title: string; groups: [string, ExperimentSession[]][] }) {
+  const head = ["", ...funnel([]).map((f) => f.label)];
+  return <Table title={title} head={head} rows={groups.map(([k, g]) => [k, ...funnel(g).map((f) => `${f.count}`)])} />;
+}
+
+function Overview({ rows, spend, setSpend, passcode }: { rows: ExperimentSession[]; spend: SpendRow[]; setSpend: (s: SpendRow[]) => void; passcode: string }) {
+  const f = funnel(rows);
+  const weeks = plansPerWeek(rows);
+  const cost = costPerTester(rows, spend);
+  const act = activation(rows.filter((r) => r.events.length === 0 || r.first_session || r.visits >= 1));
+  const [A, B] = planTable(rows);
+  const cta = ctaTable(rows);
+  const bh = behaviour(rows);
+  const refs = referralEntries(rows);
+  const modeA = distribution(A!.rows, "b2_mode_pref", modeOptions).items, modeB = distribution(B!.rows, "b2_mode_pref", modeOptions).items;
+  return (
+    <div className="space-y-10">
+      <Section title="Funnel" sub="Each step counts sessions that reached it.">
+        <div className="card p-5">
+          <ul className="space-y-3">
+            {f.map((s) => (
+              <li key={s.label}>
+                <div className="flex justify-between gap-3 text-[13.5px]"><span>{s.label}</span><span className="num font-semibold">{s.count} <span className="font-normal text-muted-foreground">({s.pct}%)</span></span></div>
+                <div className="mt-1 h-2 bg-sheet-2"><div className="h-full bg-basil" style={{ width: `${s.pct}%` }} /></div>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="mt-4 space-y-4">
+          <FunnelTable title="By channel (utm_source)" groups={groupBy(rows, (r) => r.utm_source)} />
+          <FunnelTable title="By post text (utm_content)" groups={groupBy(rows, (r) => r.utm_content ?? "none")} />
+        </div>
+      </Section>
+
+      <Section title="Our three metrics" sub="North star, cost per acquired tester and activation.">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="card p-5">
+            <h3 className="text-[17px] font-bold">North star: plans accepted per week</h3>
+            {weeks.length === 0 ? <p className="mt-3 text-[14px] text-muted-foreground">No accepted plans yet.</p> : (
+              <ul className="num mt-3 space-y-1 text-[14px]">{weeks.map((w) => <li key={w.week} className="flex justify-between"><span>{w.week}</span><b>{w.count}</b></li>)}</ul>
+            )}
+          </div>
+          <div className="card p-5">
+            <h3 className="text-[17px] font-bold">Cost per acquired tester</h3>
+            <p className="num mt-2 text-[28px] font-bold leading-none">{cost.cpa === null ? "–" : `€${cost.cpa.toFixed(2)}`}</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">€{cost.total.toFixed(2)} spent, {cost.acquired} finished Block 1.</p>
+            <table className="num mt-3 w-full text-[13px]">
+              <thead><tr className="text-left text-muted-foreground"><th className="py-1 font-medium">Channel</th><th className="font-medium">Spend</th><th className="font-medium">Testers</th><th className="font-medium">Per tester</th></tr></thead>
+              <tbody>{cost.byChannel.map((c) => <tr key={c.channel} className="border-t border-rule"><td className="py-1">{c.channel}</td><td>€{c.spend.toFixed(2)}</td><td>{c.acquired}</td><td>{c.cpa === null ? "–" : `€${c.cpa.toFixed(2)}`}</td></tr>)}</tbody>
+            </table>
+          </div>
+          <div className="card p-5">
+            <h3 className="text-[17px] font-bold">Activation</h3>
+            <p className="num mt-2 text-[28px] font-bold leading-none">{act.voluntary}%</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">tapped Accept this week on their own in their first session.</p>
+            <p className="num mt-3 text-[14px]">Including taps during the tour: <b>{act.withTour}%</b></p>
+          </div>
+        </div>
+        <SpendLog spend={spend} setSpend={setSpend} passcode={passcode} />
+      </Section>
+
+      <Section title="A/B tests" sub="Plan tab opened first, and the offer on the end screen.">
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Table title="ab_plan_variant" head={["", "A: Weekly prep first", "B: Daily pick first"]} rows={[
+            ["Sessions", `${A!.n}`, `${B!.n}`],
+            ["Accept rate", `${A!.accept}%`, `${B!.accept}%`],
+            ...modeOptions.map((m, i) => [`Q4: ${m.split(" (")[0]}`, `${modeA[i]!.pct}%`, `${modeB[i]!.pct}%`]),
+          ]} />
+          <Table title="ab_cta_variant (people who finished Block 3)" head={["", "Free pilot", "€1.99 a month"]} rows={[
+            ["Saw the offer", `${cta[0]!.n}`, `${cta[1]!.n}`],
+            ["CTA click rate", `${cta[0]!.click}%`, `${cta[1]!.click}%`],
+            ["Left contact", `${cta[0]!.contact}%`, `${cta[1]!.contact}%`],
+          ]} />
+        </div>
+      </Section>
+
+      <Section title="Behaviour" sub="What people did, not what they said.">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Kpi label="Receipt scans on their own" value={`${bh.voluntaryScans}`} sub={`${bh.guidedScans} during the tour`} />
+          <Kpi label="Deals added to plan" value={`${bh.dealsAdded}`} />
+          <Kpi label="Swaps per session" value={`${bh.swapsPerSession}`} />
+          <Kpi label="Fake door taps" value={`${bh.tiktok + bh.delivery}`} sub={`TikTok import ${bh.tiktok}, delivery ${bh.delivery}`} />
+          <Kpi label="WhatsApp shares" value={`${bh.shares}`} sub={`vs ${bh.copies} copies`} />
+          <Kpi label="Instagram follow taps" value={`${bh.igFollows}`} />
+          <Kpi label="Tour skipped" value={`${bh.tourSkipped}`} />
+          <Kpi label="Referral sign-ups" value={`${f.at(-1)!.count}`} />
+        </div>
+        {refs.length > 0 && (
+          <Table title="Extra raffle entries from referrals" head={["Sharer code", "Sign-ups", "Sharer email"]} rows={refs.map((r) => [r.ref, `${r.entries}`, r.sharer?.raffle_email ?? r.sharer?.cta_contact ?? "–"])} />
+        )}
+      </Section>
+    </div>
+  );
+}
+
+function SpendLog({ spend, setSpend, passcode }: { spend: SpendRow[]; setSpend: (s: SpendRow[]) => void; passcode: string }) {
+  const add = useServerFn(addSpend), del = useServerFn(deleteSpend);
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [channel, setChannel] = useState("");
+  const [amount, setAmount] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async () => {
+    const a = Number(amount.replace(",", "."));
+    if (!channel.trim()) { setErr("Add the channel, for example instagram"); document.getElementById("sp-ch")?.focus(); return; }
+    if (!amount || !Number.isFinite(a) || a < 0) { setErr("Add the amount in euros"); document.getElementById("sp-am")?.focus(); return; }
+    setErr(null);
+    try { const r = await add({ data: { passcode, spent_on: date, channel, amount: a } }); setSpend([r, ...spend]); setChannel(""); setAmount(""); }
+    catch { toast("That did not save. Try again."); }
+  };
+  return (
+    <div className="card mt-4 p-5">
+      <h3 className="text-[17px] font-bold">Spend log</h3>
+      <div className="mt-3 flex flex-wrap items-end gap-2">
+        <label className="text-[12.5px] font-semibold text-muted-foreground">Date<input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 block min-h-10 bg-sheet-2 px-3 text-[14px] text-ink" /></label>
+        <label className="text-[12.5px] font-semibold text-muted-foreground">Channel<input id="sp-ch" value={channel} onChange={(e) => setChannel(e.target.value)} placeholder="instagram" className="mt-1 block min-h-10 bg-sheet-2 px-3 text-[14px] text-ink" /></label>
+        <label className="text-[12.5px] font-semibold text-muted-foreground">Amount (€)<input id="sp-am" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 block min-h-10 w-28 bg-sheet-2 px-3 text-[14px] text-ink" /></label>
+        <Button className="min-h-10" onClick={() => void submit()}>Add spend</Button>
+      </div>
+      {err && <p role="alert" className="mt-2 text-[13.5px] font-semibold text-tomato">{err}</p>}
+      {spend.length > 0 && (
+        <ul className="num mt-3 divide-y divide-rule text-[13.5px]">
+          {spend.map((s) => (
+            <li key={s.id} className="flex items-center justify-between gap-3 py-1.5">
+              <span>{s.spent_on} · {s.channel}</span>
+              <span className="flex items-center gap-2">€{s.amount.toFixed(2)}
+                <button type="button" aria-label="Delete spend" onClick={async () => { await del({ data: { passcode, id: s.id } }); setSpend(spend.filter((x) => x.id !== s.id)); }} className="flex size-8 items-center justify-center text-tomato"><Trash2 className="size-4" /></button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function Questions({ rows }: { rows: ExperimentSession[] }) {
+  const charts: [string, keyof ExperimentSession, readonly string[]][] = [
+    ["Q1 Fallback dinners last week", "b1_fallback_dinners", fallbackOptions],
+    ["Q2 Biggest pains (up to 2)", "b1_pains", painOptions],
+    ["Q3 Current workarounds", "b1_workarounds", workaroundOptions],
+    ["Q4 Mode they'd use next week", "b2_mode_pref", modeOptions],
+    ["Q4b What puts them off weekly prep", "b2_prep_blockers", prepBlockerOptions],
+    ["Q5 Would snap the receipt", "b3_receipt", receiptOptions],
+    ["Q5b Why not scan", "b3_receipt_blockers", receiptBlockerOptions],
+    ["Q6 Keep only one thing", "b3_keep_one", keepOneOptions],
+    ["Q7 Buy the brand on deal", "b3_deal_brand", dealBrandOptions],
+    ["Q8 If pratico didn't launch", "b3_pmf", pmfOptions],
+    ["Q9 What would stop them", "b3_stoppers", stopperOptions],
+  ];
+  const pmfBySource = groupBy(rows.filter((r) => r.b3_pmf), (r) => r.utm_source);
+  const texts = rows.flatMap((r) => [r.b2_mode_reason && `Q4 why: ${r.b2_mode_reason}`, r.b3_stoppers_other && `Q9 other: ${r.b3_stoppers_other}`].filter(Boolean) as string[]);
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-2">
+        {charts.map(([t, k, o]) => { const d = distribution(rows, k, o); return <Bars key={k} title={`${t} (n = ${d.answered})`} items={d.items} />; })}
+      </div>
+      <Table title="Q8 very disappointed, by channel" head={["utm_source", "Answered", "Very disappointed"]}
+        rows={pmfBySource.map(([k, g]) => [k, `${g.length}`, `${pct(g.filter((r) => r.b3_pmf === pmfOptions[0]).length, g.length)}%`])} />
+      <div className="card p-5">
+        <h3 className="text-[17px] font-bold">Written answers</h3>
+        {texts.length === 0 ? <p className="mt-2 text-[14px] text-muted-foreground">None yet.</p> : <ul className="mt-2 space-y-1 text-[14px]">{texts.map((t, i) => <li key={i}>{t}</li>)}</ul>}
+      </div>
+    </div>
+  );
+}
+
+const why: [string, string, string][] = [
+  ["Q1 fallback dinners", "the dinner problem is frequent", "if under 40% say 3 or more, lead with money instead of daily decisions"],
+  ["Q2 pains", "which pain matters most", "sets our main message; many \"None\" = weak problem"],
+  ["Q3 workarounds", "people already patch the problem", "identifies early adopters; \"batch cook\" supports weekly prep"],
+  ["Q4 mode + Q4b blockers", "people will prep ahead", "under 30% Weekly prep or Both = weekly prep becomes secondary; blockers say what to fix"],
+  ["Q5 receipt + Q5b blockers", "people will scan receipts / need a fridge view", "input problem = replace scan with ticking; no need = drop the fridge"],
+  ["Q6 keep one", "which feature carries the value", "roadmap order"],
+  ["Q7 deal brand", "deals change what people buy", "supports brand/supermarket-funded revenue"],
+  ["Q8 pmf", "product/market fit signal", "40% very disappointed = strong"],
+  ["Q9 stoppers", "what blocks repeat use", "top answer becomes the next iteration"],
+];
+function WhyWeAsk() {
+  return <Table title="Why we ask (internal, never shown to testers)" head={["Question", "What it tests", "Decision rule"]} rows={why.map((r) => [...r])} plain />;
 }
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub?: string | undefined }) {
@@ -290,53 +335,34 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub?: string
   );
 }
 function Section({ title, sub, children }: { title: string; sub: string; children: ReactNode }) {
-  return (
-    <section>
-      <h2 className="text-[22px] font-bold">{title}</h2>
-      <p className="mb-4 text-[14px] text-muted-foreground">{sub}</p>
-      {children}
-    </section>
-  );
+  return <section><h2 className="text-[22px] font-bold">{title}</h2><p className="mb-4 text-[14px] text-muted-foreground">{sub}</p>{children}</section>;
 }
-const toneBg = { basil: "bg-basil", tomato: "bg-tomato", mustard: "bg-mustard" } as const;
-function Bars({ title, items, tone, unit }: { title: string; items: { label: string; count: number; pct: number }[]; tone: keyof typeof toneBg; unit?: string }) {
+function Bars({ title, items }: { title: string; items: { label: string; count: number; pct: number }[] }) {
   return (
     <div className="card p-5">
-      <h3 className="text-[17px] font-bold">{title}</h3>
-      {items.length === 0 ? <p className="mt-3 text-[14px] text-muted-foreground">No answers yet.</p> : (
-        <ul className="mt-3 space-y-3">
-          {items.map((it) => (
-            <li key={it.label}>
-              <div className="flex justify-between gap-3 text-[13.5px]"><span>{it.label}</span><span className="num shrink-0 font-semibold">{unit ? `${it.count} ${unit}` : <>{it.pct}% <span className="font-normal text-muted-foreground">({it.count})</span></>}</span></div>
-              <div className="mt-1 h-2 overflow-hidden rounded-full bg-sheet-2"><div className={`h-full rounded-full ${toneBg[tone]}`} style={{ width: `${it.pct}%` }} /></div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <h3 className="text-[16px] font-bold">{title}</h3>
+      <ul className="mt-3 space-y-3">
+        {items.map((it) => (
+          <li key={it.label}>
+            <div className="flex justify-between gap-3 text-[13.5px]"><span>{it.label}</span><span className="num shrink-0 font-semibold">{it.pct}% <span className="font-normal text-muted-foreground">({it.count})</span></span></div>
+            <div className="mt-1 h-2 bg-sheet-2"><div className="h-full bg-basil" style={{ width: `${it.pct}%` }} /></div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
-function Table({ title, head, rows, highlight }: { title: string; head: string[]; rows: string[][]; highlight?: number }) {
+function Table({ title, head, rows, plain }: { title: string; head: string[]; rows: string[][]; plain?: boolean }) {
   return (
     <div className="card overflow-x-auto p-5">
       <h3 className="text-[17px] font-bold">{title}</h3>
       <table className="num mt-3 w-full text-[13.5px]">
-        <thead><tr className="border-b border-rule text-left text-muted-foreground">{head.map((h, i) => <th key={i} className={`py-2 pr-3 font-medium ${i === highlight ? "text-basil" : ""}`}>{h}</th>)}</tr></thead>
-        <tbody>{rows.map((r) => <tr key={r[0]} className="border-b border-rule last:border-0">{r.map((c, i) => <td key={i} className={i === 0 ? "py-2 pr-3" : `py-2 pr-3 text-[16px] font-bold ${i === highlight ? "bg-basil-tint text-basil" : ""}`}>{c}</td>)}</tr>)}</tbody>
+        <thead><tr className="border-b border-rule text-left text-muted-foreground">{head.map((h, i) => <th key={i} className="py-2 pr-3 font-medium">{h}</th>)}</tr></thead>
+        <tbody>
+          {rows.length === 0 && <tr><td colSpan={head.length} className="py-3 text-muted-foreground">No data yet.</td></tr>}
+          {rows.map((r, j) => <tr key={j} className="border-b border-rule last:border-0">{r.map((c, i) => <td key={i} className={i === 0 || plain ? "py-2 pr-3" : "py-2 pr-3 font-semibold"}>{c}</td>)}</tr>)}
+        </tbody>
       </table>
     </div>
-  );
-}
-function LearnCard({ n, hypothesis, test, observation, learning }: { n: number; hypothesis: string; test: string; observation: string; learning: string }) {
-  const rows: [string, string][] = [["Hypothesis", hypothesis], ["Test & metric", test], ["Observation", observation], ["Learning & next action", learning]];
-  return (
-    <article className="card p-5">
-      <span className="tape">Card {n}</span>
-      <dl className="mt-4 space-y-3">
-        {rows.map(([t, d]) => (
-          <div key={t}><dt className="text-[12.5px] font-semibold text-muted-foreground">{t}</dt><dd className="mt-0.5 text-[14px] leading-snug">{d}</dd></div>
-        ))}
-      </dl>
-    </article>
   );
 }

@@ -1,89 +1,121 @@
-import type { FeatureKey } from "@/data/survey";
-
 export const planVariants = ["A_weekly_prep", "B_daily_pick"] as const;
-export const framingVariants = ["F1_money_saver", "F2_time_mental_load"] as const;
-export const ctaVariants = ["C1_free_receipt_cashback", "C2_paid_199_student", "C3_paid_399_household"] as const;
+export const ctaVariants = ["free_pilot", "paid_199"] as const;
 export type PlanVariant = (typeof planVariants)[number];
-export type FramingVariant = (typeof framingVariants)[number];
 export type CtaVariant = (typeof ctaVariants)[number];
 
-export const taskKeys = ["task_1_plan", "task_2_mode", "task_3_deals", "task_4_list", "task_5_fridge"] as const;
-export type TaskKey = (typeof taskKeys)[number];
+export const eventNames = [
+  "accepted_week_clicked", "mode_switched", "deal_added_to_plan", "receipt_scan_tried", "swap", "fake_door_tiktok", "fake_door_delivery",
+  "whatsapp_share_clicked", "plan_copied", "ig_follow_clicked", "cta_clicked", "tour_skipped", "tour_completed",
+  "referral_visit", "referral_activated", "referral_signup",
+] as const;
+export type EventName = (typeof eventNames)[number];
+export type StudyEvent = { e: EventName; at: string; in_tour: boolean; first_session: boolean };
 
 export type ExperimentSession = {
   session_id: string;
   created_at: string;
-  referral_source: string;
+  /** This visitor's own code, put on links they share. */
+  my_ref: string;
+  /** Referral code from the link they arrived on. */
+  ref: string | null;
+  utm_source: string;
+  utm_content: string | null;
+  shared_plan_id: string | null;
+  visits: number;
   ab_plan_variant: PlanVariant;
-  ab_framing_variant: FramingVariant;
   ab_cta_variant: CtaVariant;
+  store: string | null;
+  // Block 1
   survey_pre_completed: boolean;
-  q1_household: string | null;
-  q2_fallback_nights: string | null;
-  q3_pain_1: string | null;
-  q3_pain_2: string | null;
-  q4_workaround: string | null;
-  q5_primary_store: string | null;
-  q5_weekly_spend: number | null;
-  task_1_plan: boolean;
-  task_2_mode: boolean;
-  task_3_deals: boolean;
-  task_4_list: boolean;
-  task_5_fridge: boolean;
-  initial_mode_switched: boolean;
-  accepted_week_clicked: boolean;
-  synergy_filter_used: boolean;
-  swapped_meal_clicked: boolean;
-  deals_tab_visited: boolean;
-  fridge_receipt_scanned: boolean;
-  cook_tab_visited: boolean;
-  time_spent_seconds: number;
+  b1_fallback_dinners: string | null;
+  b1_pains: string[];
+  b1_pains_order: string[];
+  b1_workarounds: string[];
+  // Block 2
+  opened_weekly: boolean;
+  opened_daily: boolean;
+  b2_mode_pref: string | null;
+  b2_mode_reason: string | null;
+  b2_prep_blockers: string[];
+  // Block 3
   survey_post_completed: boolean;
-  q6_mode_winner: string | null;
-  q7_receipt_habit: string | null;
-  q8_pmf_score: string | null;
-  cta_converted: boolean | null;
-  contact_left: boolean;
-  contact: string | null;
-  bonus_completed: boolean;
-  q9_last_dinner_timing: string | null;
-  q10_switch_threshold: string | null;
-  q11_wasted_items: string[] | null;
-  q12_synergy_attitude: string | null;
-  q13_buy_a_feature: Record<FeatureKey, number> | null;
-  q14_stated_wtp: string | null;
-  q15_open_feedback: string | null;
-  shared_on_whatsapp: boolean;
+  b3_receipt: string | null;
+  b3_receipt_blockers: string[];
+  b3_keep_one: string | null;
+  b3_deal_brand: string | null;
+  b3_pmf: string | null;
+  b3_stoppers: string[];
+  b3_stoppers_other: string | null;
+  cta_clicked: boolean;
+  cta_contact: string | null;
+  raffle_email: string | null;
+  ig_follow_clicked: boolean;
+  // Behaviour
+  accepted_week_clicked: boolean;
+  mode_switched: boolean;
+  receipt_scan_tried: boolean;
+  deal_added_to_plan: number;
+  swap_count: number;
+  fake_door_tiktok_clicks: number;
+  fake_door_delivery_clicks: number;
+  whatsapp_share_clicked: number;
+  plan_copied: number;
+  tour_skipped: boolean;
+  tour_completed: boolean;
+  time_spent_seconds: number;
+  first_session: boolean;
+  events: StudyEvent[];
 };
 
 const pick = <T,>(xs: readonly T[], r: number) => xs[Math.min(xs.length - 1, Math.floor(r * xs.length))]!;
+const clean = (v: string | null) => (v ?? "").trim().toLowerCase().replace(/[^a-z0-9_\-.]/g, "").slice(0, 60);
 
-/** Reads ?ref= or ?utm_source= so teammates can track who brought each tester. */
-export function referralFrom(search: string) {
+/** Reads ref, utm_source and utm_content from the first URL a visitor opens. */
+export function attributionFrom(search: string) {
   const p = new URLSearchParams(search);
-  const v = (p.get("ref") ?? p.get("utm_source") ?? "").trim().toLowerCase().slice(0, 60);
-  return v || "direct_link";
+  return { ref: clean(p.get("ref")) || null, utm_source: clean(p.get("utm_source")) || "direct", utm_content: clean(p.get("utm_content")) || null };
 }
 
-export function newSession(referral = "direct_link", rand: () => number = Math.random): ExperimentSession {
+export function newSession(search = "", rand: () => number = Math.random): ExperimentSession {
+  const id = crypto.randomUUID();
   return {
-    session_id: crypto.randomUUID(),
-    created_at: new Date().toISOString(),
-    referral_source: referral,
-    ab_plan_variant: pick(planVariants, rand()),
-    ab_framing_variant: pick(framingVariants, rand()),
-    ab_cta_variant: pick(ctaVariants, rand()),
-    survey_pre_completed: false,
-    q1_household: null, q2_fallback_nights: null, q3_pain_1: null, q3_pain_2: null, q4_workaround: null, q5_primary_store: null, q5_weekly_spend: null,
-    task_1_plan: false, task_2_mode: false, task_3_deals: false, task_4_list: false, task_5_fridge: false,
-    initial_mode_switched: false, accepted_week_clicked: false, synergy_filter_used: false, swapped_meal_clicked: false,
-    deals_tab_visited: false, fridge_receipt_scanned: false, cook_tab_visited: false, time_spent_seconds: 0,
-    survey_post_completed: false, q6_mode_winner: null, q7_receipt_habit: null, q8_pmf_score: null,
-    cta_converted: null, contact_left: false, contact: null,
-    bonus_completed: false, q9_last_dinner_timing: null, q10_switch_threshold: null, q11_wasted_items: null, q12_synergy_attitude: null,
-    q13_buy_a_feature: null, q14_stated_wtp: null, q15_open_feedback: null, shared_on_whatsapp: false,
+    session_id: id, created_at: new Date().toISOString(), my_ref: id.slice(0, 8), ...attributionFrom(search), shared_plan_id: null, visits: 1,
+    ab_plan_variant: pick(planVariants, rand()), ab_cta_variant: pick(ctaVariants, rand()), store: null,
+    survey_pre_completed: false, b1_fallback_dinners: null, b1_pains: [], b1_pains_order: [], b1_workarounds: [],
+    opened_weekly: false, opened_daily: false, b2_mode_pref: null, b2_mode_reason: null, b2_prep_blockers: [],
+    survey_post_completed: false, b3_receipt: null, b3_receipt_blockers: [], b3_keep_one: null, b3_deal_brand: null, b3_pmf: null, b3_stoppers: [], b3_stoppers_other: null,
+    cta_clicked: false, cta_contact: null, raffle_email: null, ig_follow_clicked: false,
+    accepted_week_clicked: false, mode_switched: false, receipt_scan_tried: false, deal_added_to_plan: 0, swap_count: 0,
+    fake_door_tiktok_clicks: 0, fake_door_delivery_clicks: 0, whatsapp_share_clicked: 0, plan_copied: 0,
+    tour_skipped: false, tour_completed: false, time_spent_seconds: 0, first_session: true, events: [],
   };
 }
 
-export type TrackFlag = TaskKey | "initial_mode_switched" | "accepted_week_clicked" | "synergy_filter_used" | "swapped_meal_clicked" | "deals_tab_visited" | "fridge_receipt_scanned" | "cook_tab_visited";
-export const tasksDone = (s: ExperimentSession) => taskKeys.filter((k) => s[k]).length;
+/** Tour step each guided action belongs to, so we can tell guided taps from voluntary ones. */
+export const eventTourStep: Partial<Record<EventName, number>> = { accepted_week_clicked: 1, mode_switched: 1, deal_added_to_plan: 2, receipt_scan_tried: 3 };
+
+/** Applies one event to a session: logs it and updates the matching flag or counter. */
+export function applyEvent(s: ExperimentSession, e: EventName, tourStep: number | null, now = new Date()): ExperimentSession {
+  const step = eventTourStep[e];
+  const ev: StudyEvent = { e, at: now.toISOString(), in_tour: step !== undefined && tourStep === step, first_session: s.visits <= 1 };
+  const n: ExperimentSession = { ...s, events: [...s.events, ev].slice(-400) };
+  switch (e) {
+    case "accepted_week_clicked": n.accepted_week_clicked = true; break;
+    case "mode_switched": n.mode_switched = true; break;
+    case "receipt_scan_tried": n.receipt_scan_tried = true; break;
+    case "deal_added_to_plan": n.deal_added_to_plan++; break;
+    case "swap": n.swap_count++; break;
+    case "fake_door_tiktok": n.fake_door_tiktok_clicks++; break;
+    case "fake_door_delivery": n.fake_door_delivery_clicks++; break;
+    case "whatsapp_share_clicked": n.whatsapp_share_clicked++; break;
+    case "plan_copied": n.plan_copied++; break;
+    case "ig_follow_clicked": n.ig_follow_clicked = true; break;
+    case "cta_clicked": n.cta_clicked = true; break;
+    case "tour_skipped": n.tour_skipped = true; break;
+    case "tour_completed": n.tour_completed = true; break;
+    default: break;
+  }
+  return n;
+}
+
+export const isEmail = (v: string | null | undefined) => !!v && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());

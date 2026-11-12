@@ -182,6 +182,84 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_plans: {
+        Row: {
+          created_at: string
+          id: string
+          mode: string
+          people: number
+          plan_json: Json
+          sharer_session_id: string | null
+          store: string
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mode: string
+          people: number
+          plan_json: Json
+          sharer_session_id?: string | null
+          store: string
+          total: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mode?: string
+          people?: number
+          plan_json?: Json
+          sharer_session_id?: string | null
+          store?: string
+          total?: number
+        }
+        Relationships: []
+      }
+      spend_log: {
+        Row: {
+          amount: number
+          channel: string
+          created_at: string
+          id: string
+          spent_on: string
+        }
+        Insert: {
+          amount: number
+          channel: string
+          created_at?: string
+          id?: string
+          spent_on: string
+        }
+        Update: {
+          amount?: number
+          channel?: string
+          created_at?: string
+          id?: string
+          spent_on?: string
+        }
+        Relationships: []
+      }
+      study_sessions: {
+        Row: {
+          created_at: string
+          data: Json
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

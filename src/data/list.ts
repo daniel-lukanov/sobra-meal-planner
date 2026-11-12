@@ -4,7 +4,7 @@ export const shoppingList: { aisle: string; items: ListItem[] }[] = [
     { id: "potatoes", name: "Potatoes 3 kg", price: 2.29 },
     { id: "carrots", name: "Carrots 1 kg", price: 0.79 },
     { id: "peppers", name: "Peppers 3 pack", price: 1.49 },
-    { id: "onions", name: "Onions", price: null, inFridge: true },
+    { id: "onion", name: "Onions", price: null, inFridge: true },
     { id: "spinach", name: "Spinach 300 g", price: 1.19 },
   ] },
   { aisle: "Meat and fish", items: [

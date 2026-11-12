@@ -15,6 +15,13 @@
       "when": 1794338271302,
       "tag": "0001_funnel_v2_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794511618597,
+      "tag": "0002_study_v3_tables",
+      "breakpoints": true
     }
   ]
 }
