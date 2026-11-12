@@ -25,6 +25,11 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 
 `src/integrations/sobra-db/client.ts` is the app's client for this project (publishable key only) and `types.ts` is generated from it. Both are new files; Lovable's `src/integrations/supabase/*` is untouched.
 
+## Scripts (run on your own machine with Bun)
+
+- `scripts/probe-continente.sh` saves a few raw Continente pages to `data/raw/` (git-ignored) so parsers can be written against real markup.
+- `scripts/continente.ts` fetches search results for the ingredient queries, maps products to ingredients by simple name rules (`mapping_source = 'rule'`, to be reviewed), and saves products, regular prices (a new row only on change) and strike-through promotions. It is a **dry run unless you pass `--write`**. Items sold by weight are stored with the price of the whole pack. The shop tile has no promotion end date, so a promotion window runs from the day it was seen to `--hold-days` (default 3) later and is extended whenever it is seen again.
+
 ## Rules of the model
 
 - Recipes point to **ingredients**, never to products or promotions. Products point to ingredients.
