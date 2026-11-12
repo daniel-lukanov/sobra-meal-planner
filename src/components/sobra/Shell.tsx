@@ -12,9 +12,8 @@ import { MissionBar } from "./MissionBar";
 import { GuidedTour } from "./GuidedTour";
 import { isGhost } from "@/lib/experiment";
 import { Ghost } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const nav = [
   { to: "/plan", label: "Plan", icon: CalendarDays },
@@ -29,24 +28,38 @@ function StorePicker() {
   const store = useApp((s) => s.store);
   const set = useApp((s) => s.set);
   const pick = (s: StoreName) => { if (s === store) return; set({ store: s, weekAccepted: false, swaps: {} }); toast(`Plan rebuilt from ${s} deals.`); };
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close); document.addEventListener("keydown", close);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", close); };
+  }, [open]);
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger aria-label="My store"
-        className="inline-flex min-h-10 shrink-0 items-center gap-2 border-b border-ink/30 px-1 text-[14px] font-semibold text-ink outline-none hover:border-ink focus-visible:border-ink">
+    <div ref={ref} className="relative shrink-0">
+      <button type="button" aria-label="My store" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}
+        className="inline-flex min-h-10 items-center gap-2 border-b border-ink/30 px-1 text-[14px] font-semibold text-ink outline-none hover:border-ink focus-visible:border-ink">
         <span className="hidden text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:inline">Store</span>
         <span className="font-serif text-[17px] font-medium">{store}</span>
-        <ChevronDown className="size-4 text-muted-foreground" aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8} className="min-w-[200px] border-rule bg-ground p-0 shadow-float">
-        {stores.map((s) => (
-          <DropdownMenuItem key={s} onSelect={() => pick(s)}
-            className={cn("flex cursor-pointer items-center justify-between border-b border-rule px-4 py-3 font-serif text-[16px] last:border-b-0 focus:bg-sheet-2", s === store && "bg-sheet-2")}>
-            <span className="flex items-center gap-3"><StoreDot name={s} />{s}</span>
-            {s === store && <Check className="size-4" aria-hidden />}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
+      </button>
+      {open && (
+        <ul role="listbox" className="absolute right-0 top-full z-50 mt-2 min-w-[200px] border border-rule bg-ground shadow-float">
+          {stores.map((s) => (
+            <li key={s} role="option" aria-selected={s === store}>
+              <button type="button" onClick={() => { pick(s); setOpen(false); }}
+                className={cn("flex w-full items-center justify-between border-b border-rule px-4 py-3 text-left font-serif text-[16px] hover:bg-sheet-2", s === store && "bg-sheet-2")}>
+                <span className="flex items-center gap-3"><StoreDot name={s} />{s}</span>
+                {s === store && <Check className="size-4" aria-hidden />}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
