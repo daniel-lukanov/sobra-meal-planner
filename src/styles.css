@@ -58,26 +58,26 @@
 }
 
 :root {
-  --ground: #DCEBFA;
-  --sheet: #FFFFFF;
-  --sheet-2: #EAF2FB;
-  --sheet-hover: #D6E5F5;
+  --ground: #F7FAFD;
+  --sheet: #ECF2F8;
+  --sheet-2: #E1EAF3;
+  --sheet-hover: #DCE5EE;
   --ink: #13285C;
   --muted: #536380;
-  --rule: #C9DBEF;
+  --rule: #DCE5EE;
   --basil: #1F7A3D;
   --basil-700: #155C2D;
   --basil-ink: #FFFFFF;
   --basil-tint: #E4F2E7;
-  --tape: #FFD95A;
-  --tape-ink: #4A3300;
+  --tape: #FDF1CC;
+  --tape-ink: #6B4A00;
   --tomato: #C8261C;
   --tomato-tint: #FBE7E5;
   --mustard: #E9A91F;
   --mustard-ink: #8A5D0F;
   --mustard-tint: #FDF1CC;
-  --row: #F4F8FD;
-  --paper: #DCEBFA;
+  --row: #F2F6FB;
+  --paper: #F7FAFD;
   --prep-rule: #DCE5EE;
   --shadow-sheet: none;
   --shadow-card: none;
