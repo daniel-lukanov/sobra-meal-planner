@@ -4,3 +4,4 @@
 - [x] Drop outlines, photos sit on white
 - [x] Restyle colours/style inspired by Instagram pratico.lisboa
 - [x] Use pratico logo and name
+- [x] Restyle inspired by watchhouse.com

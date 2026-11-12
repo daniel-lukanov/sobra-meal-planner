@@ -4,17 +4,17 @@
 
 @theme inline {
   --font-sans: "Instrument Sans", Arial, sans-serif;
-  --font-serif: "Bricolage Grotesque", Arial, sans-serif;
+  --font-serif: "Newsreader", Georgia, serif;
   --font-hand: "Plus Jakarta Sans", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --ease-kitchen: cubic-bezier(.2, .8, .2, 1);
-  --radius-sheet: 12px;
-  --radius-block: 6px;
-  --radius-photo: 10px;
-  --radius-ctl: 8px;
-  --radius-chip: 6px;
-  --radius-input: 4px;
-  --radius-hero: 6px;
+  --radius-sheet: 0px;
+  --radius-block: 0px;
+  --radius-photo: 0px;
+  --radius-ctl: 0px;
+  --radius-chip: 0px;
+  --radius-input: 0px;
+  --radius-hero: 0px;
   --color-basil-700: var(--basil-700);
   --color-deal: var(--tomato);
   --color-ground: var(--ground);
@@ -58,17 +58,17 @@
 }
 
 :root {
-  --ground: #FFFFFF;
-  --sheet: #F4F5F3;
-  --sheet-2: #ECEEEB;
-  --sheet-hover: #E6E8E5;
-  --ink: #151816;
-  --muted: #5E6460;
-  --rule: #E6E8E5;
-  --basil: #1E7B3E;
-  --basil-700: #155C2D;
-  --basil-ink: #FFFFFF;
-  --basil-tint: #E4F2E7;
+  --ground: #F8F5F0;
+  --sheet: #F1ECE4;
+  --sheet-2: #EAE4DA;
+  --sheet-hover: #E2DBCF;
+  --ink: #1A1714;
+  --muted: #6B645B;
+  --rule: #E2DBCF;
+  --basil: #1A1714;
+  --basil-700: #3A342E;
+  --basil-ink: #F8F5F0;
+  --basil-tint: #EAE4DA;
   --tape: #FDF1CC;
   --tape-ink: #6B4A00;
   --tomato: #C8261C;
@@ -76,9 +76,9 @@
   --mustard: #E9A91F;
   --mustard-ink: #8A5D0F;
   --mustard-tint: #FDF1CC;
-  --row: #F7F8F6;
-  --paper: #F7FAFD;
-  --prep-rule: #E6E8E5;
+  --row: #F4F0EA;
+  --paper: #F8F5F0;
+  --prep-rule: #E2DBCF;
   --shadow-sheet: none;
   --shadow-card: none;
   --shadow-tape: none;
@@ -88,17 +88,17 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-  --ground: #101311;
-  --sheet: #1A1E1B;
-  --sheet-2: #232824;
-  --sheet-hover: #2C322D;
-  --ink: #F1F4F1;
-  --muted: #A7AEA8;
-  --rule: #2C322D;
-  --basil: #3FAE5F;
-  --basil-700: #2F8C4B;
-  --basil-ink: #FFFFFF;
-  --basil-tint: #1F3A2A;
+  --ground: #141210;
+  --sheet: #1D1A17;
+  --sheet-2: #26221E;
+  --sheet-hover: #302B26;
+  --ink: #F3EEE6;
+  --muted: #A69E93;
+  --rule: #302B26;
+  --basil: #F3EEE6;
+  --basil-700: #D9D2C7;
+  --basil-ink: #141210;
+  --basil-tint: #26221E;
   --tape: #3A2F12;
   --tape-ink: #F6D47A;
   --tomato: #FF6B5E;
@@ -106,9 +106,9 @@
   --mustard: #E9A91F;
   --mustard-ink: #E8B85A;
   --mustard-tint: #3A2F1A;
-  --row: #151916;
-  --paper: #101311;
-  --prep-rule: #2C322D;
+  --row: #181613;
+  --paper: #141210;
+  --prep-rule: #302B26;
   --shadow-sheet: none;
   --shadow-card: none;
   --shadow-tape: none;
@@ -130,13 +130,13 @@
     -webkit-font-smoothing: antialiased;
     font-variant-numeric: tabular-nums;
   }
-  h1, h2, h3 { font-family: var(--font-serif); letter-spacing: -0.03em; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; text-align: left; }
-  h1 { font-weight: 800; }
+  h1, h2, h3 { font-family: var(--font-serif); font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; text-align: left; }
+  h1 { font-weight: 500; }
   :focus-visible { outline: 2px solid var(--basil); outline-offset: 2px; border-radius: 6px; }
 }
 
 @utility num { font-variant-numeric: tabular-nums; }
-@utility eyebrow { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--basil); }
+@utility eyebrow { font-family: var(--font-serif); font-size: 16px; font-weight: 500; text-transform: none; letter-spacing: -0.01em; color: var(--ink); }
 @utility shadow-float { box-shadow: var(--shadow-float); }
 
 @utility sheet {
@@ -207,7 +207,7 @@
   background: var(--ink);
   color: var(--sheet);
   border: 0;
-  border-radius: 12px;
+  border-radius: 0;
   font-family: var(--font-sans);
   font-size: 14.5px;
   box-shadow: var(--shadow-float);

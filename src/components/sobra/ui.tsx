@@ -70,7 +70,7 @@ export function PageHeader({ small, title, sub, right }: { small: string; title:
     <header className="flex flex-col gap-4 pb-6 md:flex-row md:items-end md:justify-between md:gap-8">
       <div className="max-w-[560px]">
         <p className="eyebrow">{small}</p>
-        <h1 className="mt-1 text-[32px] font-extrabold font-serif">{title}</h1>
+        <h1 className="mt-1 text-[32px] font-medium font-serif">{title}</h1>
         {sub && <p className="mt-2 text-muted-foreground">{sub}</p>}
       </div>
       {right && <div className="shrink-0">{right}</div>}

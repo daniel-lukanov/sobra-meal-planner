@@ -18,7 +18,7 @@ export function SobraLogo({ compact }: { compact?: boolean }) {
     <span className="flex items-center gap-2.5">
       <SobraMark />
       <span className="leading-none">
-        <span className={cn("block font-extrabold font-serif tracking-[-0.02em] text-ink", compact ? "text-[22px]" : "text-[24px]")}>pratico</span>
+        <span className={cn("block font-medium font-serif tracking-[-0.02em] text-ink", compact ? "text-[22px]" : "text-[24px]")}>pratico</span>
         <span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">lisboa</span>
       </span>
     </span>
