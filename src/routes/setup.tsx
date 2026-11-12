@@ -81,9 +81,9 @@ function Setup() {
           {stores.map((st) => {
             const on = s.store === st;
             return (
-              <button key={st} type="button" aria-pressed={on} onClick={() => s.set({ store: st })}
+              <button key={st} type="button" aria-label={st} aria-pressed={on} onClick={() => s.set({ store: st })}
                 className={cn("press min-h-11 rounded-full p-1 ring-2", on ? "ring-ink" : "ring-transparent hover:ring-rule")}>
-                <StoreBadge name={st} className="min-h-9 px-3.5 text-[14.5px]" />
+                <StoreBadge name={st} className="h-9 px-3" />
               </button>
             );
           })}

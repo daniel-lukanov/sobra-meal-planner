@@ -94,9 +94,9 @@ export function PreSurvey() {
         <Q title="5. Which supermarket is closest to you?">
           <div className="flex flex-wrap gap-2">
             {storeOptions.map((s) => (
-              <button key={s} type="button" aria-pressed={st === s} onClick={() => { setSt(s); setApp({ store: s }); }}
+              <button key={s} type="button" aria-label={s} aria-pressed={st === s} onClick={() => { setSt(s); setApp({ store: s }); }}
                 className={cn("press min-h-11 rounded-full p-1 ring-2", st === s ? "ring-ink" : "ring-transparent hover:ring-rule")}>
-                <StoreBadge name={s} className="min-h-9 px-3.5 text-[14px]" />
+                <StoreBadge name={s} className="h-9 px-3" />
               </button>
             ))}
           </div>

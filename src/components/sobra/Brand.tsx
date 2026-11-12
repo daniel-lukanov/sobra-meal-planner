@@ -47,12 +47,11 @@ export function StoreDot({ name, className }: { name: StoreName; className?: str
   return <span aria-hidden className={cn("inline-block size-2.5 shrink-0 rounded-full", className)} style={{ backgroundColor: b.dot, boxShadow: b.ring ? `0 0 0 2px ${b.ring}` : undefined }} />;
 }
 
-/** Brand pills keep fixed light tints, so text stays dark in both themes. */
+/** Brand pills keep fixed light tints, so the mark stays readable in both themes. */
 export function StoreBadge({ name, className }: { name: StoreName; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-2 rounded-[6px] px-2.5 py-1 text-[13px] font-semibold", className)} style={{ backgroundColor: storeBrand[name].pill, color: "#1D2A33" }}>
-      <StoreLogo name={name} />
-      {name}
+    <span className={cn("inline-flex items-center justify-center rounded-[6px] px-3 py-1.5", className)} style={{ backgroundColor: storeBrand[name].pill }}>
+      <StoreLogo name={name} className="h-5" />
     </span>
   );
 }
