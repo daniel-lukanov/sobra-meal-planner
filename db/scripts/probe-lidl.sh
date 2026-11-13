@@ -12,10 +12,12 @@ fetch() { # name url
   echo "$1  http=$code  bytes=$(wc -c < "$out/$1" | tr -d ' ')  $2"
   sleep 2
 }
-fetch lidl_home.html     "https://www.lidl.pt/"
-fetch lidl_robots.txt    "https://www.lidl.pt/robots.txt"
-fetch lidl_sitemap.xml   "https://www.lidl.pt/sitemap.xml"
-fetch lidl_ofertas.html  "https://www.lidl.pt/ofertas"
-fetch lidl_c_ofertas.html "https://www.lidl.pt/c/ofertas-da-semana/s10007374"
-fetch lidl_folhetos.html "https://www.lidl.pt/c/folhetos/s10008136"
+# Round 2: the first probe showed the real URL shapes (/h/<hub>/h<id>, /c/<page>/s<id>, sitemap at /static/sitemap.xml).
+fetch lidl_sitemap.xml     "https://www.lidl.pt/static/sitemap.xml"
+fetch lidl_h_carne.html    "https://www.lidl.pt/h/carne-e-aves/h10095752"
+fetch lidl_h_despensa.html "https://www.lidl.pt/h/despensa/h10096095"
+fetch lidl_h_oleos.html    "https://www.lidl.pt/h/oleos-molhos-e-condimentos/h10096110"
+fetch lidl_h_ovos.html     "https://www.lidl.pt/h/queijos-laticinios-e-ovos/h10095761"
+fetch lidl_c_frutas.html   "https://www.lidl.pt/c/frutas-e-legumes/s10025314"
+fetch lidl_c_promo_w47.html "https://www.lidl.pt/c/store/promocoes-da-semana-w47/a10107047"
 echo "Done. Files are in data/raw/lidl/"
