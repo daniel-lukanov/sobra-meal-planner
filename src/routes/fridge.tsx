@@ -38,6 +38,15 @@ function Fridge() {
   const fileRef = useRef<HTMLInputElement>(null);
   const spinach = fridge.find((f) => f.id === "spinach");
 
+  /** Take one item out (used up, thrown away, or added by mistake). The shopping list needs it again straight away. */
+  const removeItem = (f: FridgeItem) => {
+    const at = fridge.indexOf(f);
+    set({ fridge: fridge.filter((x) => x !== f) });
+    toast(`${f.name} taken off your fridge.`, {
+      action: { label: "Undo", onClick: () => { const cur = useApp.getState().fridge; useApp.setState({ fridge: [...cur.slice(0, at), f, ...cur.slice(at)] }); } },
+    });
+  };
+
   const startScan = () => {
     useExp.getState().track("receipt_scan_tried");
     setStep("reading");
@@ -72,7 +81,13 @@ function Fridge() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-[15.5px] font-semibold">{f.name.replace(/ \(from Sunday\)/, "")}</span>
-                      <Chip tone={low ? "tomato" : "neutral"} className="num">{f.daysLeft === null ? "long life" : `${f.daysLeft} ${f.daysLeft === 1 ? "day" : "days"} left`}</Chip>
+                      <span className="flex items-center gap-1">
+                        <Chip tone={low ? "tomato" : "neutral"} className="num">{f.daysLeft === null ? "long life" : `${f.daysLeft} ${f.daysLeft === 1 ? "day" : "days"} left`}</Chip>
+                        <button type="button" aria-label={`Remove ${f.name} from fridge`} onClick={() => removeItem(f)}
+                          className="flex size-9 items-center justify-center rounded-ctl text-muted-foreground hover:bg-sheet-2 hover:text-tomato">
+                          <Trash2 className="size-4" strokeWidth={1.6} />
+                        </button>
+                      </span>
                     </div>
                     <div className="mt-2 flex items-center gap-3">
                       <div className="flex flex-1 gap-1" aria-hidden>

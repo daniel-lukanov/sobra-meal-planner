@@ -29,7 +29,10 @@ export function useLivePlan() {
       isLive,
       weekTotal: (cards: Card[]) => (isLive(cards) ? r2(cards.reduce((a, c) => a + (livePrice(c.meal) ?? c.meal.price), 0)) : weekTotal(cards)),
       items: (cards: Card[]): NeededItem[] => {
-        if (!cat || !isLive(cards)) return neededItems(cards);
+        if (!cat || !isLive(cards)) {
+          // Sample list: same rule, "in fridge" follows the real fridge and not the prototype's fixed flags.
+          return neededItems(cards).map(({ inFridge: _sample, ...it }) => ({ ...it, ...(inFridge.has(it.id) ? { inFridge: true } : {}) }));
+        }
         return buildShoppingList(cat, cards.map((c) => c.meal.title), chainId, people).map((l) => ({
           id: l.id, name: l.name, price: l.price, aisle: l.aisle, dinners: l.dinners, ...(inFridge.has(l.id) ? { inFridge: true } : {}),
         }));
