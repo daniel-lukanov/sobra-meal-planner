@@ -54,9 +54,9 @@ export function fitUnit(slug: string, qty: number, unit: "g" | "ml" | "piece"): 
 const ENT: Record<string, string> = { quot: '"', amp: "&", lt: "<", gt: ">", apos: "'", euro: "€", nbsp: " ",
   atilde: "ã", otilde: "õ", ccedil: "ç", eacute: "é", egrave: "è", ecirc: "ê", aacute: "á", agrave: "à", acirc: "â",
   iacute: "í", oacute: "ó", ocirc: "ô", uacute: "ú", ordm: "º", ordf: "ª", ndash: "–", mdash: "—", rsquo: "’", lsquo: "‘", ldquo: "“", rdquo: "”", hellip: "…", reg: "®", trade: "™", copy: "©", ntilde: "ñ", uuml: "ü", ouml: "ö", auml: "ä", szlig: "ß", Atilde: "Ã", Ccedil: "Ç", Eacute: "É", Aacute: "Á", Iacute: "Í", Oacute: "Ó", Uacute: "Ú" };
-const decode = (s: string) => s.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&([A-Za-z]+);/g, (m, n) => ENT[n] ?? m);
-const text = (s: string) => decode(s.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
-const num = (s: string) => parseFloat(s.replace(/[^\d,.]/g, "").replace(",", "."));
+export const decode = (s: string) => s.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&([A-Za-z]+);/g, (m, n) => ENT[n] ?? m);
+export const text = (s: string) => decode(s.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+export const num = (s: string) => parseFloat(s.replace(/[^\d,.]/g, "").replace(",", "."));
 
 export type Parsed = { id: string; name: string; brand: string | null; category: string | null; url: string | null;
   price: number; was: number | null; packQty: number; packUnit: "g" | "ml" | "piece"; qtyText: string };
@@ -130,7 +130,7 @@ export function usableFraction(rule: Rule, name: string): number | null {
 // ---------- fetching ----------
 const BASE = "https://www.continente.pt/on/demandware.store/Sites-continente-Site/default/Search-UpdateGrid";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function fetchGrid(q: string, start: number): Promise<string> {
   const res = await fetch(`${BASE}?q=${encodeURIComponent(q)}&start=${start}&sz=24`, { headers: { "User-Agent": UA, "Accept-Language": "pt-PT,pt;q=0.9" } });
   if (!res.ok) throw new Error(`HTTP ${res.status} for "${q}" start=${start}`);
@@ -157,9 +157,10 @@ async function rest(env: { url: string; key: string }, path: string, init: Reque
   return res.status === 204 ? null : res.json().catch(() => null);
 }
 
-type Row = Parsed & { ingredientSlug: string; usableQty: number | null };
+export type Row = Parsed & { ingredientSlug: string; usableQty: number | null };
 
-async function save(rows: Row[], holdDays: number, touchedSlugs: string[]) {
+// chain: the shop the rows come from (shared with the other scrapers)
+export async function save(rows: Row[], holdDays: number, touchedSlugs: string[], chain = "continente") {
   const env = loadEnv(); const today = lisbonToday();
   const ing: { id: string; slug: string }[] = await rest(env, "ingredient?select=id,slug");
   const idOf = new Map(ing.map((i) => [i.slug, i.id]));
@@ -168,10 +169,10 @@ async function save(rows: Row[], holdDays: number, touchedSlugs: string[]) {
   // usable weights set from a label or by hand are never overwritten by rule values
   const kept = new Map<string, { usable_qty: number; usable_source: string }>();
   for (const b of chunk(rows.map((r) => r.id), 100)) {
-    const out: { external_id: string; usable_qty: number; usable_source: string }[] = await rest(env, `product?select=external_id,usable_qty,usable_source&chain_id=eq.continente&usable_source=in.(label,manual)&external_id=in.(${b.join(",")})`);
+    const out: { external_id: string; usable_qty: number; usable_source: string }[] = await rest(env, `product?select=external_id,usable_qty,usable_source&chain_id=eq.${chain}&usable_source=in.(label,manual)&external_id=in.(${b.join(",")})`);
     for (const o of out) kept.set(o.external_id, o);
   }
-  const prodRows = rows.map((r) => ({ chain_id: "continente", external_id: r.id, name: r.name, brand: r.brand, pack_qty: r.packQty,
+  const prodRows = rows.map((r) => ({ chain_id: chain, external_id: r.id, name: r.name, brand: r.brand, pack_qty: r.packQty,
     pack_unit: r.packUnit, url: r.url, ingredient_id: idOf.get(r.ingredientSlug) ?? null, mapping_source: "rule", active: true,
     usable_qty: kept.get(r.id)?.usable_qty ?? r.usableQty, usable_source: kept.get(r.id)?.usable_source ?? (r.usableQty ? "rule" : null) }));
   const pid = new Map<string, string>();
@@ -183,7 +184,7 @@ async function save(rows: Row[], holdDays: number, touchedSlugs: string[]) {
 
   // 1b) products this run no longer matches (rules changed, or the shop dropped them): unlink and deactivate
   const touchedIds = touchedSlugs.map((x) => idOf.get(x)).filter(Boolean) as string[];
-  const old: { id: string; external_id: string }[] = await rest(env, `product?select=id,external_id&chain_id=eq.continente&mapping_source=eq.rule&ingredient_id=in.(${touchedIds.join(",")})`);
+  const old: { id: string; external_id: string }[] = await rest(env, `product?select=id,external_id&chain_id=eq.${chain}&mapping_source=eq.rule&ingredient_id=in.(${touchedIds.join(",")})`);
   const stale = old.filter((o) => !pid.has(o.external_id)).map((o) => o.id);
   for (const b of chunk(stale, 100)) await rest(env, `product?id=in.(${b.join(",")})`, { method: "PATCH", body: JSON.stringify({ ingredient_id: null, active: false }) });
 
