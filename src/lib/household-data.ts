@@ -61,7 +61,7 @@ export function toFridgeRow(f: FridgeItem, c: { householdId: string; ingredientI
     id: f.uid!, household_id: c.householdId, ingredient_id: c.ingredientId, label: f.name,
     state: isCooked(f.name) ? "cooked" : "raw", source: f.receiptId ? "receipt" : isCooked(f.name) ? "prep" : "manual",
     expires_on: f.daysLeft === null ? null : addDays(c.today, f.daysLeft), shelf_days: f.maxDays,
-    receipt_id: f.receiptId && isUuid(f.receiptId) ? f.receiptId : null,
+    receipt_id: f.receiptId && isUuid(f.receiptId) ? f.receiptId : null, quantity: f.qty ?? null,
   };
 }
 
@@ -70,7 +70,7 @@ export function fridgeFromRow(r: FridgeRow, ing: { slug: string; name: string } 
   const daysLeft = r.expires_on ? Math.max(0, dayNumber(r.expires_on) - todayNumber(today)) : null;
   return {
     id: LOCAL_ID[slug] ?? slug, name: r.label ?? ing?.name ?? slug, daysLeft, maxDays: r.shelf_days ?? Math.max(1, daysLeft ?? 1),
-    uid: r.id, ...(r.receipt_id ? { receiptId: r.receipt_id } : {}),
+    uid: r.id, ...(r.receipt_id ? { receiptId: r.receipt_id } : {}), ...(r.quantity != null ? { qty: Number(r.quantity) } : {}),
   };
 }
 
@@ -89,5 +89,5 @@ export const stable = (v: unknown): string =>
   JSON.stringify(v, (_k, x) => (x && typeof x === "object" && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => a.localeCompare(b))) : x));
 
 /** The fields of a fridge row that matter for deciding whether it changed. */
-export const fridgeKey = (r: FridgeInsert) => stable([r.ingredient_id, r.label, r.state, r.source, r.expires_on, r.shelf_days, r.receipt_id]);
+export const fridgeKey = (r: FridgeInsert) => stable([r.ingredient_id, r.label, r.state, r.source, r.expires_on, r.shelf_days, r.receipt_id, r.quantity ?? null]);
 export const receiptKey = (r: ReceiptInsert) => stable([r.chain_id, r.purchased_on, Number(r.total ?? 0)]);

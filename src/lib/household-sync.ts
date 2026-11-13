@@ -22,7 +22,7 @@ type Remote = { fridge: Map<string, string>; receipts: Map<string, string>; plan
 
 const PUSH_DELAY = 400, PULL_DELAY = 300;
 const isSample = (f: FridgeItem) => !f.receiptId && initialFridge.some((x) => x.id === f.id && x.name === f.name);
-const fridgeListKey = (l: FridgeItem[]) => stable([...l].sort((a, b) => (a.uid ?? "").localeCompare(b.uid ?? "")).map((f) => [f.uid, f.id, f.name, f.daysLeft, f.maxDays, f.receiptId ?? null]));
+const fridgeListKey = (l: FridgeItem[]) => stable([...l].sort((a, b) => (a.uid ?? "").localeCompare(b.uid ?? "")).map((f) => [f.uid, f.id, f.name, f.daysLeft, f.maxDays, f.receiptId ?? null, f.qty ?? null]));
 const receiptListKey = (l: Receipt[]) => stable([...l].sort((a, b) => a.id.localeCompare(b.id)).map((r) => [r.id, r.store, r.date, r.total]));
 const planKey = (p: { chosen: unknown; accepted: boolean; checked: unknown }) => stable({ chosen: p.chosen, accepted: p.accepted, checked: p.checked });
 

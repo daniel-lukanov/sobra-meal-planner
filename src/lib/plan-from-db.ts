@@ -10,7 +10,10 @@ export type CatRecipe = { id: string; slug: string; title: string; servings: num
 export type CatLine = { recipe_id: string; ingredient_id: string; quantity: number; is_optional: boolean };
 export type Catalog = { ingredients: CatIngredient[]; recipes: CatRecipe[]; lines: CatLine[]; prices: PriceRow[] };
 
-export type ListLine = { id: string; name: string; price: number | null; aisle: string; dinners: number; packs: number };
+/** `covered`: the fridge already holds everything this ingredient needs, so there is nothing to buy. */
+export type ListLine = { id: string; name: string; price: number | null; aisle: string; dinners: number; packs: number; covered: boolean };
+/** What the fridge holds, by ingredient id: an amount in the ingredient's base unit, or null when the amount is not known (counts as enough). */
+export type Have = Map<string, number | null>;
 
 const AISLE: Record<string, string> = { fruit_veg: "Fruit and veg", meat_fish: "Meat and fish", eggs_dairy: "Eggs and dairy", pantry: "Pantry" };
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -62,8 +65,20 @@ export function cheapestPacks(cat: Catalog, ing: CatIngredient, chainId: string,
   return best ? { ...best, cost: r2(best.cost) } : null;
 }
 
+/** Amount of this ingredient in the fridge (its own entries and its parent's, so "chicken" covers thighs). Infinity when an amount is unknown. */
+function haveOf(have: Have, ing: CatIngredient): number {
+  let sum = 0;
+  for (const id of [ing.id, ing.parent_id]) {
+    if (!id || !have.has(id)) continue;
+    const q = have.get(id);
+    if (q === null || q === undefined) return Infinity;
+    sum += q;
+  }
+  return sum;
+}
+
 /** Shopping list for the dinners (by recipe title), without pantry staples. Ingredients without a price stay on the list with no price. */
-export function buildShoppingList(cat: Catalog, titles: string[], chainId: string, people: number): ListLine[] {
+export function buildShoppingList(cat: Catalog, titles: string[], chainId: string, people: number, have: Have = new Map()): ListLine[] {
   const need = new Map<string, number>(), dinners = new Map<string, number>();
   for (const t of titles) {
     const r = recipeByTitle(cat, t);
@@ -79,11 +94,13 @@ export function buildShoppingList(cat: Catalog, titles: string[], chainId: strin
   const out: ListLine[] = [];
   for (const [id, qty] of need) {
     const ing = ingById(cat, id)!;
-    const pick = cheapestPacks(cat, ing, chainId, qty);
     const aisle = AISLE[ing.category] ?? "Pantry";
-    if (!pick) { out.push({ id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0 }); continue; }
+    const left = qty - haveOf(have, ing);
+    if (left <= 1e-9) { out.push({ id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0, covered: true }); continue; }
+    const pick = cheapestPacks(cat, ing, chainId, left);
+    if (!pick) { out.push({ id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0, covered: false }); continue; }
     const label = `${pick.row.name_en ?? pick.row.name ?? ing.name} ${formatPack(Number(pick.row.pack_qty), pick.row.pack_unit ?? ing.base_unit)}`;
-    out.push({ id: ing.slug, name: pick.packs > 1 ? `${label} × ${pick.packs}` : label, price: pick.cost, aisle, dinners: dinners.get(id) ?? 0, packs: pick.packs });
+    out.push({ id: ing.slug, name: pick.packs > 1 ? `${label} × ${pick.packs}` : label, price: pick.cost, aisle, dinners: dinners.get(id) ?? 0, packs: pick.packs, covered: false });
   }
   const order = Object.values(AISLE);
   return out.sort((a, b) => order.indexOf(a.aisle) - order.indexOf(b.aisle) || a.name.localeCompare(b.name));

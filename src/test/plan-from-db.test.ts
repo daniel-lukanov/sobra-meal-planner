@@ -63,3 +63,20 @@ describe("shopping list", () => {
     expect(list.every((l) => l.price === null)).toBe(true);
   });
 });
+
+describe("shopping list with a fridge", () => {
+  const rice = cat.ingredients[0]!.id;
+  it("needs nothing when the fridge holds enough, and says so", () => {
+    const line = buildShoppingList(cat, ["Plain rice", "Plain rice"], "continente", 2, new Map([[rice, 300]])).find((l) => l.id === "rice")!;
+    expect(line).toMatchObject({ covered: true, price: null, packs: 0 });
+  });
+  it("buys only the missing part", () => {
+    const line = buildShoppingList(cat, ["Plain rice", "Plain rice"], "continente", 2, new Map([[rice, 100]])).find((l) => l.id === "rice")!;
+    expect(line.covered).toBe(false);
+    expect(line.price).toBe(1.2); // 200 g still missing: one 1 kg pack
+  });
+  it("an item without an amount counts as enough, and a parent covers its children", () => {
+    expect(buildShoppingList(cat, ["Plain rice"], "continente", 2, new Map([[rice, null]])).find((l) => l.id === "rice")!.covered).toBe(true);
+    expect(buildShoppingList(cat, ["Chicken rice"], "continente", 2, new Map([["chicken", 300]])).find((l) => l.id === "chicken")!.covered).toBe(true);
+  });
+});
