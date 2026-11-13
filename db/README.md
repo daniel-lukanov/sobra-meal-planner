@@ -1,0 +1,87 @@
+# Sobra data layer (own Supabase project)
+
+SQL for the Supabase project that holds products, prices, promotions, recipes, users, households,
+fridge, plans and receipts. It lives in `db/` on purpose: Lovable owns `supabase/migrations/` and
+`drizzle/` for the research study on Lovable Cloud, and the two must not mix.
+
+Run the files in order (they are already applied to project `pjwepyjcahvascttlarc`, Frankfurt):
+
+| File | What it does |
+| --- | --- |
+| `001_catalog.sql` | chains, allergens, diets, meal types, ingredients, products, regular prices, flyers, promotions and their date windows |
+| `002_recipes.sql` | recipes, recipe ingredients, prep bases (cook-once components), tags |
+| `003_users_households.sql` | profile, diet/allergy/store/meal-type choices, households, fridge, receipts, weekly plans, shopping list, price alerts, cook log |
+| `004_security_and_views.sql` | row level security, signup trigger, and the views for today's prices, recipe cost, diets and allergens |
+| `005_seed_reference.sql` | chains, the 14 EU allergens, diets, 14 meal types, starter ingredients |
+| `006_storage_guidelines.sql` | USDA FoodKeeper rows and per-ingredient storage guidelines with a review status (the app reads approved rows only) |
+| `007_net_weight.sql` | usable (net) weight: `ingredient.usable_fraction`, `product.usable_qty` with `usable_source`; `product_price_today` prices per usable unit |
+| `008_image_storage.sql` | public Storage bucket `recipe-images` (1 MB, jpeg/png/webp) for recipe photos; readable by URL, writable only with the secret key |
+| `009_translations.sql`, `010_translation_terms.sql` | English product names kept in the database: table `term_translation` (Portuguese term, English term), function `translate_pt_en()`, a trigger that fills `product.name_en`, and `ingredient.name_pt` |
+| `011_accounts_invites.sql` | Usernames on `profile`; functions `username_available`, `household_invite_preview`, `join_household`, `leave_household` (the only ways to join or leave a household) |
+| `012_household_sync.sql` | `fridge_item.receipt_id` and `shelf_days`; table `household_plan_state` (chosen dinners, accepted flag, list ticks); Realtime on the three household tables |
+
+**Read `METHODOLOGY.md` first**: free-plan principles (activity, size, batching, no backups, keys), the rule that a model proposes and a person approves food-safety data, and how we change the database.
+
+## Seed data
+
+`db/seed/001_prototype_recipes.sql` loads the prototype's 18 sample meals, their ingredient quantities and 5 prep bases. It is **test data**: quantities and keeping times are placeholders, not food-safety reviewed. Re-running it is safe.
+
+## App connection
+
+`src/integrations/sobra-db/client.ts` is the app's client for this project (publishable key only) and `types.ts` is generated from it. Both are new files; Lovable's `src/integrations/supabase/*` is untouched.
+
+## Scripts (run on your own machine with Bun)
+
+- `scripts/probe-continente.sh` saves a few raw Continente pages to `data/raw/` (git-ignored) so parsers can be written against real markup.
+- `scripts/continente.ts` fetches search results for the ingredient queries, maps products to ingredients by simple name rules (`mapping_source = 'rule'`, to be reviewed), and saves products, regular prices (a new row only on change) and strike-through promotions. It is a **dry run unless you pass `--write`**. Items sold by weight are stored with the price of the whole pack (loose produce is priced per 1 kg). A product is kept only if its shop category path matches the rule's category and its name matches `include`. `--pages` is a maximum (default 8): paging stops after two pages in a row with no kept product (relevance order is not strict). `scripts/audit-search.ts` is a read-only check that scans every result page of one search term and shows the shop categories and the products in the categories you name. Usable weight comes from the label, then from a rule (e.g. tuna 70 %, bone-in chicken 65 %), and is never overwritten when set manually. `--try-cgid <id>` probes whether the grid accepts a category id (unverified). The shop tile has no promotion end date, so a promotion window runs from the day it was seen to `--hold-days` (default 3) later and is extended whenever it is seen again.
+
+## Rules of the model
+
+- Recipes point to **ingredients**, never to products or promotions. Products point to ingredients.
+- A recipe's `fingerprint` is its meal type plus its sorted ingredient slugs, so two meal types may share ingredients but an exact repeat is rejected.
+- Quantities are stored in each ingredient's `base_unit` (g, ml or piece).
+- A promotion can have several `promotion_window` rows (for example Monday, then Thursday to Sunday).
+- Diets and allergens are **computed** from ingredient flags (`recipe_diets`, `recipe_allergen`), never labelled by hand.
+- Catalog tables are public read, service-role write. Personal data is owner-only, household data is member-only.
+- "Today" in the price views is the Lisbon date.
+
+## English names
+
+Product names from the shops are Portuguese (`product.name`). The database adds the English name itself: `product.name_en` is filled by a trigger from the table `term_translation` (whole words and phrases, longest first; brands and unknown words stay). To improve a translation, add or change a row in `term_translation` and run `select public.retranslate_products();` in the SQL editor, or fix one product by hand with `update product set name_en = '...', name_en_source = 'manual' where id = '...'` (manual names are never overwritten). The app shows `name_en` and falls back to `name`.
+
+## Plan and shopping list
+
+The plan and list screens read through `src/lib/live-plan.ts` (pure logic in `src/lib/plan-from-db.ts`, tests in `src/test/plan-from-db.test.ts`, shared reads in `src/lib/db-queries.ts`). A dinner costs the share of each pack it uses, at the cheapest usable-unit price at the chosen store, scaled to the number of people, without pantry staples. The shopping list buys whole packs: for each ingredient the cheapest single product that covers the week's quantity, with the pack count. When a store has no price for every dinner of the week, the screens fall back to the prototype's sample numbers. The "already in your fridge" marks are still the sample ones.
+
+## Images
+
+Fixed images (store logos, the meal and ingredient photos) live in the repo under `public/images/` and are saved there once by `scripts/localize-images.ts`, so the app works locally and does not depend on Lovable's media storage or Unsplash. Images for recipes that are added later (generated or uploaded) go to the public Storage bucket `recipe-images` (migration 008); put its URL in `recipe.image_url`. Keep each image under 1 MB.
+
+## App reads
+
+The deals screen reads `product_price_today` through `src/lib/live-deals.ts` (pure logic in `src/lib/deals-from-db.ts`, tested in `src/test/deals-from-db.test.ts`). A deal is "real" only if it beats the cheapest regular price per usable unit for the same ingredient and the same kind (organic, extra virgin, fillet, rice variety and so on, detected from the product name). A kind with only one product compares the deal with that product's own regular price. Stores without promotions in the database fall back to the sample deals.
+
+## Still to do
+
+- Check the placeholder usable fractions (tuna 0.7, bone-in chicken 0.65) against labels; chickpeas are left unadjusted.
+- Load the FoodKeeper data into `foodkeeper_item`, let Ollama propose ingredient matches, review them, then approve into `storage_guideline`. The prototype's `ingredient.shelf_life_days` values stay placeholders until then. Protein per 100 g is empty.
+- Joining a household by invite needs an invite table and a server function (the user cannot read a household they are not in yet). Email delivery needs our own sender (see METHODOLOGY section 4).
+- Scrapers and the import step that fill `product`, `product_price`, `flyer`, `promotion`.
+- Recipe tags, and many more recipes (generated, then classified). Only the prototype's 18 sample meals are loaded.
+- Switch the screens (deals first) from `src/data/*.ts` to the database.
+
+## Accounts and households
+
+Sign-up is username + password + the person's real email. The email is not verified yet, so the app signs in to Supabase with a placeholder
+address `<username>@users.dream-giants.com` and keeps the real email in the account metadata (`contact_email`). Supabase must have
+**Confirm email** switched off (Auth, Sign In / Providers, Email), otherwise sign-up returns no session.
+Every account gets a household of its own; the invite link `/join/<invite_code>` moves a person into the inviter's household via `join_household()`.
+The fridge, receipts, accepted week and list ticks are household data (RLS: members only), saved by `src/lib/household-sync.ts` and shared live through Realtime.
+On sign-in the database wins, except for a household with nothing yet: then the browser's data is uploaded (not the prototype's sample fridge). Simultaneous edits of the same item are last-writer-wins.
+
+## Shelf life (FoodKeeper)
+
+`bun db/scripts/foodkeeper.ts load` saves the USDA FoodKeeper products to `foodkeeper_item` (add `--file path` if the download is blocked).
+`bun db/scripts/foodkeeper.ts review` shows, per ingredient, the matching FoodKeeper products with their pantry and fridge ranges; you pick one and approve each location.
+Approved rows land in `storage_guideline` (`source = 'foodkeeper'`, reviewer and time recorded) and are the only ones the app may read. `status` lists what is approved.
+Numbers are never written by a model, and an ingredient you are unsure about is skipped.

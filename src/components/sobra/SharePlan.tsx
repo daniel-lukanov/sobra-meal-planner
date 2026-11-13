@@ -5,7 +5,9 @@ import { eur, useApp } from "@/lib/store";
 import { useExp } from "@/lib/experiment";
 import { createSharedPlan } from "@/lib/experiment.functions";
 import { dailyPicks } from "@/data/plan";
-import { neededItems, perPerson, shareText, weekCards, weekTotal } from "@/lib/week";
+import { perPerson, shareText } from "@/lib/week";
+import { useWeek } from "@/lib/use-week";
+import { useLivePlan } from "@/lib/live-plan";
 import { Button } from "./ui";
 
 /** Share the current plan with flatmates on WhatsApp, or copy it. */
@@ -16,11 +18,12 @@ export function SharePlan() {
   const [fallback, setFallback] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const cards = weekCards(chosen);
+  const { cards } = useWeek();
+  const planning = useLivePlan();
   const daily = dailyPicks.find((p) => p.id === pick) ?? dailyPicks[0]!;
   const dinners = mode === "prep" ? cards.map((c) => ({ day: c.day, title: c.meal.title })) : [{ day: "Tonight", title: daily.title }];
-  const total = mode === "prep" ? weekTotal(cards) : daily.price;
-  const items = neededItems(cards).filter((i) => !i.inFridge).map((i) => i.name);
+  const total = mode === "prep" ? planning.weekTotal(cards) : daily.price;
+  const items = planning.items(cards).filter((i) => !i.inFridge).map((i) => i.name);
 
   const buildText = async () => {
     const s = useExp.getState().session;

@@ -1,10 +1,5 @@
 import { storeBrand, type StoreName } from "@/data/stores";
 import { cn } from "@/lib/utils";
-import pingoDoceLogo from "@/assets/pingo_doce.png.asset.json";
-import continenteLogo from "@/assets/continente.png.asset.json";
-import lidlLogo from "@/assets/lidl.png.asset.json";
-import aldiLogo from "@/assets/aldi.png.asset.json";
-import auchanLogo from "@/assets/auchan.png.asset.json";
 
 export function SobraMark({ size = 34 }: { size?: number }) {
   return (
@@ -29,13 +24,13 @@ export function SobraLogo({ compact }: { compact?: boolean }) {
   );
 }
 
-/** Official supermarket logos, published to the app's media storage. */
+/** Supermarket logos, kept in the repo (public/images/stores). Saved there by scripts/localize-images.ts. */
 const storeLogos: Record<StoreName, string> = {
-  "Pingo Doce": pingoDoceLogo.url,
-  Continente: continenteLogo.url,
-  Lidl: lidlLogo.url,
-  Aldi: aldiLogo.url,
-  Auchan: auchanLogo.url,
+  "Pingo Doce": "/images/stores/pingo-doce.png",
+  Continente: "/images/stores/continente.png",
+  Lidl: "/images/stores/lidl.png",
+  Aldi: "/images/stores/aldi.png",
+  Auchan: "/images/stores/auchan.png",
 };
 
 export function StoreLogo({ name, className }: { name: StoreName; className?: string }) {

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { initialFridge, type FridgeItem } from "@/data/fridge";
+import { initialFridge, type FridgeItem, type Receipt } from "@/data/fridge";
 import type { StoreName } from "@/data/stores";
 
 export type Mode = "prep" | "daily";
@@ -14,6 +14,8 @@ type State = {
   meals: string[];
   weekAccepted: boolean;
   fridge: FridgeItem[];
+  /** Receipts the tester added. Their items live in `fridge` with the receipt id. */
+  receipts: Receipt[];
   alerts: Record<string, boolean>;
   pick: string;
   /** Day row index to the dinner title picked through Swap. */
@@ -37,6 +39,7 @@ export const useApp = create<State>()(
       meals: ["Tortilla", "Curry", "Rice bowls", "Pasta", "Roast chicken", "Potato salad"],
       weekAccepted: false,
       fridge: initialFridge,
+      receipts: [],
       alerts: { potatoes: true, chicken: false, eggs: true },
       pick: "rice",
       chosen: {},

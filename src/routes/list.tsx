@@ -5,7 +5,9 @@ import { eur, useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
 import { Button, PageHeader } from "@/components/sobra/ui";
 import { useExp } from "@/lib/experiment";
-import { COMING_SOON, listTotal, neededItems, weekCards } from "@/lib/week";
+import { COMING_SOON, listTotal } from "@/lib/week";
+import { useWeek } from "@/lib/use-week";
+import { useLivePlan } from "@/lib/live-plan";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/list")({
@@ -18,7 +20,9 @@ const aisleIcon: Record<string, LucideIcon> = { "Fruit and veg": Carrot, "Meat a
 function List() {
   const { store, checked, chosen, set } = useApp();
   const [delivery, setDelivery] = useState(false);
-  const items = neededItems(weekCards(chosen));
+  const planning = useLivePlan();
+  const { cards } = useWeek();
+  const items = planning.items(cards);
   const aisles = [...new Set(items.map((i) => i.aisle))];
   const toBuy = items.filter((i) => !i.inFridge);
   return (
@@ -27,7 +31,7 @@ function List() {
       <section aria-label="List total" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sheet bg-sheet p-5">
         <div className="num">
           <p className="text-[26px] font-bold leading-none">{eur(listTotal(items))}</p>
-          <p className="mt-1 text-[13.5px] text-muted-foreground">{toBuy.length} items to buy. Sample prices, no guarantee.</p>
+          <p className="mt-1 text-[13.5px] text-muted-foreground">{toBuy.length} items to buy. {planning.listNote(cards)}</p>
         </div>
         <div>
           <Button variant="secondary" onClick={() => { useExp.getState().track("fake_door_delivery"); setDelivery(true); }}>Order groceries for tonight (coming soon)</Button>
@@ -55,7 +59,7 @@ function List() {
                         </span>
                         <span className="flex-1">
                           <span className={cn("block text-[15px] font-medium", on && "text-muted-foreground line-through")}>{it.name}</span>
-                          <span className="block text-[12.5px] text-muted-foreground">for {it.dinners} {it.dinners === 1 ? "dinner" : "dinners"}</span>
+                          <span className="block text-[12.5px] text-muted-foreground">for {it.dinners} {it.dinners === 1 ? "dinner" : "dinners"}{it.note ? `. ${it.note}` : ""}</span>
                         </span>
                         <span className="num text-[14.5px] text-muted-foreground">{it.inFridge ? "in fridge" : eur(it.price ?? 0)}</span>
                       </label>

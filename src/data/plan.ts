@@ -1,7 +1,16 @@
+import type { Step } from "./cook";
 import type { IngredientId } from "./ingredients";
 import { photo } from "./photos";
 
-export type Meal = { title: string; how: string; uses: IngredientId[]; price: number };
+/** What a dinner contains, from the database diet flags. Drives the diet filter. */
+export type MealFlags = { meat: boolean; fish: boolean; egg: boolean; dairy: boolean; pork: boolean };
+/** `uses` holds base ingredient slugs (chicken thighs count as "chicken"). The optional fields are filled for dinners from the database. */
+export type Meal = {
+  title: string; how: string; uses: string[]; price: number;
+  slug?: string; type?: string; minutes?: number; summary?: string; image?: string;
+  flags?: MealFlags; tags?: string[]; names?: Record<string, string>;
+  steps?: { relaxed: Step[]; fast: Step[] };
+};
 export type PrepRow = { kind: "prep"; day: string; title: string; meta: string; tags: string[]; note?: string };
 export type DayRow = { kind: "day"; day: string; options: Meal[] };
 export type PlanRow = PrepRow | DayRow;

@@ -7,6 +7,10 @@ export type Deal = {
   price: number;
   was: number;
   cheapestRegular: number;
+  /** Only on deals from the database. */
+  id?: string;
+  endsOn?: string;
+  photoKey?: string;
 };
 
 const d = (name: string, ingredient: IngredientId | null, price: number, was: number, cheapestRegular: number): Deal => ({ name, ingredient, price, was, cheapestRegular });
