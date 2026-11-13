@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Carrot, CookingPot, Egg, Package, Pencil, ReceiptText, type LucideIcon } from "lucide-react";
-import type { FridgeItem } from "@/data/fridge";
+import { Carrot, CookingPot, Egg, Package, Pencil, ReceiptText, Trash2, type LucideIcon } from "lucide-react";
+import type { FridgeItem, Receipt } from "@/data/fridge";
+import { addReceipt, findDuplicate, itemsOf, removeReceipt, restoreReceipt } from "@/lib/receipts";
 import { useRef, useState } from "react";
-import { useApp } from "@/lib/store";
+import { eur, useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
-import { receiptRaw, receiptRead } from "@/data/fridge";
+import { receiptRaw, receiptRead, sampleReceipt } from "@/data/fridge";
 import { Button, Chip, PageHeader, TwoCol } from "@/components/sobra/ui";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -22,13 +23,16 @@ const cats: Record<string, { label: string; icon: LucideIcon }> = {
   pantry: { label: "Pantry", icon: Package },
 };
 const categoryOf = (id: string) => cats[id === "chicken" || id === "potatoes" ? "prep" : id === "eggs" ? "dairy" : id === "rice" || id === "chickpeas" ? "pantry" : "veg"]!;
-const sourceOf = (f: FridgeItem) =>
-  f.id === "chicken" || f.id === "potatoes" ? { label: "From Sunday prep", prep: true }
+const sourceOf = (f: FridgeItem, receipts: Receipt[]) =>
+  f.receiptId ? { label: `From ${receipts.find((r) => r.id === f.receiptId)?.store ?? ""} receipt`.replace("  ", " "), prep: false }
+  : f.id === "chicken" || f.id === "potatoes" ? { label: "From Sunday prep", prep: true }
   : ["carrots", "chickpeas", "peppers", "rice"].includes(f.id) ? { label: "From Lidl receipt", prep: false }
   : { label: "From Pingo Doce receipt", prep: false };
 
 function Fridge() {
-  const { fridge, set } = useApp();
+  const { fridge, receipts, set } = useApp();
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const duplicate = findDuplicate(receipts, sampleReceipt);
   const navigate = useNavigate();
   const [step, setStep] = useState<"start" | "reading" | "review" | "done">("start");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -59,9 +63,9 @@ function Fridge() {
               const filled = Math.max(1, Math.round(pct * 5));
               const cat = categoryOf(f.id);
               const Icon = cat.icon;
-              const src = sourceOf(f);
+              const src = sourceOf(f, receipts);
               return (
-                <li key={f.id + f.name} className={cn("card flex bg-sheet items-center gap-3 p-3.5", f.isNew && "slide-in", low && "border-tomato/40")}>
+                <li key={`${f.receiptId ?? "own"}-${f.id}-${f.name}`} className={cn("card flex bg-sheet items-center gap-3 p-3.5", f.isNew && "slide-in", low && "border-tomato/40")}>
                   <span className={cn("flex size-11 shrink-0 items-center justify-center rounded-[8px]", low ? "bg-tomato-tint text-tomato" : "bg-sheet-2 text-ink")} title={cat.label}>
                     <Icon className="size-5" strokeWidth={1.7} aria-hidden /><span className="sr-only">{cat.label}</span>
                   </span>
@@ -83,6 +87,7 @@ function Fridge() {
           </ul>
         }
         side={
+          <>
           <section aria-labelledby="rs" data-tour="3" className="thermal rounded-[8px] bg-paper px-5">
             <h2 id="rs" className="flex items-center gap-2 pt-2 text-[19px] font-bold"><ReceiptText className="size-5 text-muted-foreground" aria-hidden />Receipt scan</h2>
             <div aria-hidden className="mt-2 border-t-2 border-dashed border-rule" />
@@ -120,20 +125,64 @@ function Fridge() {
                     </li>
                   ))}
                 </ul>
-                <Button className="mt-4 w-full" onClick={() => {
-                  const existing = new Set(fridge.map((f) => f.id));
-                  set({ fridge: [...receiptRead.filter((r) => !existing.has(r.item.id)).map((r) => ({ ...r.item, isNew: true })), ...fridge] });
+                {duplicate && (
+                  <p role="status" className="mt-4 rounded-[8px] bg-mustard-tint p-3 text-[13px]">
+                    You already added a receipt from {duplicate.store} on {duplicate.date} for {eur(duplicate.total)}. Adding it again would count everything twice.
+                  </p>
+                )}
+                <Button variant={duplicate ? "secondary" : "primary"} className="mt-4 w-full" onClick={() => {
+                  const next = addReceipt({ fridge, receipts }, sampleReceipt);
+                  set({ fridge: next.fridge, receipts: next.receipts });
                   setStep("done");
-                }}>Add 4 items to my fridge</Button>
+                }}>{duplicate ? "Add it anyway" : `Add ${sampleReceipt.items.length} items to my fridge`}</Button>
+                {duplicate && <button type="button" onClick={() => setStep("start")} className="mt-2 min-h-11 w-full text-[13px] font-medium text-muted-foreground underline underline-offset-4">Cancel</button>}
               </div>
             )}
             {step === "done" && (
               <div className="slide-in mt-3">
-                <p className="text-[15px]">4 items added. This is a demo with a sample receipt.</p>
+                <p className="text-[15px]">Items added to your fridge. This is a demo with a sample receipt. Added by mistake? Remove the receipt below and its items go too.</p>
                 <Button variant="secondary" className="mt-4" onClick={() => setStep("start")}>Scan another receipt</Button>
               </div>
             )}
           </section>
+          {receipts.length > 0 && (
+            <section aria-labelledby="rl" className="mt-6">
+              <h2 id="rl" className="text-[17px] font-bold">Receipts you added</h2>
+              <ul className="mt-2 space-y-2.5">
+                {receipts.map((r) => {
+                  const n = itemsOf(fridge, r.id).length;
+                  return (
+                    <li key={r.id} className="card flex items-center gap-3 bg-sheet p-3.5">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[15px] font-semibold">{r.store} · {r.date}</p>
+                        <p className="text-[12.5px] text-muted-foreground">{n} {n === 1 ? "item" : "items"} in your fridge · {eur(r.total)}</p>
+                      </div>
+                      {confirmId === r.id ? (
+                        <div className="flex shrink-0 items-center gap-1">
+                          <Button variant="secondary" onClick={() => setConfirmId(null)}>Keep</Button>
+                          <Button onClick={() => {
+                            const res = removeReceipt({ fridge, receipts }, r.id);
+                            set({ fridge: res.fridge, receipts: res.receipts });
+                            setConfirmId(null);
+                            const removed = res.removed;
+                            toast(`Receipt removed, ${removed?.items.length ?? 0} items taken off your fridge.`, removed ? {
+                              action: { label: "Undo", onClick: () => { const cur = useApp.getState(); const back = restoreReceipt({ fridge: cur.fridge, receipts: cur.receipts }, removed); useApp.setState({ fridge: back.fridge, receipts: back.receipts }); } },
+                            } : {});
+                          }}>Remove</Button>
+                        </div>
+                      ) : (
+                        <button type="button" aria-label={`Remove receipt from ${r.store} on ${r.date}`} onClick={() => setConfirmId(r.id)}
+                          className="flex size-11 shrink-0 items-center justify-center rounded-ctl text-muted-foreground hover:bg-sheet-2 hover:text-tomato">
+                          <Trash2 className="size-4" strokeWidth={1.6} />
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+          </>
         }
       />
     </>
