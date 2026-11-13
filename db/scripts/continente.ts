@@ -157,10 +157,10 @@ async function rest(env: { url: string; key: string }, path: string, init: Reque
   return res.status === 204 ? null : res.json().catch(() => null);
 }
 
-export type Row = Parsed & { ingredientSlug: string; usableQty: number | null };
+export type Row = Parsed & { ingredientSlug: string; usableQty: number | null; until?: string }; // until: the shop states when the offer ends
 
 // chain: the shop the rows come from (shared with the other scrapers)
-export async function save(rows: Row[], holdDays: number, touchedSlugs: string[], chain = "continente") {
+export async function save(rows: Row[], holdDays: number, touchedSlugs: string[], chain = "continente", source: "online" | "flyer" = "online") {
   const env = loadEnv(); const today = lisbonToday();
   const ing: { id: string; slug: string }[] = await rest(env, "ingredient?select=id,slug");
   const idOf = new Map(ing.map((i) => [i.slug, i.id]));
@@ -203,7 +203,7 @@ export async function save(rows: Row[], holdDays: number, touchedSlugs: string[]
       await rest(env, `product_price?id=eq.${c.id}`, { method: "PATCH", body: JSON.stringify({ price: regular }) }); changed++; continue;
     }
     if (c) { await rest(env, `product_price?id=eq.${c.id}`, { method: "PATCH", body: JSON.stringify({ valid_to: addDays(today, -1) }) }); changed++; }
-    newPrices.push({ product_id: p, price: regular, valid_from: today, source: "online" });
+    newPrices.push({ product_id: p, price: regular, valid_from: today, source });
   }
   for (const b of chunk(newPrices, 200)) await rest(env, "product_price", { method: "POST", body: JSON.stringify(b) });
 
@@ -213,13 +213,13 @@ export async function save(rows: Row[], holdDays: number, touchedSlugs: string[]
   type Ex = { id: string; product_id: string; promo_price: number; promotion_window: { id: string; starts_on: string; ends_on: string }[] };
   const existing = new Map<string, Ex[]>();
   for (const b of chunk(ids, 100)) {
-    const out = (await rest(env, `promotion?select=id,product_id,promo_price,promotion_window(id,starts_on,ends_on)&source=eq.online&product_id=in.(${b.join(",")})`)) as Ex[];
+    const out = (await rest(env, `promotion?select=id,product_id,promo_price,promotion_window(id,starts_on,ends_on)&source=eq.${source}&product_id=in.(${b.join(",")})`)) as Ex[];
     for (const o of out) (existing.get(o.product_id) ?? existing.set(o.product_id, []).get(o.product_id)!).push(o);
   }
   let promoNew = 0, promoExt = 0, promoClosed = 0; const yesterday = addDays(today, -1);
   for (const r of rows) {
     const p = pid.get(r.id); if (!p) continue;
-    const isPromo = !!r.was && r.was > r.price; const end = addDays(today, holdDays); let matched = false;
+    const isPromo = !!r.was && r.was > r.price; const end = r.until ?? addDays(today, holdDays); let matched = false;
     for (const e of existing.get(p) ?? []) {
       const active = e.promotion_window.filter((w) => w.ends_on >= yesterday);
       if (isPromo && !matched && Math.abs(Number(e.promo_price) - r.price) < 0.005 && active.length) {
@@ -234,7 +234,7 @@ export async function save(rows: Row[], holdDays: number, touchedSlugs: string[]
     }
     if (isPromo && !matched) {
       const [pr]: { id: string }[] = await rest(env, "promotion?select=id", { method: "POST", prefer: "return=representation",
-        body: JSON.stringify([{ product_id: p, promo_price: r.price, regular_price: r.was, deal_type: "price_cut", source: "online", source_url: r.url }]) });
+        body: JSON.stringify([{ product_id: p, promo_price: r.price, regular_price: r.was, deal_type: "price_cut", source, source_url: r.url }]) });
       await rest(env, "promotion_window", { method: "POST", body: JSON.stringify([{ promotion_id: pr.id, starts_on: today, ends_on: end }]) });
       promoNew++;
     }
