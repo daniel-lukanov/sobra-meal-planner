@@ -14,24 +14,25 @@ const BASE = "https://www.pingodoce.pt/home/produtos/";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
 
 // Pingo Doce's categories are coarser than Continente's (one page for potatoes, onions and garlic), so the name filters in the
-// shared RULES do more of the work here. paths: category pages to read. category: regex on the tile's category path.
-const SHOP: Record<string, { paths: string[]; category: RegExp }> = {
-  batata: { paths: ["frutas-e-vegetais/vegetais/batatas-cebolas-e-alhos"], category: /vegetais\/batatas-cebolas-e-alhos$/ },
-  cebola: { paths: ["frutas-e-vegetais/vegetais/batatas-cebolas-e-alhos"], category: /vegetais\/batatas-cebolas-e-alhos$/ },
-  cenoura: { paths: ["frutas-e-vegetais/vegetais/cenouras-couves-e-brocolos"], category: /vegetais\/cenouras-couves-e-brocolos$/ },
-  ovos: { paths: ["ovos"], category: /^ovos$/ },
-  arroz: { paths: ["mercearia/arroz-massa-e-leguminosas/arroz"], category: /arroz-massa-e-leguminosas\/arroz$/ },
-  "grão de bico": { paths: ["mercearia/conservas/feijao-grao-e-outros"], category: /conservas\/feijao-grao-e-outros$/ },
-  pimento: { paths: ["frutas-e-vegetais/vegetais/tomates-pepinos-e-pimentos"], category: /vegetais\/tomates-pepinos-e-pimentos$/ },
-  atum: { paths: ["mercearia/conservas/atum"], category: /conservas\/atum$/ },
-  espinafre: { paths: ["frutas-e-vegetais/vegetais/outros-vegetais", "frutas-e-vegetais/vegetais/saladas-e-legumes-preparados", "congelados/frutas-e-vegetais/vegetais-congelados"],
-    category: /(vegetais\/outros-vegetais|vegetais\/saladas-e-legumes-preparados|congelados\/frutas-e-vegetais\/vegetais-congelados)$/ },
-  frango: { paths: ["talho/aves/frango"], category: /talho\/aves\/frango$/ },
-  esparguete: { paths: ["mercearia/arroz-massa-e-leguminosas/massa"], category: /arroz-massa-e-leguminosas\/massa$/ },
-  "leite de coco": { paths: ["mercearia/sobremesas/leite-condensado-e-de-coco"], category: /sobremesas\/leite-condensado-e-de-coco$/ },
-  limão: { paths: ["frutas-e-vegetais/frutas/laranjas-tangerinas-e-limoes"], category: /frutas\/laranjas-tangerinas-e-limoes$/ },
-  "molho de soja": { paths: ["mercearia/temperos-e-molhos/outros-molhos-e-temperos"], category: /temperos-e-molhos\/outros-molhos-e-temperos$/ },
-  azeite: { paths: ["mercearia/azeite-oleo-e-vinagre/azeite"], category: /azeite-oleo-e-vinagre\/azeite$/ },
+// shared RULES do more of the work here. paths: category pages to read; a product counts as that category when it appears on
+// the page (a tile's own link points at its primary category, which can differ, e.g. lemons sit under "fruta-da-epoca").
+// include: replaces the shared name filter where Pingo Doce names things differently.
+const SHOP: Record<string, { paths: string[]; include?: RegExp }> = {
+  batata: { paths: ["frutas-e-vegetais/vegetais/batatas-cebolas-e-alhos"] },
+  cebola: { paths: ["frutas-e-vegetais/vegetais/batatas-cebolas-e-alhos"] },
+  cenoura: { paths: ["frutas-e-vegetais/vegetais/cenouras-couves-e-brocolos"] },
+  ovos: { paths: ["ovos"] },
+  arroz: { paths: ["mercearia/arroz-massa-e-leguminosas/arroz"] },
+  "grão de bico": { paths: ["mercearia/conservas/feijao-grao-e-outros"], include: /^gr[ãa]o( de)? bico/i }, // "Grão Bico em Lata"
+  pimento: { paths: ["frutas-e-vegetais/vegetais/tomates-pepinos-e-pimentos"] },
+  atum: { paths: ["mercearia/conservas/atum"] },
+  espinafre: { paths: ["frutas-e-vegetais/vegetais/outros-vegetais", "frutas-e-vegetais/vegetais/saladas-e-legumes-preparados", "congelados/frutas-e-vegetais/vegetais-congelados"] },
+  frango: { paths: ["talho/aves/frango"] },
+  esparguete: { paths: ["mercearia/arroz-massa-e-leguminosas/massa"] },
+  "leite de coco": { paths: ["mercearia/sobremesas/leite-condensado-e-de-coco"] },
+  limão: { paths: ["frutas-e-vegetais/frutas/laranjas-tangerinas-e-limoes"] },
+  "molho de soja": { paths: ["mercearia/temperos-e-molhos/outros-molhos-e-temperos"] },
+  azeite: { paths: ["mercearia/azeite-oleo-e-vinagre/azeite"] },
 };
 
 // ---------- parsing ----------
@@ -55,7 +56,11 @@ export function parsePage(html: string): { items: PdTile[]; skipped: string[]; m
       const price = sale ? Number(sale) : Number(it.price ?? gtm.value);
       const wasRaw = t.match(/strike-through[\s\S]*?<span class="value" content="([\d.]+)"/)?.[1];
       const was = wasRaw ? Number(wasRaw) : null;
-      const q = parseQuantity(qtyText);
+      let q = parseQuantity(qtyText);
+      // Loose produce ("Cebola a Granel", "Limão"): the price is per kg ("1,19 €/Kg") and the quantity is the weight of one
+      // typical piece. There is no pack, so price one kg (same as the Continente scraper).
+      const priceBlock = text(t.match(/class="product-price[^"]*">([\s\S]*?)<\/div>\s*<\/div>/)?.[1] ?? "");
+      if (/€\s*\/\s*kg/i.test(priceBlock) && !unitText.includes("|")) q = { qty: 1000, unit: "g" };
       if (!name || !isFinite(price) || !q) { skipped.push(`${id} ${name} [${unitText}]`); continue; }
       const path = href ? decode(href).replace(/%E2%80%8B/gi, "").replace(/^\/home\/produtos\//, "").split("/").slice(0, -1).join("/") : null;
       items.push({ id, name, brand: it.item_brand ? decode(String(it.item_brand)) || null : null, category: path, path,
@@ -92,16 +97,18 @@ async function main() {
     if (g.skipped.length) console.log(`    skipped ${g.skipped.length} (no pack size or price): ${g.skipped.slice(0, 3).join(" | ")}`);
     await sleep(2000);
   }
-  const all = new Map<string, PdTile>(); for (const l of pages.values()) for (const t of l) all.set(t.id, t);
+  const all = new Map<string, PdTile>(); const onPages = new Map<string, Set<string>>();
+  for (const [page, l] of pages) for (const t of l) { all.set(t.id, t); (onPages.get(t.id) ?? onPages.set(t.id, new Set()).get(t.id)!).add(page); }
 
   // 2) map tiles to ingredients with the shared name rules
   const rows: Row[] = []; const seen = new Set<string>();
   for (const q of queries) {
     const rule = RULES.find((r) => r.query === q); if (!rule) throw new Error(`RULES has no entry for "${q}"`);
     const shop = SHOP[q]!; let kept = 0, dropped = 0, unitMismatch = 0;
+    const r2 = { ...rule, category: /./, include: shop.include ?? rule.include };
     for (const it of all.values()) {
-      if (!file && !(it.path && shop.category.test(it.path))) continue;
-      const slug = mapToIngredient({ ...rule, category: file ? /./ : shop.category }, it.name, it.path);
+      if (!file && !shop.paths.some((pth) => onPages.get(it.id)?.has(pth))) continue;
+      const slug = mapToIngredient(r2, it.name, "page");
       if (!slug) { dropped++; continue; }
       const fit = fitUnit(slug, it.packQty, it.packUnit);
       if (!fit) { unitMismatch++; continue; }
