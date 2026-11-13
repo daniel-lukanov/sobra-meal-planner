@@ -5,7 +5,8 @@ import { eur, useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
 import { Button, PageHeader } from "@/components/sobra/ui";
 import { useExp } from "@/lib/experiment";
-import { COMING_SOON, listTotal, weekCards } from "@/lib/week";
+import { COMING_SOON, listTotal } from "@/lib/week";
+import { useWeek } from "@/lib/use-week";
 import { useLivePlan } from "@/lib/live-plan";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,7 @@ function List() {
   const { store, checked, chosen, set } = useApp();
   const [delivery, setDelivery] = useState(false);
   const planning = useLivePlan();
-  const cards = weekCards(chosen);
+  const { cards } = useWeek();
   const items = planning.items(cards);
   const aisles = [...new Set(items.map((i) => i.aisle))];
   const toBuy = items.filter((i) => !i.inFridge);

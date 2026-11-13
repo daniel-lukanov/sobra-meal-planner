@@ -35,7 +35,7 @@ async function main() {
 
   // 1) pantry staples (left out of costs and shopping lists)
   await upsert("ingredient", "slug", NEW_STAPLES.map((s) => ({ slug: s.slug, name: s.name, name_pt: s.name_pt, category: "pantry", base_unit: s.base_unit,
-    ...(s.grams_per_piece ? { grams_per_piece: s.grams_per_piece } : {}), is_pantry_staple: true })));
+    grams_per_piece: s.grams_per_piece, is_pantry_staple: true })));
   const all: { id: string; slug: string; parent_id: string | null }[] = await rest("ingredient?select=id,slug,parent_id");
   const idOf = new Map(all.map((i) => [i.slug, i.id])); const byId = new Map(all.map((i) => [i.id, i]));
   console.log(`staples ok (${NEW_STAPLES.map((s) => s.slug).join(", ")})`);

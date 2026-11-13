@@ -11,7 +11,7 @@ import { withShelfLife } from "@/lib/shelf-life";
 import { FridgeAmount } from "@/components/sobra/FridgeAmount";
 import { FRIDGE_SLUG } from "@/lib/household-data";
 import { useLivePlan } from "@/lib/live-plan";
-import { weekCards } from "@/lib/week";
+import { useWeek } from "@/lib/use-week";
 import { Button, Chip, PageHeader, TwoCol } from "@/components/sobra/ui";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -41,7 +41,7 @@ function Fridge() {
   const duplicate = findDuplicate(receipts, sampleReceipt);
   const guidelines = useStorageGuidelines(), catalog = useIngredients();
   const planning = useLivePlan();
-  const cards = weekCards(useApp((s) => s.chosen));
+  const { cards } = useWeek();
   const unitOf = (id: string) => catalog.data?.find((i) => i.slug === (FRIDGE_SLUG[id] ?? id))?.base_unit ?? "g";
   const navigate = useNavigate();
   const [step, setStep] = useState<"start" | "reading" | "review" | "done">("start");

@@ -1,16 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
 import { cookIngredients, fastSteps, prepLanes, relaxedSteps, type Block } from "@/data/cook";
 import { Button, PageHeader, TwoCol, UnderlineTabs } from "@/components/sobra/ui";
 import { cn } from "@/lib/utils";
-import { photo } from "@/data/photos";
+import { mealPhoto, photo } from "@/data/photos";
+import { useWeek } from "@/lib/use-week";
+import { useIngredients, useRecipes } from "@/lib/db-queries";
+import { formatAmount } from "@/lib/amounts";
+import { FRIDGE_SLUG } from "@/lib/household-data";
 import { CookingPot, Flame, UtensilsCrossed } from "lucide-react";
 
 export const Route = createFileRoute("/cook")({
   head: pageHead("Cook", "Step by step cook mode with timers, plus your Sunday prep timeline."),
+  validateSearch: (s: Record<string, unknown>): { recipe?: string } => (typeof s["recipe"] === "string" ? { recipe: s["recipe"] } : {}),
   component: Cook,
 });
 
@@ -31,7 +36,22 @@ function chime() {
 
 function Cook() {
   const [pace, setPace] = useState<"relaxed" | "fast">("relaxed");
-  const steps = pace === "relaxed" ? relaxedSteps : fastSteps;
+  const { recipe } = Route.useSearch();
+  const { ctx, cards } = useWeek();
+  const ingredients = useIngredients(), recipes = useRecipes();
+  // The dinner to cook: the one asked for, else this week's first. The sample week keeps its fixed chicken and spinach rice.
+  const meal = (recipe && ctx.pool.find((m) => m.slug === recipe)) || (ctx.live ? cards[0]?.meal : undefined);
+  const steps = meal?.steps ? (pace === "relaxed" ? meal.steps.relaxed : meal.steps.fast) : pace === "relaxed" ? relaxedSteps : fastSteps;
+  const lines = useMemo(() => {
+    if (!meal?.slug || !ingredients.data || !recipes.data) return null;
+    const r = recipes.data.recipes.find((x) => x.slug === meal.slug);
+    if (!r) return null;
+    const byId = new Map(ingredients.data.map((i) => [i.id, i]));
+    return recipes.data.lines.filter((l) => l.recipe_id === r.id && !l.is_optional).flatMap((l) => {
+      const i = byId.get(l.ingredient_id);
+      return i ? [{ name: i.name, qty: formatAmount(l.quantity, i.base_unit), staple: i.is_pantry_staple, slug: i.slug }] : [];
+    }).sort((a, b) => Number(a.staple) - Number(b.staple));
+  }, [meal?.slug, ingredients.data, recipes.data]);
   const [i, setI] = useState(0);
   const step = steps[Math.min(i, steps.length - 1)]!;
   const [left, setLeft] = useState(step.timer ?? 0);
@@ -60,6 +80,15 @@ function Cook() {
   const last = i >= steps.length - 1;
   const next = () => {
     if (!last) return setI(i + 1);
+    if (meal?.steps) {
+      const used = new Set(meal.uses);
+      const gone = (id: string) => { const slug = FRIDGE_SLUG[id] ?? id; return [...used].some((u) => slug === u || slug.startsWith(`${u}-`)); };
+      const taken = fridge.filter((f) => gone(f.id));
+      set({ fridge: fridge.filter((f) => !gone(f.id)) });
+      navigate({ to: "/fridge" });
+      toast(taken.length ? `Taken off your fridge: ${taken.map((f) => f.name ?? f.id).join(", ")}.` : "Enjoy your dinner.");
+      return;
+    }
     const drop = ["spinach", "chicken", "rice"];
     set({ fridge: fridge.filter((f) => !drop.includes(f.id)) });
     navigate({ to: "/fridge" });
@@ -76,10 +105,10 @@ function Cook() {
 
   return (
     <>
-      <PageHeader small={pace === "relaxed" ? "Tonight · 22 min" : "Tonight · 8 min"} title="Chicken and spinach rice"
+      <PageHeader small={meal?.steps ? `Cook mode${meal.minutes ? ` · ${meal.minutes} min` : ""}` : pace === "relaxed" ? "Tonight · 22 min" : "Tonight · 8 min"} title={meal?.title ?? "Chicken and spinach rice"}
         right={<UnderlineTabs label="Cooking pace" value={pace} onChange={setPace} options={[{ value: "relaxed", label: "Relaxed" }, { value: "fast", label: "Fast" }]} />} />
       <div className="mb-6 aspect-[16/7] overflow-hidden rounded-[8px] bg-sheet-2">
-        <img src={photo.chickenRice} alt="Bowl of rice with pan-fried chicken and wilted spinach" width={1200} height={525} className="size-full object-cover" />
+        <img src={meal ? (meal.image ?? mealPhoto[meal.title] ?? photo.prep) : photo.chickenRice} alt={meal ? meal.title : "Bowl of rice with pan-fried chicken and wilted spinach"} width={1200} height={525} className="size-full object-cover" />
       </div>
       <TwoCol
         main={
@@ -125,7 +154,7 @@ function Cook() {
           <section aria-labelledby="ing" className="card p-5">
             <h2 id="ing" className="text-[18px]">Ingredients</h2>
             <ul className="mt-3 divide-y divide-rule">
-              {cookIngredients.map((g) => (
+              {(lines ? lines.map((l) => ({ name: l.name, qty: l.qty, note: l.staple ? "pantry" : fridge.some((f) => (FRIDGE_SLUG[f.id] ?? f.id) === l.slug) ? "in fridge" : "" })) : cookIngredients).map((g) => (
                 <li key={g.name} className="flex justify-between gap-3 py-2.5">
                   <span><span className="font-medium">{g.name}</span> <span className="num text-muted-foreground">{g.qty}</span></span>
                   <span className={cn("text-right text-[13px]", g.note === "expires tomorrow" ? "text-tomato" : "text-muted-foreground")}>{g.note}</span>

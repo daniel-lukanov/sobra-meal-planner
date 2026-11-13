@@ -5,7 +5,8 @@ import { eur, useApp } from "@/lib/store";
 import { useExp } from "@/lib/experiment";
 import { createSharedPlan } from "@/lib/experiment.functions";
 import { dailyPicks } from "@/data/plan";
-import { perPerson, shareText, weekCards } from "@/lib/week";
+import { perPerson, shareText } from "@/lib/week";
+import { useWeek } from "@/lib/use-week";
 import { useLivePlan } from "@/lib/live-plan";
 import { Button } from "./ui";
 
@@ -17,7 +18,7 @@ export function SharePlan() {
   const [fallback, setFallback] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const cards = weekCards(chosen);
+  const { cards } = useWeek();
   const planning = useLivePlan();
   const daily = dailyPicks.find((p) => p.id === pick) ?? dailyPicks[0]!;
   const dinners = mode === "prep" ? cards.map((c) => ({ day: c.day, title: c.meal.title })) : [{ day: "Tonight", title: daily.title }];
