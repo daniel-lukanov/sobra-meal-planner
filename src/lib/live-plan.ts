@@ -5,15 +5,16 @@ import { useApp } from "@/lib/store";
 import { CHAIN_OF } from "@/lib/deals-from-db";
 import { useIngredients, usePriceRows, useRecipes } from "@/lib/db-queries";
 import { allPriced, buildShoppingList, recipeCost, type Catalog } from "@/lib/plan-from-db";
-import { shoppingList } from "@/data/list";
 import type { Meal } from "@/data/plan";
 import { neededItems, weekTotal, type Card, type NeededItem } from "@/lib/week";
 
-const SAMPLE_FRIDGE = new Set(shoppingList.flatMap((g) => g.items.filter((i) => i.inFridge).map((i) => i.id)));
+// Fridge item ids that differ from the ingredient slugs in the database.
+const FRIDGE_SLUG: Record<string, string> = { onions: "onion" };
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export function useLivePlan() {
-  const { store, people } = useApp();
+  const { store, people, fridge } = useApp();
+  const inFridge = useMemo(() => new Set(fridge.map((f) => FRIDGE_SLUG[f.id] ?? f.id)), [fridge]);
   const prices = usePriceRows(), ings = useIngredients(), recipes = useRecipes();
   const cat = useMemo<Catalog | null>(() => (prices.data && ings.data && recipes.data
     ? { ingredients: ings.data, recipes: recipes.data.recipes, lines: recipes.data.lines, prices: prices.data } : null), [prices.data, ings.data, recipes.data]);
@@ -30,11 +31,11 @@ export function useLivePlan() {
       items: (cards: Card[]): NeededItem[] => {
         if (!cat || !isLive(cards)) return neededItems(cards);
         return buildShoppingList(cat, cards.map((c) => c.meal.title), chainId, people).map((l) => ({
-          id: l.id, name: l.name, price: l.price, aisle: l.aisle, dinners: l.dinners, ...(SAMPLE_FRIDGE.has(l.id) ? { inFridge: true } : {}),
+          id: l.id, name: l.name, price: l.price, aisle: l.aisle, dinners: l.dinners, ...(inFridge.has(l.id) ? { inFridge: true } : {}),
         }));
       },
       planNote: (cards: Card[]) => (isLive(cards) ? `Prices from ${store}'s website: the share of each pack your dinners use. Check the shelf before you buy.` : "Sample prices, no guarantee."),
       listNote: (cards: Card[]) => (isLive(cards) ? `Prices from ${store}'s website, whole packs. Check the shelf before you buy.` : "Sample prices, no guarantee."),
     };
-  }, [cat, chainId, people, store]);
+  }, [cat, chainId, people, store, inFridge]);
 }
