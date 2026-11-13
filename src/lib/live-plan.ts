@@ -3,9 +3,10 @@
 import { useMemo } from "react";
 import { useApp } from "@/lib/store";
 import { CHAIN_OF } from "@/lib/deals-from-db";
+import { formatAmount } from "@/lib/amounts";
 import { FRIDGE_SLUG } from "@/lib/household-data";
 import { useIngredients, usePriceRows, useRecipes } from "@/lib/db-queries";
-import { allPriced, buildShoppingList, recipeCost, type Catalog, type Have } from "@/lib/plan-from-db";
+import { allPriced, buildShoppingList, recipeCost, weekNeed, type Catalog, type Have } from "@/lib/plan-from-db";
 import type { Meal } from "@/data/plan";
 import { neededItems, weekTotal, type Card, type NeededItem } from "@/lib/week";
 
@@ -46,7 +47,13 @@ export function useLivePlan() {
         }
         return buildShoppingList(cat, cards.map((c) => c.meal.title), chainId, people, have).map((l) => ({
           id: l.id, name: l.name, price: l.price, aisle: l.aisle, dinners: l.dinners, ...(l.covered ? { inFridge: true } : {}),
+          ...(!l.covered && l.have > 0 && Number.isFinite(l.have) ? { note: `You have ${formatAmount(l.have, l.unit)} of the ${formatAmount(l.need, l.unit)} needed` } : {}),
         }));
+      },
+      /** What this week's dinners need of one ingredient (by slug), in its base unit; null until prices and recipes are loaded. */
+      needOf: (slug: string, cards: Card[]): number | null => {
+        const ing = cat?.ingredients.find((i) => i.slug === slug);
+        return cat && ing ? weekNeed(cat, ing.id, cards.map((c) => c.meal.title), people) : null;
       },
       planNote: (cards: Card[]) => (isLive(cards) ? `Prices from ${store}'s website: the share of each pack your dinners use. Check the shelf before you buy.` : "Sample prices, no guarantee."),
       listNote: (cards: Card[]) => (isLive(cards) ? `Prices from ${store}'s website, whole packs. Check the shelf before you buy.` : "Sample prices, no guarantee."),

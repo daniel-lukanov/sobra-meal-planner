@@ -47,7 +47,7 @@ export function alternatives(i: number, chosen: Record<string, string>, diet: st
     .map((x) => x.m);
 }
 
-export type NeededItem = ListItem & { aisle: string; dinners: number };
+export type NeededItem = ListItem & { aisle: string; dinners: number; note?: string };
 /** Shopping list for the week: only ingredients some dinner still needs. */
 export function neededItems(cards: Card[]): NeededItem[] {
   const count = new Map<string, number>();

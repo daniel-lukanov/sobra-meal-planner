@@ -8,6 +8,10 @@ import { pageHead } from "@/lib/head";
 import { receiptRaw, receiptRead, sampleReceipt } from "@/data/fridge";
 import { useIngredients, useStorageGuidelines } from "@/lib/db-queries";
 import { withShelfLife } from "@/lib/shelf-life";
+import { FridgeAmount } from "@/components/sobra/FridgeAmount";
+import { FRIDGE_SLUG } from "@/lib/household-data";
+import { useLivePlan } from "@/lib/live-plan";
+import { weekCards } from "@/lib/week";
 import { Button, Chip, PageHeader, TwoCol } from "@/components/sobra/ui";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -36,6 +40,9 @@ function Fridge() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const duplicate = findDuplicate(receipts, sampleReceipt);
   const guidelines = useStorageGuidelines(), catalog = useIngredients();
+  const planning = useLivePlan();
+  const cards = weekCards(useApp((s) => s.chosen));
+  const unitOf = (id: string) => catalog.data?.find((i) => i.slug === (FRIDGE_SLUG[id] ?? id))?.base_unit ?? "g";
   const navigate = useNavigate();
   const [step, setStep] = useState<"start" | "reading" | "review" | "done">("start");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -98,6 +105,8 @@ function Fridge() {
                       </div>
                       <span className={cn("shrink-0 rounded-[6px] px-2 py-0.5 text-[11.5px] font-semibold", src.prep ? "bg-mustard-tint text-[var(--mustard-ink)]" : "bg-sheet-2 text-muted-foreground")}>{src.label}</span>
                     </div>
+                    <FridgeAmount qty={f.qty} unit={unitOf(f.id)} need={planning.needOf(FRIDGE_SLUG[f.id] ?? f.id, cards)}
+                      onChange={(qty) => set({ fridge: fridge.map((x) => (x === f ? (({ qty: _q, ...rest }) => ({ ...rest, ...(qty === undefined ? {} : { qty }) }))(x) : x)) })} />
                   </div>
                 </li>
               );

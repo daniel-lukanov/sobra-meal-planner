@@ -11,7 +11,7 @@ export type CatLine = { recipe_id: string; ingredient_id: string; quantity: numb
 export type Catalog = { ingredients: CatIngredient[]; recipes: CatRecipe[]; lines: CatLine[]; prices: PriceRow[] };
 
 /** `covered`: the fridge already holds everything this ingredient needs, so there is nothing to buy. */
-export type ListLine = { id: string; name: string; price: number | null; aisle: string; dinners: number; packs: number; covered: boolean };
+export type ListLine = { id: string; name: string; price: number | null; aisle: string; dinners: number; packs: number; covered: boolean; need: number; have: number; unit: string };
 /** What the fridge holds, by ingredient id: an amount in the ingredient's base unit, or null when the amount is not known (counts as enough). */
 export type Have = Map<string, number | null>;
 
@@ -95,15 +95,29 @@ export function buildShoppingList(cat: Catalog, titles: string[], chainId: strin
   for (const [id, qty] of need) {
     const ing = ingById(cat, id)!;
     const aisle = AISLE[ing.category] ?? "Pantry";
-    const left = qty - haveOf(have, ing);
-    if (left <= 1e-9) { out.push({ id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0, covered: true }); continue; }
+    const haveQty = haveOf(have, ing);
+    const left = qty - haveQty;
+    if (left <= 1e-9) { out.push({ id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0, covered: true, need: qty, have: haveQty, unit: ing.base_unit }); continue; }
     const pick = cheapestPacks(cat, ing, chainId, left);
-    if (!pick) { out.push({ id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0, covered: false }); continue; }
+    if (!pick) { out.push({ id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0, covered: false, need: qty, have: haveQty, unit: ing.base_unit }); continue; }
     const label = `${pick.row.name_en ?? pick.row.name ?? ing.name} ${formatPack(Number(pick.row.pack_qty), pick.row.pack_unit ?? ing.base_unit)}`;
-    out.push({ id: ing.slug, name: pick.packs > 1 ? `${label} × ${pick.packs}` : label, price: pick.cost, aisle, dinners: dinners.get(id) ?? 0, packs: pick.packs, covered: false });
+    out.push({ id: ing.slug, name: pick.packs > 1 ? `${label} × ${pick.packs}` : label, price: pick.cost, aisle, dinners: dinners.get(id) ?? 0, packs: pick.packs, covered: false, need: qty, have: haveQty, unit: ing.base_unit });
   }
   const order = Object.values(AISLE);
   return out.sort((a, b) => order.indexOf(a.aisle) - order.indexOf(b.aisle) || a.name.localeCompare(b.name));
+}
+
+/** How much of one ingredient (its children included, so "chicken" counts thighs) the dinners need, in its base unit. */
+export function weekNeed(cat: Catalog, ingredientId: string, titles: string[], people: number): number {
+  const ids = new Set([ingredientId, ...cat.ingredients.filter((i) => i.parent_id === ingredientId).map((i) => i.id)]);
+  let total = 0;
+  for (const t of titles) {
+    const r = recipeByTitle(cat, t);
+    if (!r) continue;
+    const scale = people / Math.max(1, r.servings);
+    for (const l of linesOf(cat, r.id)) if (ids.has(l.ingredient_id)) total += l.quantity * scale;
+  }
+  return total;
 }
 
 /** True when every dinner can be priced at this chain. */
