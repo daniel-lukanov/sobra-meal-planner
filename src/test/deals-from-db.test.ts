@@ -3,7 +3,7 @@ import { buildLiveDeals, formatPack, variantKey, type PriceRow } from "@/lib/dea
 
 const ings = [{ id: "i-oil", slug: "olive-oil" }, { id: "i-tuna", slug: "tuna" }];
 const row = (o: Partial<PriceRow>): PriceRow => ({
-  chain_id: "continente", deal_text: null, effective_price: 1, ingredient_id: "i-oil", name: "X", pack_qty: 750, pack_unit: "ml",
+  chain_id: "continente", deal_text: null, effective_price: 1, ingredient_id: "i-oil", name: "X", name_en: null, pack_qty: 750, pack_unit: "ml",
   price_per_base_unit: 0.001, product_id: "p", promo_ends_on: "2026-11-15", promo_price: null, regular_price: 1, requires_loyalty_card: false, ...o,
 });
 
