@@ -47,6 +47,10 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 
 Product names from the shops are Portuguese (`product.name`). The database adds the English name itself: `product.name_en` is filled by a trigger from the table `term_translation` (whole words and phrases, longest first; brands and unknown words stay). To improve a translation, add or change a row in `term_translation` and run `select public.retranslate_products();` in the SQL editor, or fix one product by hand with `update product set name_en = '...', name_en_source = 'manual' where id = '...'` (manual names are never overwritten). The app shows `name_en` and falls back to `name`.
 
+## Plan and shopping list
+
+The plan and list screens read through `src/lib/live-plan.ts` (pure logic in `src/lib/plan-from-db.ts`, tests in `src/test/plan-from-db.test.ts`, shared reads in `src/lib/db-queries.ts`). A dinner costs the share of each pack it uses, at the cheapest usable-unit price at the chosen store, scaled to the number of people, without pantry staples. The shopping list buys whole packs: for each ingredient the cheapest single product that covers the week's quantity, with the pack count. When a store has no price for every dinner of the week, the screens fall back to the prototype's sample numbers. The "already in your fridge" marks are still the sample ones.
+
 ## Images
 
 Fixed images (store logos, the meal and ingredient photos) live in the repo under `public/images/` and are saved there once by `scripts/localize-images.ts`, so the app works locally and does not depend on Lovable's media storage or Unsplash. Images for recipes that are added later (generated or uploaded) go to the public Storage bucket `recipe-images` (migration 008); put its URL in `recipe.image_url`. Keep each image under 1 MB.

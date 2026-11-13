@@ -17,7 +17,7 @@ export const RULES: Rule[] = [
   { query: "cebola", ingredient: "onion", category: /Frutas e Legumes\/Legumes\/Cebola e Alho$/, include: /^cebola/i, exclude: /(picada|laminada|frasco|chalota)/i },
   { query: "cenoura", ingredient: "carrots", category: /Frutas e Legumes\/Legumes(\/Cenoura e Abóbora)?$/, include: /^cenoura/i, exclude: /(ripad|palitos|preparado|creme|sopa|juliana)/i },
   { query: "ovos", ingredient: "eggs", category: /Laticínios e Ovos\/Ovos$/, include: /^ovos/i, exclude: /(pasteurizados|l[ií]quid|cozidos|codorniz)/i },
-  { query: "arroz", ingredient: "rice", category: /Arroz, Massa e Farinha\/Arroz$/, include: /^arroz/i },
+  { query: "arroz", ingredient: "rice", category: /Arroz, Massa e Farinha\/Arroz$/, include: /^arroz/i, exclude: /\bdoce\b/i }, // "arroz doce" is rice-pudding rice
   // canned (cooked) chickpeas only: dried ones sit under "Leguminosas" and recipes count cooked chickpeas.
   // The tile weight may already be the drained weight: usable share left at 1 until checked on a label.
   { query: "grão de bico", ingredient: "chickpeas", category: /Conservas\/Feijão e Grão de Bico$/, include: /^gr[ãa]o de bico/i, exclude: /(estilo|tagine)/i },
@@ -25,7 +25,7 @@ export const RULES: Rule[] = [
   { query: "atum", ingredient: "tuna", category: /Conservas\/Atum$/, include: /^(filetes? de |ventresca de |lombos? de )?atum/i, exclude: /(pat[eé]|salada|hamb[uú]rguer|escabeche|malagueta|alcaparras|manjeric|couscous)/i, usable: [[/./, 0.7]] }, // label weight includes oil/brine
   { query: "espinafre", ingredient: "spinach", category: /(Frutas e Legumes\/Legumes\/Espinafres|Congelados\/Frutas e Legumes\/Legumes)$/, include: /^espinafre/i, exclude: /(preparado|esparregado|creme)/i },
   { query: "frango", ingredient: "chicken", category: /Talho\/Frango$/, include: /^(frango|metades? de frango|peito|bifes? de frango|lombinhos? de frango|coxas?|sobrecoxas?|perna|perninhas?|asas?|asinhas?)/i,
-    exclude: /(moelas|f[ií]gado|pescoço|strogonoff|almôndega|hambúrguer|miúdos de)/i,
+    exclude: /(moelas|f[ií]gado|pescoço|strogonoff|almôndega|hambúrguer|miúdos de|\basas?\b|asinhas)/i,
     byName: [[/peito/i, "chicken-breast"], [/sobrecoxa|coxa/i, "chicken-thighs"]],
     usable: [[/(peito|bifes?|lombinhos?)/i, 1], [/./, 0.65]] }, // bone-in cuts: roughly 65% edible (placeholder)
   { query: "esparguete", ingredient: "spaghetti", category: /Arroz, Massa e Farinha\/Massa$/, include: /^(massa )?esparguete/i, exclude: /(shirataki|konjac|com ovo|noodle)/i },

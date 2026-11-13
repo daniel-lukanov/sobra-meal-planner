@@ -11,7 +11,8 @@ import type { IngredientId } from "@/data/ingredients";
 import { Button, Tape, UnderlineTabs } from "@/components/sobra/ui";
 import { ModeQuestion } from "@/components/sobra/ModeQuestion";
 import { SharePlan } from "@/components/sobra/SharePlan";
-import { COMING_SOON, alternatives, buildWeek, neededItems, weekCards, weekTotal } from "@/lib/week";
+import { COMING_SOON, alternatives, buildWeek, weekCards } from "@/lib/week";
+import { useLivePlan } from "@/lib/live-plan";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/plan")({
@@ -55,19 +56,20 @@ function WeekBanner() {
   const { weekAccepted, set, chosen } = useApp();
   const navigate = useNavigate();
   const cards = weekCards(chosen);
-  const items = neededItems(cards).filter((i) => !i.inFridge);
+  const planning = useLivePlan();
+  const items = planning.items(cards).filter((i) => !i.inFridge);
   return (
     <section aria-label="This week" data-tour="1" className="mb-8 flex flex-col gap-5 border-y border-rule py-5 md:flex-row md:items-center md:justify-between">
       <div>
         <dl className="num grid grid-cols-3 gap-x-8">
-          {[["Dinners", String(cards.length)], ["Total", eur(weekTotal(cards))], ["Prep time", "70 min"]].map(([k, v], i) => (
+          {[["Dinners", String(cards.length)], ["Total", eur(planning.weekTotal(cards))], ["Prep time", "70 min"]].map(([k, v], i) => (
             <div key={k}>
               <dt className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{k}</dt>
               <dd className={cn("mt-1 font-serif text-[24px] leading-none text-ink", i === 1 ? "font-extrabold" : "font-medium")}>{v}</dd>
             </div>
           ))}
         </dl>
-        <p className="mt-2 text-[12.5px] text-muted-foreground">Sample prices, no guarantee.</p>
+        <p className="mt-2 text-[12.5px] text-muted-foreground">{planning.planNote(cards)}</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button variant="quiet" onClick={() => navigate({ to: "/list" })}>See shopping list ({items.length})</Button>
@@ -115,6 +117,7 @@ function WeeklyPrep() {
   const [swapping, setSwapping] = useState<number | null>(null);
   const [tiktok, setTiktok] = useState(false);
   const chapters = buildWeek(chosen);
+  const planning = useLivePlan();
 
   return (
     <div>
@@ -139,7 +142,7 @@ function WeeklyPrep() {
                   <div className="relative h-48 bg-sheet-2">
                     <img src={mealPhoto[meal.title] ?? photo.prep} alt={meal.title} width={600} height={384} loading="lazy" className="size-full object-cover" />
                     <div className="absolute left-3 top-3"><Tape alt={k % 2 === 1}>{day}</Tape></div>
-                    <span className="num absolute right-3 top-3 rounded-[6px] bg-sheet px-2.5 py-1 text-[15px] font-semibold">{eur(meal.price)}</span>
+                    <span className="num absolute right-3 top-3 rounded-[6px] bg-sheet px-2.5 py-1 text-[15px] font-semibold">{eur(planning.priceOf(meal))}</span>
                   </div>
                   <div className="flex flex-1 flex-col p-4">
                     <h3 className="text-[19px] font-bold">{meal.title}</h3>
@@ -165,7 +168,7 @@ function WeeklyPrep() {
                                     setSwapping(null);
                                     toast(`${day} is now ${a.title}. Shopping list and total updated.`);
                                   }} className="press flex min-h-11 w-full items-center justify-between gap-3 bg-sheet-2 px-3 text-left text-[14px] hover:bg-sheet-hover">
-                                    <span className="font-medium">{a.title}</span><span className="num shrink-0 text-muted-foreground">{eur(a.price)}</span>
+                                    <span className="font-medium">{a.title}</span><span className="num shrink-0 text-muted-foreground">{eur(planning.priceOf(a))}</span>
                                   </button>
                                 </li>
                               ))}

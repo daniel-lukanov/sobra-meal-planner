@@ -9,7 +9,7 @@ import type { StoreName } from "@/data/stores";
 export type PriceRow = Database["public"]["Views"]["product_price_today"]["Row"];
 export type IngredientRef = { id: string; slug: string };
 
-const CHAIN_OF: Record<StoreName, string> = {
+export const CHAIN_OF: Record<StoreName, string> = {
   "Pingo Doce": "pingo-doce", Continente: "continente", Lidl: "lidl", Aldi: "aldi", Auchan: "auchan",
 };
 const KNOWN: IngredientId[] = ["potatoes", "chicken", "onion", "carrots", "eggs", "rice", "chickpeas", "peppers", "tuna", "spinach"];
