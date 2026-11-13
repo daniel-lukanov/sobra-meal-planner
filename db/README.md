@@ -78,3 +78,10 @@ address `<username>@users.dream-giants.com` and keeps the real email in the acco
 Every account gets a household of its own; the invite link `/join/<invite_code>` moves a person into the inviter's household via `join_household()`.
 The fridge, receipts, accepted week and list ticks are household data (RLS: members only), saved by `src/lib/household-sync.ts` and shared live through Realtime.
 On sign-in the database wins, except for a household with nothing yet: then the browser's data is uploaded (not the prototype's sample fridge). Simultaneous edits of the same item are last-writer-wins.
+
+## Shelf life (FoodKeeper)
+
+`bun db/scripts/foodkeeper.ts load` saves the USDA FoodKeeper products to `foodkeeper_item` (add `--file path` if the download is blocked).
+`bun db/scripts/foodkeeper.ts review` shows, per ingredient, the matching FoodKeeper products with their pantry and fridge ranges; you pick one and approve each location.
+Approved rows land in `storage_guideline` (`source = 'foodkeeper'`, reviewer and time recorded) and are the only ones the app may read. `status` lists what is approved.
+Numbers are never written by a model, and an ingredient you are unsure about is skipped.

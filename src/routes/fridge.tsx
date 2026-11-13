@@ -6,6 +6,8 @@ import { useRef, useState } from "react";
 import { eur, useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
 import { receiptRaw, receiptRead, sampleReceipt } from "@/data/fridge";
+import { useIngredients, useStorageGuidelines } from "@/lib/db-queries";
+import { withShelfLife } from "@/lib/shelf-life";
 import { Button, Chip, PageHeader, TwoCol } from "@/components/sobra/ui";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -33,6 +35,7 @@ function Fridge() {
   const { fridge, receipts, set } = useApp();
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const duplicate = findDuplicate(receipts, sampleReceipt);
+  const guidelines = useStorageGuidelines(), catalog = useIngredients();
   const navigate = useNavigate();
   const [step, setStep] = useState<"start" | "reading" | "review" | "done">("start");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -146,7 +149,8 @@ function Fridge() {
                   </p>
                 )}
                 <Button variant={duplicate ? "secondary" : "primary"} className="mt-4 w-full" onClick={() => {
-                  const next = addReceipt({ fridge, receipts }, sampleReceipt);
+                  const items = guidelines.data && catalog.data ? withShelfLife(sampleReceipt.items, guidelines.data, catalog.data) : sampleReceipt.items;
+                  const next = addReceipt({ fridge, receipts }, { ...sampleReceipt, items });
                   set({ fridge: next.fridge, receipts: next.receipts });
                   setStep("done");
                 }}>{duplicate ? "Add it anyway" : `Add ${sampleReceipt.items.length} items to my fridge`}</Button>

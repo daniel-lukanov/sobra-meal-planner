@@ -42,3 +42,15 @@ export function useRecipes() {
     },
   });
 }
+
+/** Approved shelf-life guidelines only (row level security hides the rest). */
+export function useStorageGuidelines() {
+  return useQuery({
+    queryKey: ["sobra", "storage"], ...opts,
+    queryFn: async () => {
+      const { data, error } = await sobraDb.from("storage_guideline").select("ingredient_id, location, min_days, max_days").eq("state", "raw");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
