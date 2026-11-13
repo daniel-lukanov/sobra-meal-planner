@@ -761,18 +761,21 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          username: string | null
         }
         Insert: {
           cooking_mode?: string
           created_at?: string
           display_name?: string | null
           id: string
+          username?: string | null
         }
         Update: {
           cooking_mode?: string
           created_at?: string
           display_name?: string | null
           id?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -1684,7 +1687,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      household_invite_preview: { Args: { code: string }; Returns: { name: string; members: number }[] }
+      join_household: { Args: { code: string }; Returns: string }
+      leave_household: { Args: Record<PropertyKey, never>; Returns: string }
+      username_available: { Args: { name: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

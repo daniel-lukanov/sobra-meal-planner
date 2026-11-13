@@ -13,10 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CookRouteImport } from './routes/cook'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as FridgeRouteImport } from './routes/fridge'
+import { Route as HouseholdRouteImport } from './routes/household'
 import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ListRouteImport } from './routes/list'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as JoinCodeRouteImport } from './routes/join/$code'
 import { Route as PIdRouteImport } from './routes/p/$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -39,6 +41,11 @@ const FridgeRoute = FridgeRouteImport.update({
   path: '/fridge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HouseholdRoute = HouseholdRouteImport.update({
+  id: '/household',
+  path: '/household',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InsightsRoute = InsightsRouteImport.update({
   id: '/insights',
   path: '/insights',
@@ -59,6 +66,11 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JoinCodeRoute = JoinCodeRouteImport.update({
+  id: '/join/$code',
+  path: '/join/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PIdRoute = PIdRouteImport.update({
   id: '/p/$id',
   path: '/p/$id',
@@ -70,10 +82,12 @@ export interface FileRoutesByFullPath {
   '/cook': typeof CookRoute
   '/deals': typeof DealsRoute
   '/fridge': typeof FridgeRoute
+  '/household': typeof HouseholdRoute
   '/insights': typeof InsightsRoute
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
+  '/join/$code': typeof JoinCodeRoute
   '/p/$id': typeof PIdRoute
 }
 export interface FileRoutesByTo {
@@ -81,10 +95,12 @@ export interface FileRoutesByTo {
   '/cook': typeof CookRoute
   '/deals': typeof DealsRoute
   '/fridge': typeof FridgeRoute
+  '/household': typeof HouseholdRoute
   '/insights': typeof InsightsRoute
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
+  '/join/$code': typeof JoinCodeRoute
   '/p/$id': typeof PIdRoute
 }
 export interface FileRoutesById {
@@ -93,10 +109,12 @@ export interface FileRoutesById {
   '/cook': typeof CookRoute
   '/deals': typeof DealsRoute
   '/fridge': typeof FridgeRoute
+  '/household': typeof HouseholdRoute
   '/insights': typeof InsightsRoute
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
+  '/join/$code': typeof JoinCodeRoute
   '/p/$id': typeof PIdRoute
 }
 export interface FileRouteTypes {
@@ -106,10 +124,12 @@ export interface FileRouteTypes {
     | '/cook'
     | '/deals'
     | '/fridge'
+    | '/household'
     | '/insights'
     | '/list'
     | '/plan'
     | '/setup'
+    | '/join/$code'
     | '/p/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -117,10 +137,12 @@ export interface FileRouteTypes {
     | '/cook'
     | '/deals'
     | '/fridge'
+    | '/household'
     | '/insights'
     | '/list'
     | '/plan'
     | '/setup'
+    | '/join/$code'
     | '/p/$id'
   id:
     | '__root__'
@@ -128,10 +150,12 @@ export interface FileRouteTypes {
     | '/cook'
     | '/deals'
     | '/fridge'
+    | '/household'
     | '/insights'
     | '/list'
     | '/plan'
     | '/setup'
+    | '/join/$code'
     | '/p/$id'
   fileRoutesById: FileRoutesById
 }
@@ -140,10 +164,12 @@ export interface RootRouteChildren {
   CookRoute: typeof CookRoute
   DealsRoute: typeof DealsRoute
   FridgeRoute: typeof FridgeRoute
+  HouseholdRoute: typeof HouseholdRoute
   InsightsRoute: typeof InsightsRoute
   ListRoute: typeof ListRoute
   PlanRoute: typeof PlanRoute
   SetupRoute: typeof SetupRoute
+  JoinCodeRoute: typeof JoinCodeRoute
   PIdRoute: typeof PIdRoute
 }
 
@@ -177,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FridgeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/household': {
+      id: '/household'
+      path: '/household'
+      fullPath: '/household'
+      preLoaderRoute: typeof HouseholdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/insights': {
       id: '/insights'
       path: '/insights'
@@ -205,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/join/$code': {
+      id: '/join/$code'
+      path: '/join/$code'
+      fullPath: '/join/$code'
+      preLoaderRoute: typeof JoinCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/p/$id': {
       id: '/p/$id'
       path: '/p/$id'
@@ -220,10 +260,12 @@ const rootRouteChildren: RootRouteChildren = {
   CookRoute: CookRoute,
   DealsRoute: DealsRoute,
   FridgeRoute: FridgeRoute,
+  HouseholdRoute: HouseholdRoute,
   InsightsRoute: InsightsRoute,
   ListRoute: ListRoute,
   PlanRoute: PlanRoute,
   SetupRoute: SetupRoute,
+  JoinCodeRoute: JoinCodeRoute,
   PIdRoute: PIdRoute,
 }
 export const routeTree = rootRouteImport

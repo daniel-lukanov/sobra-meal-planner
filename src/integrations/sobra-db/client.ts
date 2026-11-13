@@ -12,7 +12,7 @@ const DEFAULT_PUBLISHABLE_KEY = "sb_publishable_8HqHrRkay726r7vH5g1bNg_9tC1JBRN"
 const url = import.meta.env['VITE_SOBRA_SUPABASE_URL'] || DEFAULT_URL;
 const key = import.meta.env['VITE_SOBRA_SUPABASE_PUBLISHABLE_KEY'] || DEFAULT_PUBLISHABLE_KEY;
 
-// Catalog reads only for now: no login yet, so no session is stored (keeps it apart from Lovable's auth storage).
+// The session is kept in this browser under its own key, apart from Lovable's auth storage.
 export const sobraDb = createClient<Database>(url, key, {
-  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: "sobra-auth" },
 });

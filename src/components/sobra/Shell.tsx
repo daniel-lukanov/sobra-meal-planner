@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Check, BookHeart, CalendarDays, ChefHat, ChevronDown, Lock, Refrigerator, ShoppingBasket, Tag } from "lucide-react";
+import { Check, BookHeart, Users, CalendarDays, ChefHat, ChevronDown, Lock, Refrigerator, ShoppingBasket, Tag } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/lib/store";
@@ -21,7 +21,7 @@ const nav = [
   { to: "/fridge", label: "Fridge", icon: Refrigerator },
   { to: "/cook", label: "Cook", icon: ChefHat },
 ] as const;
-const topNav = [...nav, { to: "/setup" as const, label: "Your meals", icon: BookHeart }];
+const topNav = [...nav, { to: "/setup" as const, label: "Your meals", icon: BookHeart }, { to: "/household" as const, label: "Household", icon: Users }];
 
 function StorePicker() {
   const store = useApp((s) => s.store);
@@ -96,7 +96,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const isInsights = pathname.startsWith("/insights");
   const expHydrated = useExp((s) => s.hydrated);
   const session = useExp((s) => s.session);
-  const isShared = pathname.startsWith("/p/");
+  const isShared = pathname.startsWith("/p/") || pathname.startsWith("/join/");
   const showSurvey = !isInsights && !isShared && expHydrated && !!session && !session.survey_pre_completed;
   const showStudy = !isInsights && !isShared && !showSurvey && !!session?.survey_pre_completed;
   const [ghost, setGhost] = useState(false);

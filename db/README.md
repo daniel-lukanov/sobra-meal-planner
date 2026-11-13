@@ -17,6 +17,7 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 | `007_net_weight.sql` | usable (net) weight: `ingredient.usable_fraction`, `product.usable_qty` with `usable_source`; `product_price_today` prices per usable unit |
 | `008_image_storage.sql` | public Storage bucket `recipe-images` (1 MB, jpeg/png/webp) for recipe photos; readable by URL, writable only with the secret key |
 | `009_translations.sql`, `010_translation_terms.sql` | English product names kept in the database: table `term_translation` (Portuguese term, English term), function `translate_pt_en()`, a trigger that fills `product.name_en`, and `ingredient.name_pt` |
+| `011_accounts_invites.sql` | Usernames on `profile`; functions `username_available`, `household_invite_preview`, `join_household`, `leave_household` (the only ways to join or leave a household) |
 
 **Read `METHODOLOGY.md` first**: free-plan principles (activity, size, batching, no backups, keys), the rule that a model proposes and a person approves food-safety data, and how we change the database.
 
@@ -67,3 +68,11 @@ The deals screen reads `product_price_today` through `src/lib/live-deals.ts` (pu
 - Scrapers and the import step that fill `product`, `product_price`, `flyer`, `promotion`.
 - Recipe tags, and many more recipes (generated, then classified). Only the prototype's 18 sample meals are loaded.
 - Switch the screens (deals first) from `src/data/*.ts` to the database.
+
+## Accounts and households
+
+Sign-up is username + password + the person's real email. The email is not verified yet, so the app signs in to Supabase with a placeholder
+address `<username>@users.dream-giants.com` and keeps the real email in the account metadata (`contact_email`). Supabase must have
+**Confirm email** switched off (Auth, Sign In / Providers, Email), otherwise sign-up returns no session.
+Every account gets a household of its own; the invite link `/join/<invite_code>` moves a person into the inviter's household via `join_household()`.
+The fridge, receipts, plans and list ticks are household data (RLS: members only); the app still keeps them in the browser until they are moved to these tables.
