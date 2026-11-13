@@ -221,6 +221,8 @@ export type Database = {
           label: string | null
           product_id: string | null
           quantity: number | null
+          receipt_id: string | null
+          shelf_days: number | null
           source: string
           state: string
         }
@@ -234,6 +236,8 @@ export type Database = {
           label?: string | null
           product_id?: string | null
           quantity?: number | null
+          receipt_id?: string | null
+          shelf_days?: number | null
           source?: string
           state?: string
         }
@@ -247,6 +251,8 @@ export type Database = {
           label?: string | null
           product_id?: string | null
           quantity?: number | null
+          receipt_id?: string | null
+          shelf_days?: number | null
           source?: string
           state?: string
         }
@@ -315,6 +321,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      household_plan_state: {
+        Row: { checked: Json; chosen: Json; accepted: boolean; household_id: string; updated_at: string; updated_by: string | null }
+        Insert: { checked?: Json; chosen?: Json; accepted?: boolean; household_id: string; updated_at?: string; updated_by?: string | null }
+        Update: { checked?: Json; chosen?: Json; accepted?: boolean; household_id?: string; updated_at?: string; updated_by?: string | null }
+        Relationships: []
       }
       household_member: {
         Row: {

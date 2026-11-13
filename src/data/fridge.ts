@@ -1,5 +1,5 @@
 /** Items that came from a receipt carry its id, so removing the receipt removes them. */
-export type FridgeItem = { id: string; name: string; daysLeft: number | null; maxDays: number; isNew?: boolean; receiptId?: string };
+export type FridgeItem = { id: string; name: string; daysLeft: number | null; maxDays: number; isNew?: boolean; receiptId?: string; uid?: string };
 export type Receipt = { id: string; store: string; date: string; total: number; lines: [string, string][]; addedAt: number };
 export const initialFridge: FridgeItem[] = [
   { id: "spinach", name: "Spinach", daysLeft: 1, maxDays: 5 },

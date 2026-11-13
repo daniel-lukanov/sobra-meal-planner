@@ -3,13 +3,12 @@
 import { useMemo } from "react";
 import { useApp } from "@/lib/store";
 import { CHAIN_OF } from "@/lib/deals-from-db";
+import { FRIDGE_SLUG } from "@/lib/household-data";
 import { useIngredients, usePriceRows, useRecipes } from "@/lib/db-queries";
 import { allPriced, buildShoppingList, recipeCost, type Catalog } from "@/lib/plan-from-db";
 import type { Meal } from "@/data/plan";
 import { neededItems, weekTotal, type Card, type NeededItem } from "@/lib/week";
 
-// Fridge item ids that differ from the ingredient slugs in the database.
-const FRIDGE_SLUG: Record<string, string> = { onions: "onion" };
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export function useLivePlan() {

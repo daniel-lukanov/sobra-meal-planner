@@ -11,9 +11,9 @@ export const findDuplicate = (receipts: Receipt[], r: { store: string; date: str
 
 export const itemsOf = (fridge: FridgeItem[], receiptId: string) => fridge.filter((f) => f.receiptId === receiptId);
 
-export function addReceipt(s: Stock, r: ReceiptInput, now = Date.now()): Stock & { receipt: Receipt } {
-  const receipt: Receipt = { id: `r-${now}`, store: r.store, date: r.date, total: r.total, lines: r.lines, addedAt: now };
-  const items = r.items.map((i) => ({ ...i, isNew: true, receiptId: receipt.id }));
+export function addReceipt(s: Stock, r: ReceiptInput, now = Date.now(), id: string = crypto.randomUUID()): Stock & { receipt: Receipt } {
+  const receipt: Receipt = { id, store: r.store, date: r.date, total: r.total, lines: r.lines, addedAt: now };
+  const items = r.items.map((i) => ({ ...i, isNew: true, receiptId: receipt.id, uid: crypto.randomUUID() }));
   return { fridge: [...items, ...s.fridge], receipts: [receipt, ...s.receipts], receipt };
 }
 

@@ -13,6 +13,7 @@ import { isGhost } from "@/lib/experiment";
 import { Ghost } from "lucide-react";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { useHouseholdSync } from "@/lib/household-sync";
 
 const nav = [
   { to: "/plan", label: "Plan", icon: CalendarDays },
@@ -92,6 +93,7 @@ function TopNav({ minimal }: { minimal: boolean }) {
 
 export function Shell({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  useHouseholdSync();
   const hydrated = useApp((s) => s.hydrated);
   const isInsights = pathname.startsWith("/insights");
   const expHydrated = useExp((s) => s.hydrated);
