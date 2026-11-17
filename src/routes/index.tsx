@@ -1,23 +1,25 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Clock, Link2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Check, ChefHat, RefreshCw, Trash2 } from "lucide-react";
 import { useExp } from "@/lib/experiment";
 import { eur, storesLabel, useApp } from "@/lib/store";
 import { fitsPrefs } from "@/lib/prefs";
-import { isRealDeal, realSaving } from "@/data/deals";
-import type { Meal, PrepRow } from "@/data/plan";
+import { isRealDeal, realSaving, type Deal } from "@/data/deals";
+import type { Meal } from "@/data/plan";
 import { dealPhoto, mealPhoto, photo } from "@/data/photos";
-import { Button, Tape, UnderlineTabs } from "@/components/pratico/ui";
+import { Button, Tape } from "@/components/pratico/ui";
 import { ModeQuestion } from "@/components/pratico/ModeQuestion";
 import { SharePlan } from "@/components/pratico/SharePlan";
-import { AddToPlan } from "@/components/pratico/AddToPlan";
 import { StoreBadge } from "@/components/pratico/Brand";
-import { COMING_SOON, REMOVED, alternatives, emptySlots, proposals, weekSlots } from "@/lib/week";
+import { labelOf, todayName, useCookFlow, useCovered, usePlaceFlow, useTonight } from "@/components/pratico/PlanFlows";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { REMOVED, alternatives, proposals, weekSlots, type Card } from "@/lib/week";
 import { useWeek } from "@/lib/use-week";
 import { useLivePlan } from "@/lib/live-plan";
 import { useLiveDeals } from "@/lib/live-deals";
 import { useIngredients } from "@/lib/db-queries";
+import type { StoreName } from "@/data/stores";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -31,29 +33,19 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-const labelOf = (slug: string, names?: Record<string, string>) => names?.[slug] ?? (slug.charAt(0).toUpperCase() + slug.slice(1).replace(/-/g, " "));
-const prepTape: Record<string, string> = { Sun: "Sunday prep", Wed: "Wednesday prep" };
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const imageOf = (m: Meal) => m.image ?? mealPhoto[m.title] ?? photo.prep;
 
-/** Does the fridge hold this base ingredient (or a cut of it)? */
-function useHas() {
-  const fridge = useApp((s) => s.fridge);
-  return useMemo(() => {
-    const ids = fridge.map((f) => (f.id === "onions" ? "onion" : f.id));
-    return (u: string) => ids.some((id) => id === u || id.startsWith(`${u}-`));
-  }, [fridge]);
+/** The dinners Home is about: the week in Weekly prep, tonight's in Daily pick. */
+function usePlanned(): Card[] {
+  const { mode } = useApp();
+  const { cards } = useWeek();
+  const tonight = useTonight();
+  if (mode === "prep") return cards;
+  return tonight ? [{ i: -1, day: "Tonight", meal: tonight }] : [];
 }
 
 function Home() {
-  const { stores, mode, set, weekAccepted } = useApp();
-  const store = storesLabel(stores);
-  const switchMode = (m: "prep" | "daily") => {
-    if (m === mode) return;
-    useExp.getState().track("mode_switched");
-    set({ mode: m });
-  };
-  // Remember which modes the tester has seen, for the mode question.
+  const { stores, mode, weekAccepted } = useApp();
   const s = useExp((x) => x.session);
   const seen = mode === "prep" ? s?.opened_weekly : s?.opened_daily;
   useEffect(() => {
@@ -61,21 +53,19 @@ function Home() {
   }, [mode, seen, s]);
   return (
     <>
-      <header className="flex flex-col gap-4 pb-6 md:flex-row md:items-end md:justify-between md:gap-8">
-        <div className="max-w-[640px]">
-          <p className="eyebrow">Prices from {store}</p>
-          <h1 className="mt-1 text-[28px] font-bold md:text-[32px]">{mode === "prep" ? "Cook twice this week, eat something different every night" : "Pick tonight's dinner"}</h1>
-        </div>
-        <div><UnderlineTabs label="Planning mode" value={mode} onChange={switchMode}
-          options={[{ value: "prep", label: "Weekly prep" }, { value: "daily", label: "Daily pick" }]} /></div>
+      <header className="pb-6">
+        <p className="eyebrow">Prices from {storesLabel(stores)}</p>
+        <h1 className="mt-1 text-[28px] font-bold md:text-[32px]">{mode === "prep" ? "Your week" : "Tonight"}</h1>
       </header>
       <ModeQuestion />
       <WeekStatusNote />
-      {mode === "daily" ? <DailyPick /> : <Today />}
-      <ThisWeek />
-      <Proposed />
-      <DealsPanel />
-      {weekAccepted && <div className="mt-8"><SharePlan /></div>}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">{mode === "prep" ? <WeekSection /> : <TonightSection />}</div>
+        <MissingPanel />
+      </div>
+      <Suggested />
+      <TopDeals />
+      {mode === "prep" && weekAccepted && <div className="mt-8"><SharePlan /></div>}
     </>
   );
 }
@@ -88,389 +78,324 @@ function WeekStatusNote() {
   if (status === "error") return <p role="alert" className="mb-6 text-tomato">We could not load the recipes. Reload the page and try again.</p>;
   const settings = <Link to="/account" className="underline underline-offset-4">your account settings</Link>;
   if (status === "none") return <p role="status" className="mb-6 rounded-sheet bg-sheet p-5">None of our recipes fit {settings} yet. We never show a dinner with an ingredient you avoid. Loosen a food or allergy choice, and more recipes are on the way.</p>;
-  if (mode === "prep" && cards.length < 6) return <p role="status" className="mb-6 rounded-sheet bg-sheet p-5">Only {fitting} {fitting === 1 ? "recipe fits" : "recipes fit"} {settings}, so this week has {cards.length} {cards.length === 1 ? "dinner" : "dinners"} instead of 6. We never show a dinner with an ingredient you avoid.</p>;
+  if (mode === "prep" && cards.length + Object.values(useApp.getState().chosen).filter((v) => v === REMOVED).length < 6) return <p role="status" className="mb-6 rounded-sheet bg-sheet p-5">Only {fitting} {fitting === 1 ? "recipe fits" : "recipes fit"} {settings}, so this week has fewer than 6 dinners. We never show a dinner with an ingredient you avoid.</p>;
   return null;
 }
 
-/** One dinner pinned on top: what is missing for it, and one click to start cooking. */
-function PinnedMeal({ meal, eyebrow }: { meal: Meal; eyebrow: string }) {
-  const { checked, have, set } = useApp();
-  const has = useHas();
-  const planning = useLivePlan();
-  const navigate = useNavigate();
-  const [delivery, setDelivery] = useState(false);
-  const missing = meal.uses.filter((u) => !has(u) && !checked[u] && !have.includes(u));
-  return (
-    <section aria-label={eyebrow} className="mb-10 grid overflow-hidden rounded-sheet bg-sheet md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-      <div className="h-52 bg-sheet-2 md:h-full"><img src={imageOf(meal)} alt={meal.title} width={600} height={416} className="size-full object-cover" /></div>
-      <div className="p-5">
-        <p className="eyebrow">{eyebrow}</p>
-        <h2 className="mt-1 text-[24px] font-bold">{meal.title}</h2>
-        <p className="num text-[13.5px] text-muted-foreground">{meal.minutes ?? 20} min, {eur(planning.priceOf(meal) / 2)} a portion</p>
-        <p className="mt-3 text-[14.5px]">{missing.length === 0 ? "You have everything for this one." : `Missing: ${missing.map((u) => labelOf(u, meal.names).toLowerCase()).join(", ")}.`}</p>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {meal.slug !== undefined && <Button onClick={() => navigate({ to: "/cook", search: { recipe: meal.slug! } })}>Start cooking</Button>}
-          {meal.slug !== undefined && <Link to="/recipe/$slug" params={{ slug: meal.slug }} className="inline-flex min-h-11 items-center px-3 text-[14.5px] font-medium underline underline-offset-4">View recipe</Link>}
-          {missing.length > 0 && <Button variant="secondary" onClick={() => set({ have: [...new Set([...have, ...missing])] })}>I have these</Button>}
-          {missing.length > 0 && <Link to="/list" className="inline-flex min-h-11 items-center px-3 text-[14.5px] font-medium underline underline-offset-4">Shopping list</Link>}
-        </div>
-        <button type="button" onClick={() => { useExp.getState().track("fake_door_delivery"); setDelivery(true); }} className="mt-3 text-[13px] text-muted-foreground underline underline-offset-4">Order groceries for tonight (coming soon)</button>
-        {delivery && <p role="status" className="mt-2 text-[13.5px] text-muted-foreground">{COMING_SOON} We mean supermarket groceries delivered, not takeaway.</p>}
-      </div>
-    </section>
-  );
-}
-
-/** Weekly prep mode: today's dinner from the plan, or what is next. */
-function Today() {
-  const { cards, chapters, status } = useWeek();
-  if (status !== "ready") return null;
-  const day = WEEKDAYS[new Date().getDay()]!;
-  const today = cards.find((c) => c.day === day);
-  const prep = chapters.find((ch) => ch.prep.day === day)?.prep;
-  const order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const next = cards.find((c) => order.indexOf(c.day) > order.indexOf(day));
-  return (
-    <>
-      {prep && <div className="mb-6"><PrepBanner row={prep} /></div>}
-      {today ? <PinnedMeal meal={today.meal} eyebrow={`Today, ${today.day}`} />
-        : next ? <PinnedMeal meal={next.meal} eyebrow={`Next up, ${next.day}`} />
-        : <p className="mb-8 rounded-sheet bg-sheet p-5">Nothing planned today. Your next week starts on Monday.</p>}
-    </>
-  );
-}
-
-function PrepBanner({ row }: { row: PrepRow }) {
-  const navigate = useNavigate();
-  const text = `${row.meta}${row.tags.length ? `: ${row.tags.join(", ")}` : ""}`;
-  return (
-    <div className="flex flex-wrap items-end justify-between gap-4 border-l-[3px] border-basil pl-4">
-      <div>
-        <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-basil">{prepTape[row.day] ?? row.title}</p>
-        <p className="mt-1 text-[15px] font-medium text-ink">{text}</p>
-      </div>
-      <Button variant="quiet" className="underline underline-offset-4" onClick={() => navigate({ to: "/cook", hash: "prep" })}>See the prep timeline</Button>
-    </div>
-  );
-}
-
-function WeekBanner() {
-  const { weekAccepted, set } = useApp();
-  const { cards, chapters } = useWeek();
-  const prepMinutes = chapters.reduce((a, c) => a + (parseInt(c.prep.meta, 10) || 0), 0);
-  const planning = useLivePlan();
-  const items = planning.items(cards).filter((i) => !i.inFridge);
-  return (
-    <section aria-label="This week" data-tour="1" className="mb-8 flex flex-col gap-5 border-y border-rule py-5 md:flex-row md:items-center md:justify-between">
-      <div>
-        <dl className="num grid grid-cols-3 gap-x-8">
-          {[["Dinners", String(cards.length)], ["Total", eur(planning.weekTotal(cards))], ["Prep time", `${prepMinutes} min`]].map(([k, v], i) => (
-            <div key={k}>
-              <dt className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{k}</dt>
-              <dd className={cn("mt-1 font-serif text-[24px] leading-none text-ink", i === 1 ? "font-extrabold" : "font-medium")}>{v}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="mt-2 text-[12.5px] text-muted-foreground">{planning.planNote(cards)}</p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Link to="/list" className="inline-flex min-h-11 items-center px-3 text-[14.5px] font-medium underline underline-offset-4">See shopping list ({items.length})</Link>
-        {weekAccepted ? <span className="inline-flex min-h-11 items-center px-2 font-semibold text-basil">Week accepted</span> : (
-          <Button onClick={() => { useExp.getState().track("accepted_week_clicked"); set({ weekAccepted: true }); toast("Week accepted. Your shopping list is ready."); }}>Accept this week</Button>
-        )}
-      </div>
-    </section>
-  );
-}
-
-/** The generated starter week. Swap, remove or add dinners; the list and total follow. */
-function ThisWeek() {
-  const { chosen, set } = useApp();
-  const [filter, setFilter] = useState<string | null>(null);
-  const [swapping, setSwapping] = useState<number | null>(null);
-  const [tiktok, setTiktok] = useState(false);
+/** Weekly prep: today's dinner large with Start cooking, then every day of the week. */
+function WeekSection() {
+  const { chosen, set, weekAccepted } = useApp();
   const { ctx, chapters, prefs, status } = useWeek();
   const planning = useLivePlan();
-  const has = useHas();
-  const props = useMemo(() => proposals(chosen, prefs, ctx, has, 1), [chosen, prefs, ctx, has]);
+  const cook = useCookFlow();
+  const [swapping, setSwapping] = useState<number | null>(null);
   if (status !== "ready") return null;
-  const slots = new Map(weekSlots(chosen, ctx).map((s) => [s.i, s]));
-  const names: Record<string, string> = {};
-  const tally = new Map<string, number>();
-  for (const c of chapters) for (const d of c.days) for (const u of d.meal.uses) { tally.set(u, (tally.get(u) ?? 0) + 1); names[u] ??= labelOf(u, d.meal.names); }
-  const bases: { id: string | null; label: string }[] = [{ id: null, label: "All dinners" },
-    ...[...tally].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 4).map(([id]) => ({ id, label: names[id]! }))];
-
-  // Chapters in the plan, including free days.
-  const groups: { prep: PrepRow; days: { i: number; day: string }[] }[] = [];
-  ctx.plan.forEach((row, i) => { if (row.kind === "prep") groups.push({ prep: row, days: [] }); else groups.at(-1)?.days.push({ i, day: row.day }); });
-
-  const remove = (i: number, day: string) => {
+  const slots = weekSlots(chosen, ctx);
+  const day = todayName();
+  const today = slots.find((s) => s.day === day);
+  const prepToday = chapters.find((c) => c.prep.day === day)?.prep;
+  const cards = slots.flatMap((s) => (s.meal ? [{ i: s.i, day: s.day, meal: s.meal }] : []));
+  const remove = (i: number, d: string) => {
     const before = chosen[i];
     set({ chosen: { ...chosen, [i]: REMOVED }, weekAccepted: false });
-    toast(`${day} is free now.`, { action: { label: "Undo", onClick: () => { const c = { ...useApp.getState().chosen }; if (before === undefined) delete c[i]; else c[i] = before; useApp.getState().set({ chosen: c }); } } });
+    toast(`${d} is free now. Pick a suggestion below to fill it.`, { action: { label: "Undo", onClick: () => { const c = { ...useApp.getState().chosen }; if (before === undefined) delete c[i]; else c[i] = before; useApp.getState().set({ chosen: c }); } } });
   };
+  const swapSlot = slots.find((s) => s.i === swapping);
+  const alts = swapping !== null ? alternatives(swapping, chosen, prefs, ctx) : [];
 
   return (
-    <div className="mt-2">
-      <h2 className="mb-4 text-[20px]">This week</h2>
-      <WeekBanner />
-      <div role="group" aria-label="Show dinners that use" className="mb-8 flex flex-wrap gap-x-6 gap-y-2 border-b border-rule">
-        {bases.map((b) => (
-          <button key={b.label} type="button" aria-pressed={filter === b.id} onClick={() => setFilter(b.id)}
-            className={cn("-mb-px min-h-11 border-b-2 text-[14px] font-semibold transition-colors", filter === b.id ? "border-basil text-ink" : "border-transparent text-muted-foreground hover:text-ink")}>
-            {b.label}
-          </button>
-        ))}
+    <section aria-labelledby="week" data-tour="1" className="rounded-sheet bg-sheet p-4 md:p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 id="week" className="text-[20px]">This week <span className="num ml-2 text-[15px] font-medium text-muted-foreground">{cards.length} dinners · {eur(planning.weekTotal(cards))}</span></h2>
+        <div className="flex items-center gap-3">
+          <Link to="/cook" hash="prep" className="text-[13.5px] underline underline-offset-4">Prep timeline</Link>
+          {weekAccepted ? <span className="text-[14px] font-semibold text-basil">Week accepted</span>
+            : <Button className="min-h-10" onClick={() => { useExp.getState().track("accepted_week_clicked"); set({ weekAccepted: true }); toast("Week accepted. Your shopping list is ready."); }}>Accept this week</Button>}
+        </div>
       </div>
-      {groups.map((ch, ci) => (
-        <section key={ci} aria-label={prepTape[ch.prep.day] ?? ch.prep.title}>
-          <div className="mb-5"><PrepBanner row={ch.prep} /></div>
-          <ul className={cn("grid grid-cols-1 gap-5 md:grid-cols-3", ci === 0 ? "mb-10" : "mb-8")}>
-            {ch.days.map(({ i, day }, k) => {
-              const meal = slots.get(i)?.meal ?? null;
-              if (!meal) {
-                const p = props[0];
-                return (
-                  <li key={i} className="flex min-h-48 flex-col justify-between rounded-sheet border-2 border-dashed border-rule p-4">
-                    <div><Tape alt={k % 2 === 1}>{day}</Tape><p className="mt-3 text-[17px] font-semibold">Free day</p></div>
-                    {p ? <Button variant="secondary" onClick={() => { set({ chosen: { ...chosen, [i]: p.title }, weekAccepted: false }); toast(`${p.title} added for ${day}.`); }}><Plus className="size-4" aria-hidden />Add {p.title}</Button>
-                      : <p className="text-[13.5px] text-muted-foreground">No other recipe fits your settings.</p>}
-                  </li>
-                );
-              }
-              const lit = !!filter && meal.uses.includes(filter);
-              const alts = swapping === i ? alternatives(i, chosen, prefs, ctx) : [];
-              return (
-                <li key={i} className={cn("flex flex-col overflow-hidden rounded-sheet bg-sheet transition-all duration-200", filter && !lit && "opacity-50")}>
-                  <div className="relative h-48 bg-sheet-2">
-                    <img src={imageOf(meal)} alt={meal.title} width={600} height={384} loading="lazy" className="size-full object-cover" />
-                    <div className="absolute left-3 top-3"><Tape alt={k % 2 === 1}>{day}</Tape></div>
-                    <span className="num absolute right-3 top-3 rounded-[6px] bg-sheet px-2.5 py-1 text-[15px] font-semibold">{eur(planning.priceOf(meal))}</span>
-                  </div>
-                  <div className="flex flex-1 flex-col p-4">
-                    <h3 className="text-[19px] font-bold">{meal.title}</h3>
-                    <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground"><Clock className="size-3.5" aria-hidden />{meal.how}</p>
-                    {lit && <p className="slide-in mt-2 flex items-center gap-1.5 text-[12.5px] font-semibold text-basil"><Link2 className="size-3.5" aria-hidden />Uses your prepped {(names[filter!] ?? filter!).toLowerCase()}</p>}
-                    {meal.slug !== undefined && (
-                      <div className="mt-2 flex flex-wrap gap-x-4">
-                        <Link to="/recipe/$slug" params={{ slug: meal.slug }} className="inline-flex min-h-9 items-center text-[13.5px] font-medium underline underline-offset-4">View recipe</Link>
-                        <Link to="/cook" search={{ recipe: meal.slug }} className="inline-flex min-h-9 items-center text-[13.5px] font-medium underline underline-offset-4">Start cooking</Link>
-                      </div>
-                    )}
-                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-rule pt-3">
-                      <p className="min-w-0 text-[13px] text-muted-foreground">Uses {meal.uses.map((u) => labelOf(u, meal.names).toLowerCase()).join(", ")}</p>
-                      <div className="flex shrink-0 gap-1.5">
-                        <Button variant="secondary" aria-expanded={swapping === i} className="min-h-9 px-3 text-[13.5px]" onClick={() => setSwapping(swapping === i ? null : i)}>
-                          <RefreshCw className="size-3.5" strokeWidth={1.8} aria-hidden />Swap
-                        </Button>
-                        <Button variant="secondary" aria-label={`Remove ${meal.title}`} className="min-h-9 px-3" onClick={() => remove(i, day)}><Trash2 className="size-3.5" strokeWidth={1.8} aria-hidden /></Button>
-                      </div>
-                    </div>
-                    {swapping === i && (
-                      <div className="slide-in mt-3 border-t border-rule pt-3">
-                        {alts.length === 0 ? <p className="text-[13.5px]">No other dinner fits your settings right now.</p> : (
-                          <>
-                            <p className="text-[12.5px] font-semibold text-muted-foreground">Pick a different dinner for {day}</p>
-                            <ul className="mt-2 space-y-1.5">
-                              {alts.map((a) => (
-                                <li key={a.title}>
-                                  <button type="button" onClick={() => {
-                                    set({ chosen: { ...chosen, [i]: a.title }, weekAccepted: false });
-                                    useExp.getState().track("swap");
-                                    setSwapping(null);
-                                    toast(`${day} is now ${a.title}. Shopping list and total updated.`);
-                                  }} className="press flex min-h-11 w-full items-center justify-between gap-3 bg-sheet-2 px-3 text-left text-[14px] hover:bg-sheet-hover">
-                                    <span className="font-medium">{a.title}</span><span className="num shrink-0 text-muted-foreground">{eur(planning.priceOf(a))}</span>
-                                  </button>
-                                </li>
-                              ))}
-                            </ul>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      ))}
-      <MissingNow />
-      <div className="mt-8 border-t border-rule pt-5">
-        <Button variant="secondary" onClick={() => { useExp.getState().track("fake_door_tiktok"); setTiktok(true); }}>Import a recipe from TikTok or Instagram (coming soon)</Button>
-        {tiktok && <p role="status" className="mt-2 text-[14px] text-muted-foreground">{COMING_SOON}</p>}
-      </div>
-    </div>
-  );
-}
 
-/** What this week still needs that is not in the fridge, with a link to the full list. */
-function MissingNow() {
-  const { cards } = useWeek();
-  const planning = useLivePlan();
-  const items = planning.items(cards).filter((i) => !i.inFridge);
-  if (cards.length === 0) return null;
-  return (
-    <section aria-labelledby="missing" className="rounded-sheet bg-sheet p-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h3 id="missing" className="text-[18px] font-bold">Missing for this week ({items.length})</h3>
-        <Link to="/list" className="text-[14.5px] font-medium underline underline-offset-4">Open the shopping list</Link>
-      </div>
-      {items.length === 0 ? <p className="mt-2 text-[14.5px] text-muted-foreground">You have everything this week needs.</p> : (
-        <ul className="mt-3 grid gap-x-8 gap-y-1 sm:grid-cols-2">
-          {items.slice(0, 8).map((it) => <li key={it.id} className="flex justify-between gap-3 text-[14.5px]"><span>{it.name}</span><span className="num text-muted-foreground">{it.price != null ? eur(it.price) : ""}</span></li>)}
-          {items.length > 8 && <li className="text-[13.5px] text-muted-foreground">and {items.length - 8} more</li>}
-        </ul>
+      {today?.meal ? (
+        <div className="mb-4 grid overflow-hidden rounded-[8px] bg-sheet-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <img src={imageOf(today.meal)} alt={today.meal.title} width={480} height={300} className="h-44 w-full object-cover sm:h-full" />
+          <div className="p-4">
+            <p className="eyebrow">Today, {today.day}</p>
+            <h3 className="mt-1 text-[22px] font-bold leading-tight">{today.meal.title}</h3>
+            <p className="num mt-1 text-[13.5px] text-muted-foreground">{today.meal.minutes ?? 20} min · {eur(planning.priceOf(today.meal))}</p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Button onClick={() => cook.start(today.meal!, today.i)}><ChefHat className="size-4" aria-hidden />Start cooking</Button>
+              {today.meal.slug && <Link to="/recipe/$slug" params={{ slug: today.meal.slug }} className="text-[14px] underline underline-offset-4">View recipe</Link>}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className="mb-4 rounded-[8px] bg-sheet-2 p-4 text-[15px]">
+          {prepToday ? <>Today is prep day: {prepToday.meta}. <Link to="/cook" hash="prep" className="underline underline-offset-4">See the timeline</Link>.</>
+            : today ? "Today is free. Pick one of the suggestions below." : "No dinner planned today. Start any day's dinner below if you want to cook now."}
+        </p>
       )}
-    </section>
-  );
-}
 
-/** Dinners that fill the free days, one click each. */
-function Proposed() {
-  const { chosen, set } = useApp();
-  const { ctx, prefs, status } = useWeek();
-  const has = useHas();
-  const planning = useLivePlan();
-  const free = emptySlots(chosen, ctx);
-  const list = useMemo(() => proposals(chosen, prefs, ctx, has, 3), [chosen, prefs, ctx, has]);
-  if (status !== "ready" || free.length === 0) return null;
-  return (
-    <section aria-labelledby="prop" className="mt-10">
-      <h2 id="prop" className="mb-1 text-[20px]">Proposed meals</h2>
-      <p className="mb-4 text-[14px] text-muted-foreground">{free.length === 1 ? `${free[0]!.day} is free.` : `${free.map((f) => f.day).join(", ")} are free.`} These fit your settings and reuse what you already buy.</p>
-      {list.length === 0 ? <p className="text-muted-foreground">No other recipe fits your settings yet.</p> : (
-        <ul className="grid grid-cols-1 gap-5 md:grid-cols-3">
-          {list.map((m, k) => {
-            const slot = free[Math.min(k, free.length - 1)]!;
-            return (
-              <li key={m.title} className="flex flex-col overflow-hidden rounded-sheet bg-sheet">
-                <div className="h-36 bg-sheet-2"><img src={imageOf(m)} alt="" width={600} height={288} loading="lazy" className="size-full object-cover" /></div>
-                <div className="flex flex-1 flex-col p-4">
-                  <h3 className="text-[18px] font-bold">{m.title}</h3>
-                  <p className="num text-[13px] text-muted-foreground">{m.minutes ?? 20} min, {eur(planning.priceOf(m))} for {useApp.getState().people}</p>
-                  <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <Button className="min-h-10" onClick={() => { set({ chosen: { ...chosen, [slot.i]: m.title }, weekAccepted: false }); toast(`${m.title} added for ${slot.day}.`); }}>Add to {slot.day}</Button>
-                    {m.slug !== undefined && <Link to="/recipe/$slug" params={{ slug: m.slug }} className="text-[13.5px] font-medium underline underline-offset-4">View recipe</Link>}
-                  </div>
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+        {slots.map((s, k) => {
+          const isToday = s.day === day;
+          if (!s.meal) return (
+            <li key={s.i} className={cn("flex min-h-[188px] flex-col rounded-[8px] border-2 border-dashed border-rule p-2.5", isToday && "border-basil")}>
+              <Tape alt={k % 2 === 1}>{s.day}</Tape>
+              <p className="mt-3 text-[14px] font-semibold">Free</p>
+              <p className="text-[12.5px] text-muted-foreground">Add one of the suggestions below.</p>
+            </li>
+          );
+          return (
+            <li key={s.i} className={cn("flex flex-col overflow-hidden rounded-[8px] bg-sheet-2", isToday && "ring-2 ring-basil")}>
+              <div className="relative h-20">
+                <img src={imageOf(s.meal)} alt="" width={240} height={160} loading="lazy" className="size-full object-cover" />
+                <div className="absolute left-1.5 top-1.5"><Tape alt={k % 2 === 1}>{isToday ? `${s.day} · today` : s.day}</Tape></div>
+              </div>
+              <div className="flex flex-1 flex-col p-2.5">
+                {s.meal.slug ? <Link to="/recipe/$slug" params={{ slug: s.meal.slug }} className="line-clamp-2 text-[13.5px] font-semibold leading-snug hover:underline">{s.meal.title}</Link>
+                  : <p className="line-clamp-2 text-[13.5px] font-semibold leading-snug">{s.meal.title}</p>}
+                <div className="mt-auto flex items-center gap-1 pt-2">
+                  <button type="button" onClick={() => cook.start(s.meal!, s.i)} className="press inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-[6px] bg-basil px-2 text-[12.5px] font-semibold text-basil-ink">
+                    <ChefHat className="size-3.5" aria-hidden />Cook
+                  </button>
+                  <button type="button" aria-label={`Swap ${s.meal.title}`} onClick={() => setSwapping(s.i)} className="press flex size-9 items-center justify-center rounded-[6px] hover:bg-sheet-hover"><RefreshCw className="size-3.5" aria-hidden /></button>
+                  <button type="button" aria-label={`Remove ${s.meal.title}`} onClick={() => remove(s.i, s.day)} className="press flex size-9 items-center justify-center rounded-[6px] hover:bg-sheet-hover"><Trash2 className="size-3.5" aria-hidden /></button>
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 text-[12.5px] text-muted-foreground">{planning.planNote(cards)}</p>
+
+      <Dialog open={swapping !== null} onOpenChange={(o) => { if (!o) setSwapping(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Swap {swapSlot?.day}'s dinner</DialogTitle>
+            <DialogDescription>{swapSlot?.meal ? `Instead of ${swapSlot.meal.title}. These reuse what you prep for that half of the week.` : ""}</DialogDescription>
+          </DialogHeader>
+          {alts.length === 0 ? <p className="text-[14px]">No other dinner fits your settings right now.</p> : (
+            <ul className="space-y-1.5">
+              {alts.map((a) => (
+                <li key={a.title}>
+                  <button type="button" onClick={() => {
+                    if (swapping === null) return;
+                    set({ chosen: { ...chosen, [swapping]: a.title }, weekAccepted: false });
+                    useExp.getState().track("swap");
+                    toast(`${swapSlot?.day} is now ${a.title}. Shopping list updated.`);
+                    setSwapping(null);
+                  }} className="press flex min-h-11 w-full items-center justify-between gap-3 bg-sheet-2 px-3 text-left text-[14px] hover:bg-sheet-hover">
+                    <span className="font-medium">{a.title}</span><span className="num shrink-0 text-muted-foreground">{eur(planning.priceOf(a))}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </DialogContent>
+      </Dialog>
+      {cook.dialogs}
     </section>
   );
 }
 
-/** This week's real deals on ingredients we have recipes for, with the recipes that use them. */
-function DealsPanel() {
-  const { stores } = useApp();
+/** Daily pick: tonight's dinner, or an empty slot to fill from the suggestions. */
+function TonightSection() {
+  const { set } = useApp();
+  const { status } = useWeek();
+  const tonight = useTonight();
+  const planning = useLivePlan();
+  const cook = useCookFlow();
+  if (status !== "ready") return null;
+  return (
+    <section aria-labelledby="tonight" className="h-full rounded-sheet bg-sheet p-4 md:p-5">
+      <h2 id="tonight" className="mb-4 text-[20px]">Today, {todayName()}</h2>
+      {tonight ? (
+        <div className="grid overflow-hidden rounded-[8px] bg-sheet-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <img src={imageOf(tonight)} alt={tonight.title} width={480} height={300} className="h-48 w-full object-cover sm:h-full" />
+          <div className="p-4">
+            <h3 className="text-[22px] font-bold leading-tight">{tonight.title}</h3>
+            <p className="num mt-1 text-[13.5px] text-muted-foreground">{tonight.minutes ?? 20} min · {eur(planning.priceOf(tonight))}</p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Button onClick={() => cook.start(tonight)}><ChefHat className="size-4" aria-hidden />Start cooking</Button>
+              {tonight.slug && <Link to="/recipe/$slug" params={{ slug: tonight.slug }} className="text-[14px] underline underline-offset-4">View recipe</Link>}
+              <button type="button" onClick={() => set({ today: null })} className="text-[13.5px] text-muted-foreground underline underline-offset-4">Clear</button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex min-h-48 items-center justify-center rounded-[8px] border-2 border-dashed border-rule p-6 text-center">
+          <p className="max-w-sm text-[15px]">Nothing picked for tonight yet. Choose one of the suggestions below. They are ranked by what is already in your fridge.</p>
+        </div>
+      )}
+      {cook.dialogs}
+    </section>
+  );
+}
+
+/** What the planned dinners need that is not at home: the delta between the plan and the fridge. */
+function MissingPanel() {
+  const { have, checked, set, mode } = useApp();
+  const planned = usePlanned();
+  const planning = useLivePlan();
+  const { status } = useWeek();
+  const all = planning.items(planned);
+  const missing = all.filter((i) => !i.inFridge && !checked[i.id]);
+  const marked = all.filter((i) => have.includes(i.id));
+  if (status !== "ready") return null;
+  return (
+    <aside aria-labelledby="missing" className="flex flex-col rounded-sheet bg-sheet p-4 md:p-5">
+      <h2 id="missing" className="text-[20px]">Missing ingredients</h2>
+      <p className="mt-1 text-[13.5px] text-muted-foreground">
+        {planned.length === 0 ? (mode === "daily" ? "Pick tonight's dinner to see what it needs." : "Add dinners to see what they need.")
+          : `What ${mode === "daily" ? "tonight's dinner needs" : "this week's dinners need"} and we can't see in your fridge. Anything you don't mark stays on your shopping list.`}
+      </p>
+      {planned.length > 0 && (missing.length === 0 ? <p className="mt-4 flex items-center gap-2 text-[15px] font-medium text-basil"><Check className="size-4" aria-hidden />You have everything.</p> : (
+        <ul className="mt-3 divide-y divide-rule">
+          {missing.map((it) => (
+            <li key={it.id} className="flex items-center justify-between gap-2 py-2">
+              <span className="min-w-0">
+                <span className="block text-[14.5px] font-medium">{it.name}</span>
+                <span className="block text-[12px] text-muted-foreground">for {it.dinners} {it.dinners === 1 ? "dinner" : "dinners"}{it.price != null ? ` · ${eur(it.price)}` : ""}{it.store && mode === "prep" ? ` · ${it.store}` : ""}</span>
+              </span>
+              <Button variant="secondary" className="min-h-9 shrink-0 px-3 text-[13px]" onClick={() => set({ have: [...new Set([...have, it.id])] })}>I have it</Button>
+            </li>
+          ))}
+        </ul>
+      ))}
+      {marked.length > 0 && (
+        <p className="mt-3 text-[12.5px] text-muted-foreground">
+          At home: {marked.map((m) => m.name.split(" ")[0]).join(", ")}.{" "}
+          <button type="button" className="underline underline-offset-4" onClick={() => set({ have: have.filter((h) => !marked.some((m) => m.id === h)) })}>Undo</button>
+        </p>
+      )}
+      <div className="mt-auto pt-4">
+        <Link to="/list" className="inline-flex min-h-11 w-full items-center justify-center rounded-ctl bg-sheet-2 px-4 text-[14.5px] font-semibold hover:bg-sheet-hover">
+          Shopping list ({missing.length}){missing.length ? ` · ${eur(missing.reduce((a, i) => a + (i.price ?? 0), 0))}` : ""}
+        </Link>
+      </div>
+    </aside>
+  );
+}
+
+/** Dinners that fit the person and reuse what the plan or the fridge already has. One click to add. */
+function Suggested() {
+  const { chosen, mode } = useApp();
+  const { ctx, prefs, status } = useWeek();
+  const covered = useCovered();
+  const tonight = useTonight();
+  const planning = useLivePlan();
+  const cook = useCookFlow();
+  const place = usePlaceFlow();
+  const list = useMemo(() => {
+    if (mode === "prep") return proposals(chosen, prefs, ctx, covered, 6);
+    return proposals({}, prefs, { plan: [], pool: ctx.pool.filter((m) => m.title !== tonight?.title) }, covered, 6);
+  }, [chosen, prefs, ctx, covered, mode, tonight]);
+  if (status !== "ready" || list.length === 0) return null;
+  return (
+    <section aria-labelledby="sugg" className="mt-10">
+      <h2 id="sugg" className="text-[20px]">Suggested meals</h2>
+      <p className="mb-4 mt-1 text-[14px] text-muted-foreground">{mode === "prep" ? "They fit your settings and reuse what your week already buys." : "They fit your settings, ranked by what is in your fridge."}</p>
+      <ul className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+        {list.map((m) => {
+          const have = m.uses.filter(covered).length;
+          return (
+            <li key={m.title} className="flex flex-col overflow-hidden rounded-sheet bg-sheet">
+              <img src={imageOf(m)} alt="" width={300} height={200} loading="lazy" className="h-28 w-full object-cover" />
+              <div className="flex flex-1 flex-col p-3">
+                {m.slug ? <Link to="/recipe/$slug" params={{ slug: m.slug }} className="line-clamp-2 text-[14.5px] font-bold leading-snug hover:underline">{m.title}</Link> : <p className="text-[14.5px] font-bold">{m.title}</p>}
+                <p className="num mt-0.5 text-[12.5px] text-muted-foreground">{m.minutes ?? 20} min · {eur(planning.priceOf(m))}{have ? ` · ${have} at home` : ""}</p>
+                <div className="mt-auto flex flex-col gap-1.5 pt-3">
+                  <Button variant="secondary" className="min-h-9 text-[13px]" onClick={() => place.add(m)}>{mode === "prep" ? "Add to plan" : "Pick for tonight"}</Button>
+                  {mode === "daily" && <Button className="min-h-9 text-[13px]" onClick={() => cook.start(m)}>Start cooking</Button>}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {place.dialogs}{cook.dialogs}
+    </section>
+  );
+}
+
+type DealRow = { key: string; store: StoreName; deal: Deal; base: string; name: string; recipes: Meal[] };
+
+/** The best real deals at the person's stores, for ingredients we have recipes for. */
+function TopDeals() {
+  const { stores, mode } = useApp();
   const live = useLiveDeals().data;
   const ings = useIngredients();
   const { ctx, prefs, status } = useWeek();
+  const covered = useCovered();
+  const planned = usePlanned();
+  const place = usePlaceFlow();
   const [open, setOpen] = useState<string | null>(null);
-  const rows = useMemo(() => {
+  const rows = useMemo<DealRow[]>(() => {
     if (!live || !ings.data || status !== "ready") return [];
     const bySlug = new Map(ings.data.map((i) => [i.slug, i]));
     const byId = new Map(ings.data.map((i) => [i.id, i]));
     const fitting = ctx.pool.filter((m) => fitsPrefs(m, prefs));
-    const out: { key: string; store: (typeof stores)[number]; deal: NonNullable<typeof live[keyof typeof live]>[number]; base: string; recipes: Meal[] }[] = [];
+    const out: DealRow[] = [];
     for (const st of stores) for (const d of live[st] ?? []) {
       if (!d.slug || !isRealDeal(d)) continue;
       const ing = bySlug.get(d.slug);
-      const base = (ing?.parent_id && byId.get(ing.parent_id)?.slug) || d.slug;
+      const parent = ing?.parent_id ? byId.get(ing.parent_id) : undefined;
+      const base = parent?.slug ?? d.slug;
       const recipes = fitting.filter((m) => m.uses.includes(base));
-      if (recipes.length) out.push({ key: `${st}-${d.id ?? d.name}`, store: st, deal: d, base, recipes });
+      if (recipes.length) out.push({ key: `${st}-${d.id ?? d.name}`, store: st, deal: d, base, name: (parent ?? ing)?.name ?? base, recipes });
     }
-    return out.sort((a, b) => realSaving(b.deal) - realSaving(a.deal)).slice(0, 4);
+    return out.sort((a, b) => realSaving(b.deal) - realSaving(a.deal)).slice(0, 6);
   }, [live, ings.data, status, ctx.pool, prefs, stores]);
   if (rows.length === 0) return null;
+  const weekTitles = new Set(planned.map((c) => c.meal.title));
   return (
     <section aria-labelledby="deals" className="mt-10">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
-        <h2 id="deals" className="text-[20px]">Deals you can cook with</h2>
+        <h2 id="deals" className="text-[20px]">Top deals at your stores</h2>
         <Link to="/deals" className="text-[14.5px] font-medium underline underline-offset-4">All deals</Link>
       </div>
-      <ul className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        {rows.map((r) => (
-          <li key={r.key} className="overflow-hidden rounded-sheet bg-sheet">
-            <div className="flex gap-4 p-4">
-              <img src={dealPhoto(r.deal.photoKey ?? r.deal.name)} alt="" width={96} height={96} loading="lazy" className="size-20 shrink-0 rounded-[8px] object-cover" />
-              <div className="min-w-0 flex-1">
-                <StoreBadge name={r.store} className="h-6 px-2" />
-                <h3 className="mt-1 text-[17px] font-bold">{r.deal.name}</h3>
-                <p className="num text-[14px]"><span className="font-bold">{eur(r.deal.price)}</span> <span className="text-muted-foreground line-through">{eur(r.deal.was)}</span> <span className="text-basil">{eur(realSaving(r.deal))} cheaper than the regular price</span></p>
-              </div>
-            </div>
-            <div className="border-t border-rule px-4 py-3">
-              <Button variant="secondary" className="min-h-10" aria-expanded={open === r.key} onClick={() => setOpen(open === r.key ? null : r.key)}>Build recipe</Button>
-              {open === r.key && (
-                <ul className="slide-in mt-3 space-y-3">
-                  {r.recipes.slice(0, 3).map((m) => (
-                    <li key={m.title} className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[15px] font-semibold">{m.title}</p>
-                        {m.slug !== undefined && <Link to="/recipe/$slug" params={{ slug: m.slug }} className="text-[13px] underline underline-offset-4">View recipe</Link>}
-                      </div>
-                      <AddToPlan meal={m} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-type DailyCard = { id: string; title: string; minutes: number; price: number; reason: string; meal: Meal };
-const tones = ["bg-tomato-tint text-tomato", "bg-mustard-tint text-mustard-ink", "bg-basil-tint text-basil"];
-
-/** Daily pick mode: three dinners for tonight, ranked by what is already in the fridge. The chosen one is pinned below. */
-function DailyPick() {
-  const { pick, set } = useApp();
-  const planning = useLivePlan();
-  const { ctx, prefs, status } = useWeek();
-  const has = useHas();
-  const cards: DailyCard[] = (() => {
-    const ranked = ctx.pool.filter((m) => m.slug && fitsPrefs(m, prefs)).map((m) => ({ m, have: m.uses.filter(has).length, quick: m.tags?.includes("quick") ? 1 : 0 }))
-      .sort((a, b) => b.have / Math.max(1, b.m.uses.length) - a.have / Math.max(1, a.m.uses.length) || b.quick - a.quick || (a.m.minutes ?? 99) - (b.m.minutes ?? 99) || a.m.title.localeCompare(b.m.title));
-    const out: typeof ranked = [], types = new Set<string>();
-    for (const r of ranked) { if (out.length === 3) break; if (!types.has(r.m.type ?? "")) { out.push(r); types.add(r.m.type ?? ""); } }
-    return out.map(({ m, have: h }) => ({
-      id: m.slug!, title: m.title, minutes: m.minutes ?? 20, price: planning.priceOf(m) / 2, meal: m,
-      reason: h > 0 ? `Uses ${h} thing${h === 1 ? "" : "s"} you already have` : m.tags?.includes("quick") ? "Quick tonight" : "Something different",
-    }));
-  })();
-  if (status !== "ready" || cards.length === 0) return null;
-  const sel = cards.find((p) => p.id === pick) ?? cards[0]!;
-  return (
-    <div>
-      <h2 className="mb-4 text-[20px]">Tonight, pick one</h2>
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        {cards.map((p, k) => {
-          const on = p.id === sel.id;
+      <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {rows.map((r) => {
+          const usedBy = planned.filter((c) => c.meal.uses.includes(r.base));
+          const atHome = covered(r.base);
+          const options = r.recipes.filter((m) => !weekTitles.has(m.title)).slice(0, 4);
           return (
-            <button key={p.id} type="button" aria-pressed={on} onClick={() => set({ pick: p.id })}
-              className={cn("group flex flex-col overflow-hidden rounded-sheet border-2 bg-sheet text-left transition-all duration-200", on ? "border-basil" : "border-transparent")}>
-              <div className="h-52 overflow-hidden bg-sheet-2">
-                <img src={imageOf(p.meal)} alt={p.title} width={600} height={416} loading="lazy" className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+            <li key={r.key} className="flex flex-col overflow-hidden rounded-sheet bg-sheet">
+              <div className="flex gap-3 p-4">
+                <img src={dealPhoto(r.deal.photoKey ?? r.deal.name)} alt="" width={80} height={80} loading="lazy" className="size-16 shrink-0 rounded-[8px] object-cover" />
+                <div className="min-w-0 flex-1">
+                  <StoreBadge name={r.store} className="h-6 px-2" />
+                  <h3 className="mt-1 line-clamp-2 text-[15.5px] font-bold leading-snug">{r.deal.name}</h3>
+                  <p className="num text-[13.5px]"><span className="font-bold">{eur(r.deal.price)}</span> <span className="text-muted-foreground line-through">{eur(r.deal.was)}</span> <span className="text-basil">−{eur(realSaving(r.deal))}</span></p>
+                </div>
               </div>
-              <div className="p-4">
-                <h3 className="text-[19px] font-bold">{p.title}</h3>
-                <p className="num text-[13px] text-muted-foreground">{p.minutes} min, {eur(p.price)} a portion</p>
-                <span className={cn("mt-3 inline-flex rounded-[6px] px-2.5 py-1 text-[12.5px] font-semibold", tones[k % 3])}>{p.reason}</span>
+              <div className="mt-auto border-t border-rule px-4 py-3">
+                <Button variant="secondary" className="min-h-10 w-full" aria-expanded={open === r.key} onClick={() => setOpen(open === r.key ? null : r.key)}>Include in a recipe</Button>
+                {open === r.key && (
+                  <div className="slide-in mt-3 space-y-3">
+                    {(usedBy.length > 0 || atHome) && (
+                      <p className="rounded-[6px] bg-basil-tint px-3 py-2 text-[13px] text-basil">
+                        {usedBy.length > 0 ? `Already in your plan: ${usedBy.map((c) => `${c.meal.title} (${c.day})`).join(", ")}.` : ""}
+                        {atHome ? ` You already have ${r.name.toLowerCase()} at home.` : ""}
+                      </p>
+                    )}
+                    {options.length === 0 ? <p className="text-[13.5px] text-muted-foreground">Every recipe with {r.name.toLowerCase()} that fits you is already planned.</p> : (
+                      <ul className="space-y-2">
+                        {options.map((m) => (
+                          <li key={m.title} className="flex items-center justify-between gap-2">
+                            {m.slug ? <Link to="/recipe/$slug" params={{ slug: m.slug }} className="min-w-0 text-[14px] font-medium hover:underline">{m.title}</Link> : <span className="text-[14px] font-medium">{m.title}</span>}
+                            <Button variant="secondary" className="min-h-9 shrink-0 px-3 text-[13px]" onClick={() => place.add(m)}>{mode === "prep" ? "Add to plan" : "Pick for tonight"}</Button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
-            </button>
+            </li>
           );
         })}
-      </div>
-      <div className="mt-6"><PinnedMeal meal={sel.meal} eyebrow="Tonight" /></div>
-    </div>
+      </ul>
+      {place.dialogs}
+    </section>
   );
 }

@@ -28,8 +28,10 @@ type State = {
   /** Day row index to the dinner title picked through Swap. */
   chosen: Record<string, string>;
   addedDeals: string[];
-  /** Ingredients the tester confirmed they already have for tonight. */
+  /** Ingredients (slugs) the person said they already have at home. They leave the shopping list. */
   have: string[];
+  /** Daily pick: tonight's dinner (recipe title) and the day it was picked for (yyyy-mm-dd). */
+  today: { date: string; title: string } | null;
   people: number;
   checked: Record<string, boolean>;
   set: (p: Partial<State>) => void;
@@ -55,6 +57,7 @@ export const useApp = create<State>()(
       chosen: {},
       addedDeals: [],
       have: [],
+      today: null,
       people: 2,
       checked: {},
       set: (p) => set(p),

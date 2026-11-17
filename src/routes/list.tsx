@@ -67,7 +67,7 @@ function List() {
                           <span className={cn("block text-[15px] font-medium", on && "text-muted-foreground line-through")}>{it.name}</span>
                           <span className="block text-[12.5px] text-muted-foreground">for {it.dinners} {it.dinners === 1 ? "dinner" : "dinners"}{it.note ? `. ${it.note}` : ""}</span>
                         </span>
-                        <span className="num text-[14.5px] text-muted-foreground">{it.inFridge ? "in fridge" : eur(it.price ?? 0)}</span>
+                        <span className="num text-[14.5px] text-muted-foreground">{it.inFridge ? "at home" : eur(it.price ?? 0)}</span>
                       </label>
                     </li>
                   );

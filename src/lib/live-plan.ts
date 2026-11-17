@@ -13,7 +13,7 @@ import { neededItems, weekTotal, type Card, type NeededItem } from "@/lib/week";
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export function useLivePlan() {
-  const { stores, people, fridge } = useApp();
+  const { stores, people, fridge, have: atHome } = useApp();
   const store = storesLabel(stores);
   const prices = usePriceRows(), ings = useIngredients(), recipes = useRecipes();
   // Amounts per ingredient id, summed over the fridge; an item without an amount (older entries, prepared food) counts as enough.
@@ -26,8 +26,10 @@ export function useLivePlan() {
       const prev = m.get(id);
       m.set(id, f.qty === undefined || prev === null ? null : (prev ?? 0) + f.qty);
     }
+    // Things the person said they have at home count as enough.
+    for (const slug of atHome) { const id = bySlug.get(slug); if (id) m.set(id, null); }
     return m;
-  }, [fridge, ings.data]);
+  }, [fridge, ings.data, atHome]);
   const inFridge = useMemo(() => new Set(fridge.map((f) => FRIDGE_SLUG[f.id] ?? f.id)), [fridge]);
   const cat = useMemo<Catalog | null>(() => (prices.data && ings.data && recipes.data
     ? { ingredients: ings.data, recipes: recipes.data.recipes, lines: recipes.data.lines, prices: prices.data } : null), [prices.data, ings.data, recipes.data]);

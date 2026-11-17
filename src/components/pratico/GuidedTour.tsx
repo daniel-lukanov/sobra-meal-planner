@@ -4,7 +4,7 @@ import { useExp, type TourStep } from "@/lib/experiment";
 import { Button } from "./ui";
 
 const steps: Record<TourStep, { to: "/" | "/deals" | "/fridge" | null; text: string }> = {
-  1: { to: "/", text: "This is your week. Switch between Weekly prep and Daily pick to compare. If you'd cook this, tap Accept this week." },
+  1: { to: "/", text: "This is your week. Start cooking any day, swap or remove dinners, and mark what you already have. If you would cook this, tap Accept this week." },
   2: { to: "/deals", text: "Every deal is checked against the regular price. Price traps are marked. Tap Add to plan on a deal you'd buy." },
   3: { to: "/fridge", text: "After shopping you could snap your receipt here and pratico fills your fridge. Try it with the sample receipt or skip." },
   4: { to: null, text: "That's the tour. Look around as long as you like. When you're done, tap Give feedback." },
