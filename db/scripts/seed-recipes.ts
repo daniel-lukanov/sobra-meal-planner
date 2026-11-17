@@ -1,4 +1,4 @@
-// Loads the generated recipes (db/seed/recipes.ts) into the Sobra database. Run with Bun:
+// Loads the generated recipes (db/seed/recipes.ts) into the pratico database. Run with Bun:
 //   bun db/scripts/seed-recipes.ts --dry     check the data and print what would be written (writes nothing)
 //   bun db/scripts/seed-recipes.ts           write: new staples, 30 recipes, their ingredients, tags and prep-base links,
 //                                            and steps, tags and a summary for the 18 prototype recipes

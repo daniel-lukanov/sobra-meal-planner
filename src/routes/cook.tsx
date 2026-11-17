@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
 import { cookIngredients, fastSteps, prepLanes, relaxedSteps, type Block } from "@/data/cook";
-import { Button, PageHeader, TwoCol, UnderlineTabs } from "@/components/sobra/ui";
+import { Button, PageHeader, TwoCol, UnderlineTabs } from "@/components/pratico/ui";
 import { cn } from "@/lib/utils";
 import { mealPhoto, photo } from "@/data/photos";
 import { useWeek } from "@/lib/use-week";

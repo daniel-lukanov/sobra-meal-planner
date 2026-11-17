@@ -1,17 +1,16 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Check, BookHeart, Users, CalendarDays, ChefHat, ChevronDown, Lock, Refrigerator, ShoppingBasket, Tag } from "lucide-react";
+import { CalendarDays, ChefHat, Refrigerator, ShoppingBasket, Tag } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
-import { toast } from "sonner";
 import { useApp } from "@/lib/store";
-import { stores, type StoreName } from "@/data/stores";
-import { SobraLogo, StoreLogo } from "./Brand";
+import { PraticoLogo } from "./Brand";
+import { UserMenu } from "./UserMenu";
 import { useExp } from "@/lib/experiment";
 import { PreSurvey } from "./PreSurvey";
 import { FeedbackPill } from "./VerdictModal";
 import { GuidedTour } from "./GuidedTour";
 import { isGhost } from "@/lib/experiment";
 import { Ghost } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useHouseholdSync } from "@/lib/household-sync";
 
@@ -22,52 +21,13 @@ const nav = [
   { to: "/fridge", label: "Fridge", icon: Refrigerator },
   { to: "/cook", label: "Cook", icon: ChefHat },
 ] as const;
-const topNav = [...nav, { to: "/setup" as const, label: "Your meals", icon: BookHeart }, { to: "/household" as const, label: "Household", icon: Users }];
-
-function StorePicker() {
-  const store = useApp((s) => s.store);
-  const set = useApp((s) => s.set);
-  const pick = (s: StoreName) => { if (s === store) return; set({ store: s, weekAccepted: false }); useExp.getState().update({ store: s }); toast(`Prices now from ${s}.`); };
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", close); document.addEventListener("keydown", close);
-    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", close); };
-  }, [open]);
-  return (
-    <div ref={ref} className="relative shrink-0">
-      <button type="button" aria-label="Pick your store" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}
-        className="inline-flex min-h-10 items-center gap-2 border-b border-ink/30 px-1 text-[14px] font-semibold text-ink outline-none hover:border-ink focus-visible:border-ink">
-        <span className="hidden text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:inline">Store</span>
-        <StoreLogo name={store} className="h-5" />
-        <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
-      </button>
-      {open && (
-        <ul role="listbox" className="absolute right-0 top-full z-50 mt-2 min-w-[124px] border border-rule bg-ground shadow-float">
-          {stores.map((s) => (
-            <li key={s} role="option" aria-selected={s === store}>
-              <button type="button" aria-label={s} onClick={() => { pick(s); setOpen(false); }}
-                className={cn("flex w-full items-center justify-center gap-2 border-b border-rule px-3 py-2.5 hover:bg-sheet-2", s === store && "bg-sheet-2")}>
-                <span className="flex items-center gap-3"><StoreLogo name={s} className="h-5" /></span>
-                {s === store && <Check className="size-4" aria-hidden />}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
+const topNav = nav;
 
 function TopNav({ minimal }: { minimal: boolean }) {
   const { pathname } = useLocation();
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-rule bg-ground px-4 sm:px-8">
-      <Link to="/plan" aria-label="pratico, go to plan" className="shrink-0"><SobraLogo compact /></Link>
+      <Link to="/plan" aria-label="pratico, go to plan" className="shrink-0"><PraticoLogo compact /></Link>
       {!minimal && (
         <nav aria-label="Main" className="hidden h-full items-center gap-1 md:flex">
           {topNav.map(({ to, label }) => {
@@ -82,10 +42,7 @@ function TopNav({ minimal }: { minimal: boolean }) {
         </nav>
       )}
       <div className="flex items-center gap-2">
-        {!minimal && <StorePicker />}
-        <Link to="/insights" aria-label="Founder insights" className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-sheet-2 hover:text-ink">
-          <Lock className="size-4" aria-hidden />
-        </Link>
+        <UserMenu />
       </div>
     </header>
   );

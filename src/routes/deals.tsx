@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { BadgeCheck, BellRing, ShieldAlert } from "lucide-react";
-import { eur, useApp } from "@/lib/store";
+import { eur, storesLabel, useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
 import { dealsByStore, isRealDeal, realSaving } from "@/data/deals";
 import { dealPhoto } from "@/data/photos";
-import { Button, PageHeader } from "@/components/sobra/ui";
+import { Button, PageHeader } from "@/components/pratico/ui";
 import { Switch } from "@/components/ui/switch";
 import { useExp } from "@/lib/experiment";
 import { useLiveDeals } from "@/lib/live-deals";
@@ -23,17 +23,21 @@ const alertItems = [
 ];
 
 function Deals() {
-  const { store, alerts, set, addedDeals } = useApp();
-  const live = useLiveDeals().data?.[store];
-  const isLive = !!live?.length;
-  const endsOn = isLive ? live!.map((d) => d.endsOn).filter(Boolean).sort()[0] : undefined;
-  const deals = [...(isLive ? live! : dealsByStore[store])].sort((a, b) => Number(isRealDeal(b)) - Number(isRealDeal(a)));
+  const { stores, alerts, set, addedDeals } = useApp();
+  const store = storesLabel(stores);
+  const liveByStore = useLiveDeals().data;
+  // Deals from every store the household shops at; a store without live data shows the sample deals.
+  const perStore = stores.map((s) => ({ s, live: liveByStore?.[s] ?? [] }));
+  const liveAll = perStore.flatMap((x) => x.live);
+  const isLive = liveAll.length > 0;
+  const endsOn = isLive ? liveAll.map((d) => d.endsOn).filter(Boolean).sort()[0] : undefined;
+  const deals = [...perStore.flatMap((x) => (x.live.length ? x.live : dealsByStore[x.s]))].sort((a, b) => Number(isRealDeal(b)) - Number(isRealDeal(a)));
   const traps = deals.filter((d) => !isRealDeal(d)).length;
   return (
     <>
       <PageHeader small={`Deals at ${store}`} title="Which deals are actually cheaper"
         sub={`We compare each deal with the cheapest regular price for the same thing. ${traps} of ${deals.length} this week ${traps === 1 ? "is a price trap" : "are price traps"}.`} />
-      <p className="-mt-3 mb-6 text-[12.5px] text-muted-foreground">{isLive ? `Prices read from ${store}'s website${endsOn ? `, promotions shown until about ${endsOn}` : ""}. Check the shelf before you buy.` : "Sample prices, no guarantee."}</p>
+      <p className="-mt-3 mb-6 text-[12.5px] text-muted-foreground">{isLive ? `Prices read from ${store}${endsOn ? `, promotions shown until about ${endsOn}` : ""}. Check the shelf before you buy.` : "Sample prices, no guarantee."}</p>
       <ul className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-3">
         {deals.map((d, i) => {
           const real = isRealDeal(d);

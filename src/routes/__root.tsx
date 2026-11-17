@@ -11,7 +11,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import { Toaster } from "sonner";
-import { Shell } from "../components/sobra/Shell";
+import { Shell } from "../components/pratico/Shell";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -131,7 +131,7 @@ function RootComponent() {
       <Shell>
         <Outlet />
       </Shell>
-      <Toaster position="bottom-center" duration={2600} offset={88} toastOptions={{ className: "sobra-toast" }} />
+      <Toaster position="bottom-center" duration={2600} offset={88} toastOptions={{ className: "pratico-toast" }} />
     </QueryClientProvider>
   );
 }

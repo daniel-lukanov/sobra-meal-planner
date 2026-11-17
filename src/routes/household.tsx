@@ -3,8 +3,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { pageHead } from "@/lib/head";
 import { inviteLink, signOut, useHousehold, useHouseholdActions, useSession } from "@/lib/account";
-import { AccountForm } from "@/components/sobra/AccountForm";
-import { Button, Chip, PageHeader } from "@/components/sobra/ui";
+import { AccountForm } from "@/components/pratico/AccountForm";
+import { Button, Chip, PageHeader } from "@/components/pratico/ui";
 
 export const Route = createFileRoute("/household")({
   head: pageHead("Household", "Invite the people you cook and shop with, and share one fridge and one plan."),

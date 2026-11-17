@@ -18,6 +18,7 @@ import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ListRouteImport } from './routes/list'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as JoinCodeRouteImport } from './routes/join/$code'
 import { Route as PIdRouteImport } from './routes/p/$id'
 
@@ -66,6 +67,11 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinCodeRoute = JoinCodeRouteImport.update({
   id: '/join/$code',
   path: '/join/$code',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
+  '/settings': typeof SettingsRoute
   '/join/$code': typeof JoinCodeRoute
   '/p/$id': typeof PIdRoute
 }
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
+  '/settings': typeof SettingsRoute
   '/join/$code': typeof JoinCodeRoute
   '/p/$id': typeof PIdRoute
 }
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
+  '/settings': typeof SettingsRoute
   '/join/$code': typeof JoinCodeRoute
   '/p/$id': typeof PIdRoute
 }
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/list'
     | '/plan'
     | '/setup'
+    | '/settings'
     | '/join/$code'
     | '/p/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/list'
     | '/plan'
     | '/setup'
+    | '/settings'
     | '/join/$code'
     | '/p/$id'
   id:
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/list'
     | '/plan'
     | '/setup'
+    | '/settings'
     | '/join/$code'
     | '/p/$id'
   fileRoutesById: FileRoutesById
@@ -169,6 +181,7 @@ export interface RootRouteChildren {
   ListRoute: typeof ListRoute
   PlanRoute: typeof PlanRoute
   SetupRoute: typeof SetupRoute
+  SettingsRoute: typeof SettingsRoute
   JoinCodeRoute: typeof JoinCodeRoute
   PIdRoute: typeof PIdRoute
 }
@@ -238,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join/$code': {
       id: '/join/$code'
       path: '/join/$code'
@@ -265,6 +285,7 @@ const rootRouteChildren: RootRouteChildren = {
   ListRoute: ListRoute,
   PlanRoute: PlanRoute,
   SetupRoute: SetupRoute,
+  SettingsRoute: SettingsRoute,
   JoinCodeRoute: JoinCodeRoute,
   PIdRoute: PIdRoute,
 }

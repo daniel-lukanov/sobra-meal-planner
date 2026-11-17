@@ -3,12 +3,12 @@ import type { IngredientId } from "./ingredients";
 import { photo } from "./photos";
 
 /** What a dinner contains, from the database diet flags. Drives the diet filter. */
-export type MealFlags = { meat: boolean; fish: boolean; egg: boolean; dairy: boolean; pork: boolean };
+export type MealFlags = { meat: boolean; fish: boolean; egg: boolean; dairy: boolean; pork: boolean; poultry?: boolean; beef?: boolean; otherMeat?: boolean; shellfish?: boolean; finfish?: boolean };
 /** `uses` holds base ingredient slugs (chicken thighs count as "chicken"). The optional fields are filled for dinners from the database. */
 export type Meal = {
   title: string; how: string; uses: string[]; price: number;
   slug?: string; type?: string; minutes?: number; summary?: string; image?: string;
-  flags?: MealFlags; tags?: string[]; names?: Record<string, string>;
+  flags?: MealFlags; allergens?: string[]; cuisine?: string; tags?: string[]; names?: Record<string, string>;
   steps?: { relaxed: Step[]; fast: Step[] };
 };
 export type PrepRow = { kind: "prep"; day: string; title: string; meta: string; tags: string[]; note?: string };

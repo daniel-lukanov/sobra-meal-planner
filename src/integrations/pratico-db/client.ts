@@ -1,4 +1,4 @@
-// Client for the Sobra data layer (own Supabase project, SQL in db/).
+// Client for the pratico data layer (own Supabase project, SQL in db/).
 // Separate from src/integrations/supabase/*, which Lovable generates for the research study on Lovable Cloud.
 // The URL and publishable key are public by design (row level security protects the data), so they can sit here.
 // Override them with VITE_SOBRA_SUPABASE_URL / VITE_SOBRA_SUPABASE_PUBLISHABLE_KEY in .env.local if needed.
@@ -13,6 +13,6 @@ const url = import.meta.env['VITE_SOBRA_SUPABASE_URL'] || DEFAULT_URL;
 const key = import.meta.env['VITE_SOBRA_SUPABASE_PUBLISHABLE_KEY'] || DEFAULT_PUBLISHABLE_KEY;
 
 // The session is kept in this browser under its own key, apart from Lovable's auth storage.
-export const sobraDb = createClient<Database>(url, key, {
+export const praticoDb = createClient<Database>(url, key, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, storageKey: "sobra-auth" },
 });

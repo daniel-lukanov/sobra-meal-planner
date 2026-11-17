@@ -1,4 +1,4 @@
-// Pingo Doce scraper + importer for the Sobra database. Run with Bun:
+// Pingo Doce scraper + importer for the pratico database. Run with Bun:
 //   bun db/scripts/pingodoce.ts                       dry run: fetch category pages, parse, print a summary (writes nothing)
 //   bun db/scripts/pingodoce.ts --query arroz         only one ingredient rule
 //   bun db/scripts/pingodoce.ts --write               also save to the database (needs db/.env)

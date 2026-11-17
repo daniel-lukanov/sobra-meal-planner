@@ -1,4 +1,4 @@
-// Lidl Portugal scraper + importer for the Sobra database. Run with Bun:
+// Lidl Portugal scraper + importer for the pratico database. Run with Bun:
 //   bun db/scripts/lidl.ts                       dry run: fetch the product hub pages, parse, print a summary (writes nothing)
 //   bun db/scripts/lidl.ts --query arroz         only one ingredient rule
 //   bun db/scripts/lidl.ts --write               also save to the database (needs db/.env)

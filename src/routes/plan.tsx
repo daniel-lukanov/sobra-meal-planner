@@ -2,15 +2,17 @@ import { useExp } from "@/lib/experiment";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { eur, useApp } from "@/lib/store";
+import { eur, storesLabel, useApp } from "@/lib/store";
+import { Link } from "@tanstack/react-router";
+import { fitsPrefs } from "@/lib/prefs";
 import { pageHead } from "@/lib/head";
-import { dailyPicks, type PrepRow } from "@/data/plan";
+import type { PrepRow } from "@/data/plan";
 import { mealPhoto, photo } from "@/data/photos";
 import { Clock, Link2, RefreshCw } from "lucide-react";
-import { Button, Tape, UnderlineTabs } from "@/components/sobra/ui";
-import { ModeQuestion } from "@/components/sobra/ModeQuestion";
-import { SharePlan } from "@/components/sobra/SharePlan";
-import { COMING_SOON, alternatives, fitsDiet } from "@/lib/week";
+import { Button, Tape, UnderlineTabs } from "@/components/pratico/ui";
+import { ModeQuestion } from "@/components/pratico/ModeQuestion";
+import { SharePlan } from "@/components/pratico/SharePlan";
+import { COMING_SOON, alternatives } from "@/lib/week";
 import { useWeek } from "@/lib/use-week";
 import { useLivePlan } from "@/lib/live-plan";
 import { cn } from "@/lib/utils";
@@ -21,7 +23,8 @@ export const Route = createFileRoute("/plan")({
 });
 
 function Plan() {
-  const { store, mode, set, weekAccepted } = useApp();
+  const { stores, mode, set, weekAccepted } = useApp();
+  const store = storesLabel(stores);
   const switchMode = (m: "prep" | "daily") => {
     if (m === mode) return;
     const e = useExp.getState();
@@ -45,6 +48,7 @@ function Plan() {
           options={[{ value: "prep", label: "Weekly prep" }, { value: "daily", label: "Daily pick" }]} /></div>
       </header>
       <ModeQuestion />
+      <WeekStatusNote />
       <WeekBanner />
       {mode === "prep" ? <WeeklyPrep /> : <DailyPick />}
       {weekAccepted && <div className="mt-8"><SharePlan /></div>}
@@ -99,12 +103,24 @@ function PrepBanner({ row }: { row: PrepRow }) {
   );
 }
 
+/** Says why the week is empty or short. There is no sample week to fall back on, and an allergy is never overridden. */
+function WeekStatusNote() {
+  const { status, cards, fitting } = useWeek();
+  const { mode } = useApp();
+  if (status === "loading") return <p role="status" className="mb-6 text-muted-foreground">Loading this week's dinners and prices.</p>;
+  if (status === "error") return <p role="alert" className="mb-6 text-tomato">We could not load the recipes. Reload the page and try again.</p>;
+  const settings = <Link to="/settings" className="underline underline-offset-4">your settings</Link>;
+  if (status === "none") return <p role="status" className="mb-6 rounded-sheet bg-sheet p-5">None of our recipes fit {settings} yet. We never show a dinner with an ingredient you avoid. Loosen a food or allergy choice, and more recipes are on the way.</p>;
+  if (mode === "prep" && cards.length < 6) return <p role="status" className="mb-6 rounded-sheet bg-sheet p-5">Only {fitting} {fitting === 1 ? "recipe fits" : "recipes fit"} {settings}, so this week has {cards.length} {cards.length === 1 ? "dinner" : "dinners"} instead of 6. We never show a dinner with an ingredient you avoid.</p>;
+  return null;
+}
+
 function WeeklyPrep() {
-  const { chosen, diet, set } = useApp();
+  const { chosen, set } = useApp();
   const [filter, setFilter] = useState<string | null>(null);
   const [swapping, setSwapping] = useState<number | null>(null);
   const [tiktok, setTiktok] = useState(false);
-  const { ctx, chapters } = useWeek();
+  const { ctx, chapters, prefs } = useWeek();
   const navigate = useNavigate();
   const planning = useLivePlan();
   // Filter tabs: the ingredients that most of this week's dinners share.
@@ -131,7 +147,7 @@ function WeeklyPrep() {
           <ul className={cn("grid grid-cols-1 gap-5 md:grid-cols-3", ci === 0 ? "mb-10" : "mb-8")}>
             {ch.days.map(({ i, day, meal }, k) => {
               const lit = !!filter && meal.uses.includes(filter);
-              const alts = swapping === i ? alternatives(i, chosen, diet, ctx) : [];
+              const alts = swapping === i ? alternatives(i, chosen, prefs, ctx) : [];
               return (
                 <li key={i} className={cn("flex flex-col overflow-hidden rounded-sheet bg-sheet transition-all duration-200", filter && !lit && "opacity-50")}>
                   <div className="relative h-48 bg-sheet-2">
@@ -189,27 +205,22 @@ function WeeklyPrep() {
   );
 }
 
-/** What each sample daily pick needs, used only when the database recipes are not loaded. */
-const pickNeeds: Record<string, { id: string; name: string }[]> = {
-  rice: [{ id: "rice", name: "Rice" }, { id: "chicken", name: "Chicken thighs" }, { id: "spinach", name: "Spinach" }, { id: "soy", name: "Soy sauce" }],
-  curry: [{ id: "chickpeas", name: "Chickpeas" }, { id: "rice", name: "Rice" }, { id: "onion", name: "Onion" }, { id: "coconut", name: "Coconut milk" }],
-  pasta: [{ id: "tuna", name: "Canned tuna" }, { id: "onion", name: "Onion" }, { id: "spaghetti", name: "Spaghetti" }],
-};
 type DailyCard = { id: string; title: string; minutes: number; price: number; reason: string; image: string; alt: string; slug?: string; needs: { id: string; name: string }[] };
 const tones = ["bg-tomato-tint text-tomato", "bg-mustard-tint text-mustard-ink", "bg-basil-tint text-basil"];
 
 function DailyPick() {
-  const { pick, set, fridge, checked, have, diet, store } = useApp();
+  const { pick, set, fridge, checked, have, stores } = useApp();
+  const store = storesLabel(stores);
   const navigate = useNavigate();
   const planning = useLivePlan();
-  const { ctx } = useWeek();
+  const { ctx, prefs } = useWeek();
   const [showMissing, setShowMissing] = useState(false);
   const [delivery, setDelivery] = useState(false);
   const inFridge = new Set(fridge.map((f) => (f.id === "onions" ? "onion" : f.id)));
   const has = (u: string) => [...inFridge].some((id) => id === u || id.startsWith(`${u}-`));
   // Tonight's three: dinners that fit the diet, ranked by how much of them is already in the fridge, then by speed. Different meal types.
   const cards: DailyCard[] = ctx.live ? (() => {
-    const eligible = ctx.pool.filter((m) => fitsDiet(m, diet));
+    const eligible = ctx.pool.filter((m) => fitsPrefs(m, prefs));
     const ranked = eligible.map((m) => ({ m, have: m.uses.filter(has).length, quick: m.tags?.includes("quick") ? 1 : 0 }))
       .sort((a, b) => b.have / Math.max(1, b.m.uses.length) - a.have / Math.max(1, a.m.uses.length) || b.quick - a.quick || (a.m.minutes ?? 99) - (b.m.minutes ?? 99) || a.m.title.localeCompare(b.m.title));
     const out: typeof ranked = [], types = new Set<string>();
@@ -220,7 +231,8 @@ function DailyPick() {
       image: m.image ?? mealPhoto[m.title] ?? photo.prep, alt: m.title,
       needs: m.uses.map((u) => ({ id: u, name: (m.names?.[u] ?? u) })),
     }));
-  })() : dailyPicks.map((p) => ({ id: p.id, title: p.title, minutes: p.minutes, price: p.price, reason: p.reason, image: p.image, alt: p.alt, needs: pickNeeds[p.id] ?? [] }));
+  })() : [];
+  if (cards.length === 0) return <WeekStatusNote />;
   const sel = cards.find((p) => p.id === pick) ?? cards[0]!;
   const missing = sel.needs.filter((n) => !has(n.id) && !checked[n.id] && !have.includes(n.id));
   return (
@@ -244,7 +256,7 @@ function DailyPick() {
           );
         })}
       </div>
-      <p className="mt-2 text-[12.5px] text-muted-foreground">{ctx.live ? `Prices from ${store}'s website, where we have them. Check the shelf before you buy.` : "Sample prices, no guarantee."}</p>
+      <p className="mt-2 text-[12.5px] text-muted-foreground">{ctx.live ? `Prices from ${store}, cheapest of your stores, where we have them. Check the shelf before you buy.` : "Sample prices, no guarantee."}</p>
       <div className="mt-6 rounded-sheet bg-sheet p-5">
         <h3 className="text-[19px] font-bold">{sel.title}</h3>
         <p className="text-[14px] text-muted-foreground">{missing.length === 0 ? "You have everything for this one." : `We can't see ${missing.length === 1 ? "1 item" : `${missing.length} items`} in your fridge or ticked on your list.`}</p>

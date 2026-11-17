@@ -4,13 +4,13 @@
 //  * later changes in the app are pushed after a short pause, row by row; changes by housemates arrive through Realtime
 //  * a change by someone else is never applied while this browser still has an unsent change
 import { useEffect, useRef } from "react";
-import { sobraDb } from "@/integrations/sobra-db/client";
+import { praticoDb } from "@/integrations/pratico-db/client";
 import { useApp } from "@/lib/store";
 import { initialFridge, type FridgeItem, type Receipt } from "@/data/fridge";
 import { useIngredients } from "@/lib/db-queries";
 import { useHousehold, useSession } from "@/lib/account";
 import type { CatIngredient } from "@/lib/plan-from-db";
-import type { Json, Database } from "@/integrations/sobra-db/types";
+import type { Json, Database } from "@/integrations/pratico-db/types";
 import {
   FRIDGE_SLUG, fridgeFromRow, fridgeKey, normalize, receiptFromRow, receiptKey, stable, toFridgeRow, toReceiptRow,
   type FridgeInsert, type FridgeRow, type ReceiptRow,
@@ -35,9 +35,9 @@ function createSync(hid: string, userId: string, ings: CatIngredient[]) {
 
   const fetchAll = async (): Promise<Snapshot> => {
     const [f, r, p] = await Promise.all([
-      sobraDb.from("fridge_item").select("*").eq("household_id", hid).order("created_at", { ascending: false }),
-      sobraDb.from("receipt").select("*").eq("household_id", hid).order("created_at", { ascending: false }),
-      sobraDb.from("household_plan_state").select("*").eq("household_id", hid).maybeSingle(),
+      praticoDb.from("fridge_item").select("*").eq("household_id", hid).order("created_at", { ascending: false }),
+      praticoDb.from("receipt").select("*").eq("household_id", hid).order("created_at", { ascending: false }),
+      praticoDb.from("household_plan_state").select("*").eq("household_id", hid).maybeSingle(),
     ]);
     if (f.error) throw f.error;
     if (r.error) throw r.error;
@@ -94,27 +94,27 @@ function createSync(hid: string, userId: string, ings: CatIngredient[]) {
 
       const rUp = rrows.filter((r) => remote.receipts.get(r.id!) !== receiptKey(r));
       if (rUp.length) {
-        const { error } = await sobraDb.from("receipt").upsert(rUp);
+        const { error } = await praticoDb.from("receipt").upsert(rUp);
         if (error) throw error;
         for (const r of rUp) remote.receipts.set(r.id!, receiptKey(r));
       }
       const fUp = frows.filter((r) => remote.fridge.get(r.id!) !== fridgeKey(r));
       if (fUp.length) {
-        const { error } = await sobraDb.from("fridge_item").upsert(fUp);
+        const { error } = await praticoDb.from("fridge_item").upsert(fUp);
         if (error) throw error;
         for (const r of fUp) remote.fridge.set(r.id!, fridgeKey(r));
       }
       const keepF = new Set(frows.map((r) => r.id!));
       const fDel = [...remote.fridge.keys()].filter((id) => !keepF.has(id));
       if (fDel.length) {
-        const { error } = await sobraDb.from("fridge_item").delete().in("id", fDel);
+        const { error } = await praticoDb.from("fridge_item").delete().in("id", fDel);
         if (error) throw error;
         for (const id of fDel) remote.fridge.delete(id);
       }
       const keepR = new Set(rrows.map((r) => r.id!));
       const rDel = [...remote.receipts.keys()].filter((id) => !keepR.has(id));
       if (rDel.length) {
-        const { error } = await sobraDb.from("receipt").delete().in("id", rDel);
+        const { error } = await praticoDb.from("receipt").delete().in("id", rDel);
         if (error) throw error;
         for (const id of rDel) remote.receipts.delete(id);
       }
@@ -122,7 +122,7 @@ function createSync(hid: string, userId: string, ings: CatIngredient[]) {
       const cur = useApp.getState();
       const wanted = planKey({ chosen: cur.chosen, accepted: cur.weekAccepted, checked: cur.checked });
       if (wanted !== remote.plan) {
-        const { error } = await sobraDb.from("household_plan_state").upsert({
+        const { error } = await praticoDb.from("household_plan_state").upsert({
           household_id: hid, chosen: cur.chosen as unknown as Json, accepted: cur.weekAccepted, checked: cur.checked as unknown as Json,
           updated_by: userId, updated_at: new Date().toISOString(),
         });
@@ -153,7 +153,7 @@ function createSync(hid: string, userId: string, ings: CatIngredient[]) {
     if (s.fridge !== prev.fridge || s.receipts !== prev.receipts || s.chosen !== prev.chosen || s.weekAccepted !== prev.weekAccepted || s.checked !== prev.checked) schedulePush();
   });
 
-  const channel = sobraDb.channel(`household-${hid}`);
+  const channel = praticoDb.channel(`household-${hid}`);
   for (const table of ["fridge_item", "receipt", "household_plan_state"] as const) {
     channel.on("postgres_changes", { event: "*", schema: "public", table, filter: `household_id=eq.${hid}` }, () => schedulePull());
   }
@@ -181,7 +181,7 @@ function createSync(hid: string, userId: string, ings: CatIngredient[]) {
       stopped = true; ready = false;
       clearTimeout(pushTimer); clearTimeout(pullTimer);
       unsubscribe();
-      void sobraDb.removeChannel(channel);
+      void praticoDb.removeChannel(channel);
     },
   };
 }

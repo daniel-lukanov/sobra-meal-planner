@@ -1,7 +1,7 @@
 import { storeBrand, type StoreName } from "@/data/stores";
 import { cn } from "@/lib/utils";
 
-export function SobraMark({ size = 34 }: { size?: number }) {
+export function PraticoMark({ size = 34 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 34 34" aria-hidden className="shrink-0">
       <circle cx="17" cy="17" r="17" fill="#1E7B3E" />
@@ -12,10 +12,10 @@ export function SobraMark({ size = 34 }: { size?: number }) {
   );
 }
 
-export function SobraLogo({ compact }: { compact?: boolean }) {
+export function PraticoLogo({ compact }: { compact?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
-      <SobraMark />
+      <PraticoMark />
       <span className="leading-none">
         <span className={cn("block font-medium font-serif tracking-[-0.02em] text-ink", compact ? "text-[22px]" : "text-[24px]")}>pratico</span>
         <span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">lisboa</span>

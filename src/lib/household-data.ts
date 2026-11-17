@@ -1,7 +1,7 @@
 // Mapping between the app's fridge/receipt/plan state and the household tables. Pure, so it can be tested.
 import type { FridgeItem, Receipt } from "@/data/fridge";
 import type { StoreName } from "@/data/stores";
-import type { Database } from "@/integrations/sobra-db/types";
+import type { Database } from "@/integrations/pratico-db/types";
 import { CHAIN_OF } from "@/lib/deals-from-db";
 
 type Tables = Database["public"]["Tables"];

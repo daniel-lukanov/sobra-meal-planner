@@ -1,4 +1,4 @@
-// Continente scraper + importer for the Sobra database. Run with Bun:
+// Continente scraper + importer for the pratico database. Run with Bun:
 //   bun db/scripts/continente.ts                       dry run: fetch, parse, print a summary (writes nothing)
 //   bun db/scripts/continente.ts --query arroz --pages 1
 //   bun db/scripts/continente.ts --write               also save to the database (needs db/.env)
