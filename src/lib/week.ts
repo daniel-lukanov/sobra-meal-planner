@@ -1,6 +1,6 @@
 export const COMING_SOON = "This isn't available yet. Thanks, your tap tells us you'd want it.";
 import { extraMeals, weekPlan, type DayRow, type Meal, type PlanRow, type PrepRow } from "@/data/plan";
-import { fitsPrefs, type Prefs } from "@/lib/prefs";
+import { fitsPrefs, goalScore, type Prefs } from "@/lib/prefs";
 import { shoppingList, type ListItem } from "@/data/list";
 
 /** The week the screens show: the sample week, or one built from database recipes (see useWeek). */
@@ -13,17 +13,42 @@ export const EMPTY_CTX: WeekCtx = { plan: [], pool: [] };
 export const mealByTitle = (t: string, ctx: WeekCtx = STATIC_CTX) => ctx.pool.find((m) => m.title === t);
 
 export type Card = { i: number; day: string; meal: Meal };
+/** Stored in `chosen` for a day the person emptied. The day stays in the week as a free slot. */
+export const REMOVED = "__removed__";
 /** The current week: each day shows the chosen dinner, or the first option. */
 export function buildWeek(chosen: Record<string, string>, ctx: WeekCtx = STATIC_CTX) {
   const chapters: { prep: PrepRow; days: Card[] }[] = [];
   ctx.plan.forEach((row, i) => {
     if (row.kind === "prep") { chapters.push({ prep: row, days: [] }); return; }
     const r = row as DayRow;
+    if (chosen[i] === REMOVED) return;
     const meal = (chosen[i] && mealByTitle(chosen[i]!, ctx)) || r.options[0]!;
     chapters.at(-1)!.days.push({ i, day: r.day, meal });
   });
   return chapters;
 }
+/** Every dinner day of the week, with its dinner or null when the person removed it. */
+export function weekSlots(chosen: Record<string, string>, ctx: WeekCtx = STATIC_CTX): { i: number; day: string; meal: Meal | null }[] {
+  return ctx.plan.flatMap((row, i): { i: number; day: string; meal: Meal | null }[] => {
+    if (row.kind !== "day") return [];
+    if (chosen[i] === REMOVED) return [{ i, day: row.day, meal: null }];
+    return [{ i, day: row.day, meal: (chosen[i] && mealByTitle(chosen[i]!, ctx)) || row.options[0]! }];
+  });
+}
+export const emptySlots = (chosen: Record<string, string>, ctx: WeekCtx = STATIC_CTX) => weekSlots(chosen, ctx).filter((s) => !s.meal);
+
+/** Dinners to suggest for free days: they fit the person, are not in the week, and reuse what the week or the fridge already has. */
+export function proposals(chosen: Record<string, string>, prefs: Prefs, ctx: WeekCtx, inFridge: (slug: string) => boolean, n = 3) {
+  const week = weekSlots(chosen, ctx).flatMap((s) => (s.meal ? [s.meal] : []));
+  const inWeek = new Set(week.map((m) => m.title));
+  const bases = new Set(week.flatMap((m) => m.uses));
+  return ctx.pool
+    .filter((m) => !inWeek.has(m.title) && fitsPrefs(m, prefs))
+    .map((m) => ({ m, score: 2 * m.uses.filter((u) => bases.has(u)).length + m.uses.filter(inFridge).length + 1.5 * goalScore(m, prefs.goals) - (prefs.goals.includes("budget") ? 0.5 * m.price : 0) }))
+    .sort((a, b) => b.score - a.score || a.m.title.localeCompare(b.m.title))
+    .slice(0, n).map((x) => x.m);
+}
+
 export const weekCards = (chosen: Record<string, string>, ctx: WeekCtx = STATIC_CTX) => buildWeek(chosen, ctx).flatMap((c) => c.days);
 
 /** Up to 3 alternatives for one day, preferring dinners that reuse that half-week's prepped bases. */

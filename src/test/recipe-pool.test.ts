@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { RECIPES, BACKFILL } from "../../db/seed/recipes";
 import type { Meal } from "@/data/plan";
-import { buildWeek, alternatives, type WeekCtx } from "@/lib/week";
+import { buildWeek, alternatives, emptySlots, proposals, weekCards, weekSlots, REMOVED, type WeekCtx } from "@/lib/week";
 import { dietToPrefs, fitsPrefs } from "@/lib/prefs";
 import { planWeek, typeSlug } from "@/lib/recipe-pool";
 
@@ -68,5 +68,31 @@ describe("planWeek", () => {
   it("maps survey labels to meal type slugs", () => {
     expect(typeSlug("Rice bowls")).toBe("rice-bowls");
     expect(typeSlug("Bacalhau à Brás")).toBe("bacalhau-a-bras");
+  });
+});
+
+describe("editing the week", () => {
+  const prefs = dietToPrefs(["Meat", "Fish"]);
+  const plan = planWeek(pool, { prefs, types: [] });
+  const ctx: WeekCtx = { plan, pool };
+  const firstDay = plan.findIndex((r) => r.kind === "day");
+  it("a removed day leaves the week and becomes a free slot", () => {
+    const chosen = { [firstDay]: REMOVED };
+    expect(weekCards(chosen, ctx).length).toBe(5);
+    expect(emptySlots(chosen, ctx).map((s) => s.i)).toEqual([firstDay]);
+    expect(weekSlots(chosen, ctx).length).toBe(6);
+  });
+  it("proposals are not already in the week and never break an allergy", () => {
+    const chosen = { [firstDay]: REMOVED };
+    const inWeek = new Set(weekCards(chosen, ctx).map((c) => c.meal.title));
+    const got = proposals(chosen, { ...prefs, allergens: ["gluten", "eggs"] }, ctx, () => false, 5);
+    expect(got.length).toBeGreaterThan(0);
+    for (const m of got) { expect(inWeek.has(m.title)).toBe(false); expect(fitsPrefs(m, { ...prefs, allergens: ["gluten", "eggs"] })).toBe(true); }
+  });
+  it("adding a dinner to a free day puts it back in the week", () => {
+    const pick = proposals({ [firstDay]: REMOVED }, prefs, ctx, () => false, 1)[0]!;
+    const chosen = { [firstDay]: pick.title };
+    expect(weekCards(chosen, ctx).length).toBe(6);
+    expect(weekCards(chosen, ctx).some((c) => c.meal.title === pick.title)).toBe(true);
   });
 });

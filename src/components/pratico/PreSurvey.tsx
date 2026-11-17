@@ -38,7 +38,7 @@ export function PreSurvey() {
     if (session.ref && session.utm_source === "whatsapp_share") useExp.getState().track("referral_activated");
     setApp({ setupDone: true, stores: picked, ...(session.shared_plan_id ? {} : { mode: session.ab_plan_variant === "A_weekly_prep" ? "prep" : "daily" }) });
     useExp.getState().setTour(1);
-    navigate({ to: "/plan" });
+    navigate({ to: "/" });
   };
 
   return (

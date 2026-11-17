@@ -12,6 +12,7 @@ import { useIngredients, useRecipes } from "@/lib/db-queries";
 import { formatAmount } from "@/lib/amounts";
 import { FRIDGE_SLUG } from "@/lib/household-data";
 import { CookingPot, Flame, UtensilsCrossed } from "lucide-react";
+import { Crumbs } from "@/components/pratico/Crumbs";
 
 export const Route = createFileRoute("/cook")({
   head: pageHead("Cook", "Step by step cook mode with timers, plus your Sunday prep timeline."),
@@ -40,7 +41,7 @@ function Cook() {
   const { ctx, cards } = useWeek();
   const ingredients = useIngredients(), recipes = useRecipes();
   // The dinner to cook: the one asked for, else this week's first. The sample week keeps its fixed chicken and spinach rice.
-  const meal = (recipe && ctx.pool.find((m) => m.slug === recipe)) || (ctx.live ? cards[0]?.meal : undefined);
+  const meal = (recipe && ctx.pool.find((m) => m.slug === recipe)) || (recipe ? undefined : cards[0]?.meal);
   const steps = meal?.steps ? (pace === "relaxed" ? meal.steps.relaxed : meal.steps.fast) : pace === "relaxed" ? relaxedSteps : fastSteps;
   const lines = useMemo(() => {
     if (!meal?.slug || !ingredients.data || !recipes.data) return null;
@@ -103,8 +104,18 @@ function Cook() {
     speechSynthesis.speak(u);
   };
 
+  if (!meal) {
+    return (
+      <>
+        <Crumbs trail={[{ label: "Home", to: "/" }, { label: "Cook" }]} />
+        <PageHeader small="Cook" title="Pick a dinner to cook" sub="Choose one on Home, then press Start cooking. Your prep timeline is below." />
+        <PrepTimeline />
+      </>
+    );
+  }
   return (
     <>
+      <Crumbs trail={[{ label: "Home", to: "/" }, { label: "Recipe", to: "/recipe/$slug", slug: meal.slug ?? "" }, { label: "Cook" }]} />
       <PageHeader small={meal?.steps ? `Cook mode${meal.minutes ? ` · ${meal.minutes} min` : ""}` : pace === "relaxed" ? "Tonight · 22 min" : "Tonight · 8 min"} title={meal?.title ?? "Chicken and spinach rice"}
         right={<UnderlineTabs label="Cooking pace" value={pace} onChange={setPace} options={[{ value: "relaxed", label: "Relaxed" }, { value: "fast", label: "Fast" }]} />} />
       <div className="mb-6 aspect-[16/7] overflow-hidden rounded-[8px] bg-sheet-2">
@@ -165,7 +176,6 @@ function Cook() {
           </section>
         }
       />
-      <PrepTimeline />
     </>
   );
 }

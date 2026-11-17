@@ -28,7 +28,7 @@ function Join() {
     return shell(<>
       <h1 className="mt-6 text-[24px] font-bold">This invite link does not work</h1>
       <p className="mt-2 text-muted-foreground">Ask the person who sent it for a new link.</p>
-      <Button className="mt-5" onClick={() => navigate({ to: "/plan" })}>Build my own week</Button>
+      <Button className="mt-5" onClick={() => navigate({ to: "/" })}>Build my own week</Button>
     </>);
   }
   const { name, members } = preview.data;

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as CookRouteImport } from './routes/cook'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as FridgeRouteImport } from './routes/fridge'
@@ -18,13 +19,18 @@ import { Route as InsightsRouteImport } from './routes/insights'
 import { Route as ListRouteImport } from './routes/list'
 import { Route as PlanRouteImport } from './routes/plan'
 import { Route as SetupRouteImport } from './routes/setup'
-import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as JoinCodeRouteImport } from './routes/join/$code'
 import { Route as PIdRouteImport } from './routes/p/$id'
+import { Route as RecipeSlugRouteImport } from './routes/recipe.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CookRoute = CookRouteImport.update({
@@ -67,11 +73,6 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const JoinCodeRoute = JoinCodeRouteImport.update({
   id: '/join/$code',
   path: '/join/$code',
@@ -82,9 +83,15 @@ const PIdRoute = PIdRouteImport.update({
   path: '/p/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecipeSlugRoute = RecipeSlugRouteImport.update({
+  id: '/recipe/$slug',
+  path: '/recipe/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/cook': typeof CookRoute
   '/deals': typeof DealsRoute
   '/fridge': typeof FridgeRoute
@@ -93,12 +100,13 @@ export interface FileRoutesByFullPath {
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
-  '/settings': typeof SettingsRoute
   '/join/$code': typeof JoinCodeRoute
   '/p/$id': typeof PIdRoute
+  '/recipe/$slug': typeof RecipeSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/cook': typeof CookRoute
   '/deals': typeof DealsRoute
   '/fridge': typeof FridgeRoute
@@ -107,13 +115,14 @@ export interface FileRoutesByTo {
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
-  '/settings': typeof SettingsRoute
   '/join/$code': typeof JoinCodeRoute
   '/p/$id': typeof PIdRoute
+  '/recipe/$slug': typeof RecipeSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/cook': typeof CookRoute
   '/deals': typeof DealsRoute
   '/fridge': typeof FridgeRoute
@@ -122,14 +131,15 @@ export interface FileRoutesById {
   '/list': typeof ListRoute
   '/plan': typeof PlanRoute
   '/setup': typeof SetupRoute
-  '/settings': typeof SettingsRoute
   '/join/$code': typeof JoinCodeRoute
   '/p/$id': typeof PIdRoute
+  '/recipe/$slug': typeof RecipeSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/cook'
     | '/deals'
     | '/fridge'
@@ -138,12 +148,13 @@ export interface FileRouteTypes {
     | '/list'
     | '/plan'
     | '/setup'
-    | '/settings'
     | '/join/$code'
     | '/p/$id'
+    | '/recipe/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/cook'
     | '/deals'
     | '/fridge'
@@ -152,12 +163,13 @@ export interface FileRouteTypes {
     | '/list'
     | '/plan'
     | '/setup'
-    | '/settings'
     | '/join/$code'
     | '/p/$id'
+    | '/recipe/$slug'
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/cook'
     | '/deals'
     | '/fridge'
@@ -166,13 +178,14 @@ export interface FileRouteTypes {
     | '/list'
     | '/plan'
     | '/setup'
-    | '/settings'
     | '/join/$code'
     | '/p/$id'
+    | '/recipe/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   CookRoute: typeof CookRoute
   DealsRoute: typeof DealsRoute
   FridgeRoute: typeof FridgeRoute
@@ -181,9 +194,9 @@ export interface RootRouteChildren {
   ListRoute: typeof ListRoute
   PlanRoute: typeof PlanRoute
   SetupRoute: typeof SetupRoute
-  SettingsRoute: typeof SettingsRoute
   JoinCodeRoute: typeof JoinCodeRoute
   PIdRoute: typeof PIdRoute
+  RecipeSlugRoute: typeof RecipeSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -193,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cook': {
@@ -251,13 +271,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/join/$code': {
       id: '/join/$code'
       path: '/join/$code'
@@ -272,11 +285,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recipe/$slug': {
+      id: '/recipe/$slug'
+      path: '/recipe/$slug'
+      fullPath: '/recipe/$slug'
+      preLoaderRoute: typeof RecipeSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   CookRoute: CookRoute,
   DealsRoute: DealsRoute,
   FridgeRoute: FridgeRoute,
@@ -285,9 +306,9 @@ const rootRouteChildren: RootRouteChildren = {
   ListRoute: ListRoute,
   PlanRoute: PlanRoute,
   SetupRoute: SetupRoute,
-  SettingsRoute: SettingsRoute,
   JoinCodeRoute: JoinCodeRoute,
   PIdRoute: PIdRoute,
+  RecipeSlugRoute: RecipeSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

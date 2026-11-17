@@ -33,7 +33,7 @@ function Shared() {
         <PraticoLogo />
         <h1 className="mt-6 text-[24px] font-bold">We couldn't find this plan</h1>
         <p className="mt-2 text-muted-foreground">The link may be incomplete. You can still build your own week.</p>
-        <Button className="mt-5" onClick={() => navigate({ to: "/plan" })}>Build my week</Button>
+        <Button className="mt-5" onClick={() => navigate({ to: "/" })}>Build my week</Button>
       </div>
     );
   }
@@ -42,7 +42,7 @@ function Shared() {
     useApp.getState().set({ stores: [store], mode: plan.mode, chosen: plan.plan.chosen, people: plan.people, weekAccepted: false });
     const s = useExp.getState().ensure();
     useExp.getState().update({ shared_plan_id: plan.id, ...(s.survey_pre_completed ? {} : { store }) }, true);
-    navigate({ to: "/plan" });
+    navigate({ to: "/" });
   };
   return (
     <div className="mx-auto my-10 max-w-lg rounded-sheet bg-sheet p-6">

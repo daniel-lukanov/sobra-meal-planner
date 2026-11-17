@@ -3,8 +3,8 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { useExp, type TourStep } from "@/lib/experiment";
 import { Button } from "./ui";
 
-const steps: Record<TourStep, { to: "/plan" | "/deals" | "/fridge" | null; text: string }> = {
-  1: { to: "/plan", text: "This is your week. Switch between Weekly prep and Daily pick to compare. If you'd cook this, tap Accept this week." },
+const steps: Record<TourStep, { to: "/" | "/deals" | "/fridge" | null; text: string }> = {
+  1: { to: "/", text: "This is your week. Switch between Weekly prep and Daily pick to compare. If you'd cook this, tap Accept this week." },
   2: { to: "/deals", text: "Every deal is checked against the regular price. Price traps are marked. Tap Add to plan on a deal you'd buy." },
   3: { to: "/fridge", text: "After shopping you could snap your receipt here and pratico fills your fridge. Try it with the sample receipt or skip." },
   4: { to: null, text: "That's the tour. Look around as long as you like. When you're done, tap Give feedback." },
@@ -19,7 +19,7 @@ export function GuidedTour() {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const cur = step ? steps[step] : null;
 
-  useEffect(() => { if (cur?.to && !pathname.startsWith(cur.to)) navigate({ to: cur.to }); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (cur?.to && (cur.to === "/" ? pathname !== "/" : !pathname.startsWith(cur.to))) navigate({ to: cur.to }); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     if (!step || step === 4) { setPos(null); return; }
     let el: HTMLElement | null = null;

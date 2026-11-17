@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { CalendarDays, ChefHat, Refrigerator, ShoppingBasket, Tag } from "lucide-react";
+import { House, Refrigerator, ShoppingBasket, Tag } from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { useApp } from "@/lib/store";
 import { PraticoLogo } from "./Brand";
@@ -15,11 +15,10 @@ import { cn } from "@/lib/utils";
 import { useHouseholdSync } from "@/lib/household-sync";
 
 const nav = [
-  { to: "/plan", label: "Plan", icon: CalendarDays },
+  { to: "/", label: "Home", icon: House },
   { to: "/deals", label: "Deals", icon: Tag },
   { to: "/list", label: "List", icon: ShoppingBasket },
   { to: "/fridge", label: "Fridge", icon: Refrigerator },
-  { to: "/cook", label: "Cook", icon: ChefHat },
 ] as const;
 const topNav = nav;
 
@@ -27,11 +26,11 @@ function TopNav({ minimal }: { minimal: boolean }) {
   const { pathname } = useLocation();
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-3 border-b border-rule bg-ground px-4 sm:px-8">
-      <Link to="/plan" aria-label="pratico, go to plan" className="shrink-0"><PraticoLogo compact /></Link>
+      <Link to="/" aria-label="pratico, go to Home" className="shrink-0"><PraticoLogo compact /></Link>
       {!minimal && (
         <nav aria-label="Main" className="hidden h-full items-center gap-1 md:flex">
           {topNav.map(({ to, label }) => {
-            const active = pathname.startsWith(to);
+            const active = to === "/" ? pathname === "/" || pathname.startsWith("/recipe") || pathname.startsWith("/cook") : pathname.startsWith(to);
             return (
               <Link key={to} to={to} aria-current={active ? "page" : undefined}
                 className={cn("flex h-full items-center border-b-2 px-3 text-[14.5px] transition-colors", active ? "border-basil font-semibold text-basil" : "border-transparent font-medium text-muted-foreground hover:text-ink")}>
@@ -100,7 +99,7 @@ export function Shell({ children }: { children: ReactNode }) {
       {!showSurvey && !isInsights && !isShared && (
         <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-rule bg-sheet pb-[env(safe-area-inset-bottom)] md:hidden">
           {nav.map(({ to, label, icon: Icon }) => {
-            const active = pathname.startsWith(to);
+            const active = to === "/" ? pathname === "/" || pathname.startsWith("/recipe") || pathname.startsWith("/cook") : pathname.startsWith(to);
             return (
               <Link key={to} to={to} aria-current={active ? "page" : undefined}
                 className={cn("flex min-h-14 min-w-14 flex-col items-center justify-center gap-0.5 text-[12px] font-medium", active ? "text-basil" : "text-muted-foreground")}>

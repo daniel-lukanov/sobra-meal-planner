@@ -70,7 +70,7 @@ function Fridge() {
       {spinach && spinach.daysLeft !== null && spinach.daysLeft <= 1 && (
         <div role="status" className="mb-6 flex flex-col gap-3 rounded-[8px] bg-tomato-tint p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[15px]"><span className="font-semibold text-tomato">Spinach expires tomorrow.</span> Chicken and spinach rice uses it tonight.</p>
-          <Button onClick={() => { set({ mode: "daily", pick: "rice" }); navigate({ to: "/plan" }); }}>Plan it for tonight</Button>
+          <Button onClick={() => { set({ mode: "daily", pick: "rice" }); navigate({ to: "/" }); }}>Plan it for tonight</Button>
         </div>
       )}
       <TwoCol

@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronDown, Lock, Settings, User, UserRound, Users } from "lucide-react";
+import { ChevronDown, Lock, User, UserRound, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "@/lib/account";
 import { cn } from "@/lib/utils";
 
-/** Top-right menu: who you are, and the way to Account, Household, Settings and the admin login. */
+/** Top-right menu: who you are, and the way to Account (your food settings), Household and the admin login. */
 export function UserMenu() {
   const session = useSession();
   const user = session?.user;
@@ -21,9 +21,8 @@ export function UserMenu() {
     return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", close); };
   }, [open]);
   const items = [
-    { to: "/household" as const, label: user ? "Account" : "Register or log in", icon: UserRound },
+    { to: "/account" as const, label: user ? "Account" : "Register or log in", icon: UserRound },
     { to: "/household" as const, label: "Household", icon: Users },
-    { to: "/settings" as const, label: "Settings", icon: Settings },
     { to: "/insights" as const, label: "Admin login", icon: Lock },
   ];
   return (

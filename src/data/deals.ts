@@ -9,6 +9,8 @@ export type Deal = {
   cheapestRegular: number;
   /** Only on deals from the database. */
   id?: string;
+  /** Slug of the database ingredient, only on deals from the database. */
+  slug?: string;
   endsOn?: string;
   photoKey?: string;
 };
