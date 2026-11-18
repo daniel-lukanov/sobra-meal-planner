@@ -348,7 +348,20 @@ function TopDeals() {
     }
     return out.sort((a, b) => realSaving(b.deal) - realSaving(a.deal)).slice(0, 6);
   }, [live, ings.data, status, ctx.pool, prefs, stores]);
-  if (rows.length === 0) return null;
+  if (rows.length === 0) {
+    const why = !live || !ings.data || status === "loading" ? "Loading this week's deals…"
+      : status !== "ready" ? "Deals show once there are dinners that fit your diet and allergies."
+      : "No promotion at your stores this week matches an ingredient we have a fitting recipe for. See all deals for everything on offer.";
+    return (
+      <section aria-labelledby="deals" className="mt-10">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="deals" className="text-[20px]">Top deals at your stores</h2>
+          <Link to="/deals" className="text-[14.5px] font-medium underline underline-offset-4">All deals</Link>
+        </div>
+        <p role="status" className="rounded-sheet bg-sheet p-4 text-[14.5px] text-muted-foreground">{why}</p>
+      </section>
+    );
+  }
   const weekTitles = new Set(planned.map((c) => c.meal.title));
   return (
     <section aria-labelledby="deals" className="mt-10">
