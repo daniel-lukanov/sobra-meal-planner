@@ -1,4 +1,4 @@
-import { ctaVariants, planVariants, type ExperimentSession } from "./experiment-types";
+import { ctaVariants, planVariants, surveyVersionOf, type ExperimentSession } from "./experiment-types";
 import { isEmail } from "./experiment-types";
 
 type R = ExperimentSession;
@@ -127,6 +127,9 @@ const csvCols: (keyof R)[] = [
   "cta_clicked", "cta_contact", "raffle_email", "ig_follow_clicked",
   "accepted_week_clicked", "mode_switched", "receipt_scan_tried", "deal_added_to_plan", "swap_count", "fake_door_tiktok_clicks", "fake_door_delivery_clicks",
   "whatsapp_share_clicked", "plan_copied", "tour_skipped", "tour_completed", "time_spent_seconds", "events",
+  "survey_version", "path", "lang", "demo_receipt_used", "b1_household", "b1_weekly_spend", "b1_deal_habits", "b1_deal_habits_order",
+  "b3_number_trust", "b3_actions", "b3_actions_order", "b3_action_blockers", "b3_input", "b3_frequency", "b3_stoppers_order",
+  "result_saving", "result_percent", "result_total", "result_cheapest_store", "result_user_store", "shared_result_id", "lists_made", "referral_email",
 ];
 export function toCSV(rows: R[]) {
   const esc = (v: unknown) => {
@@ -134,7 +137,7 @@ export function toCSV(rows: R[]) {
     const s = Array.isArray(v) && v.every((x) => typeof x === "string") ? v.join("; ") : typeof v === "object" ? JSON.stringify(v) : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  return [csvCols.join(","), ...rows.map((r) => csvCols.map((c) => esc(r[c])).join(","))].join("\n");
+  return [csvCols.join(","), ...rows.map((r) => { const x = { ...r, survey_version: surveyVersionOf(r) }; return csvCols.map((c) => esc(x[c])).join(","); })].join("\n");
 }
 
 /** An accidental open: no Block 1 and no tracked action. */

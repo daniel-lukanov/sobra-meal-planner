@@ -8,10 +8,10 @@ import type { ExperimentSession } from "@/lib/experiment-types";
 import { GHOST_KEY, useExp } from "@/lib/experiment";
 import { Switch } from "@/components/ui/switch";
 import { SessionExplorer } from "@/components/pratico/SessionExplorer";
-import {
-  dealBrandOptions, fallbackOptions, keepOneOptions, modeOptions, painOptions, pmfOptions, prepBlockerOptions, receiptBlockerOptions, receiptOptions, stopperOptions, workaroundOptions,
-} from "@/data/survey";
-import { activation, behaviour, costPerTester, ctaTable, distribution, funnel, groupBy, isBounce, pct, planTable, plansPerWeek, referralEntries, toCSV } from "@/lib/insights";
+import { costPerTester, groupBy, isBounce } from "@/lib/insights";
+import { activation3, behaviour3, ctaTable3, funnel3, onlyV3, pmfSplit, questionChart, referralStats, returnRate, sharedPerWeek, WHY } from "@/lib/insights-v3";
+import { toCSV } from "@/lib/insights";
+import type { QId } from "@/lib/savings/survey";
 import { Button, UnderlineTabs } from "@/components/pratico/ui";
 import { PraticoLogo } from "@/components/pratico/Brand";
 
@@ -90,6 +90,7 @@ function Dashboard({ live, spend, setLive, setSpend, passcode }: { live: Experim
   useEffect(() => { setGhost(localStorage.getItem(GHOST_KEY) === "1"); }, []);
   const toggleGhost = (v: boolean) => { setGhost(v); if (v) localStorage.setItem(GHOST_KEY, "1"); else localStorage.removeItem(GHOST_KEY); toast(v ? "Ghost mode on. Your visits on this device are not recorded." : "Ghost mode off."); };
   const rows = useMemo(() => (excludeBounces ? live.filter((r) => !isBounce(r)) : live), [live, excludeBounces]);
+  const v3 = useMemo(() => onlyV3(rows), [rows]);
 
   const saveSession = async (s: ExperimentSession) => {
     await saveFn({ data: { passcode, session: s } });
@@ -106,7 +107,7 @@ function Dashboard({ live, spend, setLive, setSpend, passcode }: { live: Experim
   };
   const resetMine = () => {
     useExp.getState().reset();
-    localStorage.removeItem("pratico-study-v3"); localStorage.removeItem("pratico-app-v2"); sessionStorage.removeItem("pratico-visit");
+    localStorage.removeItem("pratico-study-v3"); localStorage.removeItem("pratico-app-v2"); localStorage.removeItem("pratico-savings-v1"); sessionStorage.removeItem("pratico-visit");
     toast("Your test session is cleared. Open the app to start again.");
   };
 
@@ -116,7 +117,7 @@ function Dashboard({ live, spend, setLive, setSpend, passcode }: { live: Experim
         <div>
           <p className="text-[13px] font-medium text-muted-foreground">Católica Lisbon NVC · Team V6 Ventures · private</p>
           <h1 className="mt-1 text-[30px] font-bold md:text-[34px]">Founder insights</h1>
-          <p className="mt-1 text-[14px] text-muted-foreground">{rows.length} sessions{excludeBounces ? ", bounces left out" : ""}.</p>
+          <p className="mt-1 text-[14px] text-muted-foreground">{v3.length} savings check sessions in the charts ({rows.length - v3.length} older meal-planner sessions are kept in the CSV and Sessions){excludeBounces ? ", bounces left out" : ""}.</p>
         </div>
         <label className="inline-flex items-center gap-2.5 rounded-[6px] bg-ink px-4 py-2 text-[13.5px] font-semibold text-sheet">
           <Ghost className="size-4" aria-hidden />Founder Ghost Mode (do not record my visits)
@@ -131,8 +132,8 @@ function Dashboard({ live, spend, setLive, setSpend, passcode }: { live: Experim
         { value: "explorer", label: `Sessions (${live.length})` },
       ]} />
 
-      {view === "overview" && <Overview rows={rows} spend={spend} setSpend={setSpend} passcode={passcode} />}
-      {view === "questions" && <Questions rows={rows} />}
+      {view === "overview" && <Overview rows={v3} spend={spend} setSpend={setSpend} passcode={passcode} />}
+      {view === "questions" && <Questions rows={v3} />}
       {view === "why" && <WhyWeAsk />}
       {view === "explorer" && <SessionExplorer rows={live} excludeBounces={excludeBounces} setExcludeBounces={setExcludeBounces} onSave={saveSession} onDelete={deleteSessions} />}
 
@@ -145,23 +146,21 @@ function Dashboard({ live, spend, setLive, setSpend, passcode }: { live: Experim
 }
 
 function FunnelTable({ title, groups }: { title: string; groups: [string, ExperimentSession[]][] }) {
-  const head = ["", ...funnel([]).map((f) => f.label)];
-  return <Table title={title} head={head} rows={groups.map(([k, g]) => [k, ...funnel(g).map((f) => `${f.count}`)])} />;
+  const head = ["", ...funnel3([]).map((f) => f.label)];
+  return <Table title={title} head={head} rows={groups.map(([k, g]) => [k, ...funnel3(g).map((f) => `${f.count}`)])} />;
 }
 
 function Overview({ rows, spend, setSpend, passcode }: { rows: ExperimentSession[]; spend: SpendRow[]; setSpend: (s: SpendRow[]) => void; passcode: string }) {
-  const f = funnel(rows);
-  const weeks = plansPerWeek(rows);
+  const f = funnel3(rows);
+  const weeks = sharedPerWeek(rows);
+  const refs = referralStats(rows);
   const cost = costPerTester(rows, spend);
-  const act = activation(rows);
-  const [A, B] = planTable(rows);
-  const cta = ctaTable(rows);
-  const bh = behaviour(rows);
-  const refs = referralEntries(rows);
-  const modeA = distribution(A!.rows, "b2_mode_pref", modeOptions).items, modeB = distribution(B!.rows, "b2_mode_pref", modeOptions).items;
+  const ret = returnRate(rows);
+  const cta = ctaTable3(rows);
+  const bh = behaviour3(rows);
   return (
     <div className="space-y-10">
-      <Section title="Funnel" sub="Each step counts sessions that reached it.">
+      <Section title="Funnel" sub="Each step counts sessions that reached it. Savings check sessions only.">
         <div className="card p-5">
           <ul className="space-y-3">
             {f.map((s) => (
@@ -178,62 +177,51 @@ function Overview({ rows, spend, setSpend, passcode }: { rows: ExperimentSession
         </div>
       </Section>
 
-      <Section title="Our three metrics" sub="North star, cost per acquired tester and activation.">
+      <Section title="Our metrics" sub="North star, acquisition, activation and return.">
         <div className="grid gap-4 lg:grid-cols-3">
           <div className="card p-5">
-            <h3 className="text-[17px] font-bold">North star: plans accepted per week</h3>
-            {weeks.length === 0 ? <p className="mt-3 text-[14px] text-muted-foreground">No accepted plans yet.</p> : (
+            <h3 className="text-[17px] font-bold">North star: savings checks shared per week</h3>
+            {weeks.length === 0 ? <p className="mt-3 text-[14px] text-muted-foreground">Nothing shared yet.</p> : (
               <ul className="num mt-3 space-y-1 text-[14px]">{weeks.map((w) => <li key={w.week} className="flex justify-between"><span>{w.week}</span><b>{w.count}</b></li>)}</ul>
             )}
+            <p className="num mt-3 text-[13.5px]">Referral sign-ups per shared result: <b>{refs.perShared}</b></p>
+            <p className="mt-1 text-[12px] text-muted-foreground">Each result counts once. Ghost Mode visits are never recorded.</p>
           </div>
           <div className="card p-5">
-            <h3 className="text-[17px] font-bold">Cost per acquired tester</h3>
-            <p className="num mt-2 text-[28px] font-bold leading-none">{cost.cpa === null ? "–" : `€${cost.cpa.toFixed(2)}`}</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">€{cost.total.toFixed(2)} spent, {cost.acquired} finished Block 1.</p>
-            <table className="num mt-3 w-full text-[13px]">
-              <thead><tr className="text-left text-muted-foreground"><th className="py-1 font-medium">Channel</th><th className="font-medium">Spend</th><th className="font-medium">Testers</th><th className="font-medium">Per tester</th></tr></thead>
-              <tbody>{cost.byChannel.map((c) => <tr key={c.channel} className="border-t border-rule"><td className="py-1">{c.channel}</td><td>€{c.spend.toFixed(2)}</td><td>{c.acquired}</td><td>{c.cpa === null ? "–" : `€${c.cpa.toFixed(2)}`}</td></tr>)}</tbody>
-            </table>
+            <h3 className="text-[17px] font-bold">Acquisition</h3>
+            <p className="num mt-2 text-[28px] font-bold leading-none">{refs.rate}%</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">referral rate: {refs.signups} referral sign-ups out of the people who saw a result.</p>
+            <p className="num mt-3 text-[13.5px]">Cost per Block 1 finished: <b>{cost.cpa === null ? "–" : `€${cost.cpa.toFixed(2)}`}</b> (€{cost.total.toFixed(2)} spent)</p>
           </div>
           <div className="card p-5">
-            <h3 className="text-[17px] font-bold">Activation</h3>
-            <p className="num mt-2 text-[28px] font-bold leading-none">{act.voluntary}%</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">tapped Accept this week on their own in their first session.</p>
-            <p className="num mt-3 text-[14px]">Including taps during the tour: <b>{act.withTour}%</b></p>
+            <h3 className="text-[17px] font-bold">Activation and return</h3>
+            <p className="num mt-2 text-[28px] font-bold leading-none">{activation3(rows)}%</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">of first-session visitors reached the savings screen.</p>
+            <p className="num mt-3 text-[14px]">Checked a second receipt within 14 days: <b>{ret.back}</b> ({ret.pct}% of people who saw a result)</p>
           </div>
         </div>
         <SpendLog spend={spend} setSpend={setSpend} passcode={passcode} />
       </Section>
 
-      <Section title="A/B tests" sub="Plan tab opened first, and the offer on the end screen.">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Table title="ab_plan_variant" head={["", "A: Weekly prep first", "B: Daily pick first"]} rows={[
-            ["Sessions", `${A!.n}`, `${B!.n}`],
-            ["Accept rate", `${A!.accept}%`, `${B!.accept}%`],
-            ...modeOptions.map((m, i) => [`Q4: ${m.split(" (")[0]}`, `${modeA[i]!.pct}%`, `${modeB[i]!.pct}%`]),
-          ]} />
-          <Table title="ab_cta_variant (people who finished Block 3)" head={["", "Free pilot", "€1.99 a month"]} rows={[
-            ["Saw the offer", `${cta[0]!.n}`, `${cta[1]!.n}`],
-            ["CTA click rate", `${cta[0]!.click}%`, `${cta[1]!.click}%`],
-            ["Left contact", `${cta[0]!.contact}%`, `${cta[1]!.contact}%`],
-          ]} />
-        </div>
+      <Section title="A/B test" sub="The offer on the end screen, among people who saw a result.">
+        <Table title="ab_cta_variant" head={["", "Free pilot", "Paid"]} rows={[
+          ["Saw a result", `${cta[0]!.n}`, `${cta[1]!.n}`],
+          ["CTA click rate", `${cta[0]!.click}%`, `${cta[1]!.click}%`],
+          ["Left contact", `${cta[0]!.contact}%`, `${cta[1]!.contact}%`],
+        ]} />
       </Section>
 
       <Section title="Behaviour" sub="What people did, not what they said.">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Kpi label="Receipt scans on their own" value={`${bh.voluntaryScans}`} sub={`${bh.guidedScans} during the tour`} />
-          <Kpi label="Deals added to plan" value={`${bh.dealsAdded}`} />
-          <Kpi label="Swaps per session" value={`${bh.swapsPerSession}`} />
-          <Kpi label="Fake door taps" value={`${bh.tiktok + bh.delivery}`} sub={`TikTok import ${bh.tiktok}, delivery ${bh.delivery}`} />
+          <Kpi label="Receipt, manual, example" value={`${bh.receipt} / ${bh.manual} / ${bh.demo}`} />
+          <Kpi label="Receipt read failures" value={`${bh.parseFailRate}%`} sub="of photos taken" />
+          <Kpi label="Average saving shown" value={bh.avgSaving === null ? "–" : `€${bh.avgSaving.toFixed(2)}`} />
+          <Kpi label="Fake door taps" value={`${bh.doorLoyalty + bh.doorDinners + bh.doorDelivery}`} sub={`loyalty ${bh.doorLoyalty}, dinners ${bh.doorDinners}, delivery ${bh.doorDelivery}`} />
           <Kpi label="WhatsApp shares" value={`${bh.shares}`} sub={`vs ${bh.copies} copies`} />
           <Kpi label="Instagram follow taps" value={`${bh.igFollows}`} />
-          <Kpi label="Tour skipped" value={`${bh.tourSkipped}`} />
-          <Kpi label="Referral sign-ups" value={`${f.at(-1)!.count}`} />
+          <Kpi label="Shopping list taps" value={`${bh.listClicks}`} sub={`${bh.secondListBlocked} blocked as second list`} />
+          <Kpi label="Referral sign-ups" value={`${refs.signups}`} />
         </div>
-        {refs.length > 0 && (
-          <Table title="Extra raffle entries from referrals" head={["Sharer code", "Sign-ups", "Sharer email"]} rows={refs.map((r) => [r.ref, `${r.entries}`, r.sharer?.raffle_email ?? r.sharer?.cta_contact ?? "–"])} />
-        )}
       </Section>
     </div>
   );
@@ -280,28 +268,20 @@ function SpendLog({ spend, setSpend, passcode }: { spend: SpendRow[]; setSpend: 
 }
 
 function Questions({ rows }: { rows: ExperimentSession[] }) {
-  const charts: [string, keyof ExperimentSession, readonly string[]][] = [
-    ["Q1 Fallback dinners last week", "b1_fallback_dinners", fallbackOptions],
-    ["Q2 Biggest pains (up to 2)", "b1_pains", painOptions],
-    ["Q3 Current workarounds", "b1_workarounds", workaroundOptions],
-    ["Q4 Mode they'd use next week", "b2_mode_pref", modeOptions],
-    ["Q4b What puts them off weekly prep", "b2_prep_blockers", prepBlockerOptions],
-    ["Q5 Would snap the receipt", "b3_receipt", receiptOptions],
-    ["Q5b Why not scan", "b3_receipt_blockers", receiptBlockerOptions],
-    ["Q6 Keep only one thing", "b3_keep_one", keepOneOptions],
-    ["Q7 Buy the brand on deal", "b3_deal_brand", dealBrandOptions],
-    ["Q8 If pratico didn't launch", "b3_pmf", pmfOptions],
-    ["Q9 What would stop them", "b3_stoppers", stopperOptions],
+  const ids: [string, QId][] = [
+    ["Q1 Household", "q1"], ["Q2 Weekly spend", "q2"], ["Q3 Deal habits", "q3"], ["Q4 Number trust", "q4"], ["Q5 What they would do", "q5"], ["Q5b What stops them", "q5b"],
+    ["Q6 How they would share what they buy", "q6"], ["Q7 How often", "q7"], ["Q8 If pratico didn't launch", "q8"], ["Q9 What would stop them", "q9"],
   ];
-  const pmfBySource = groupBy(rows.filter((r) => r.b3_pmf), (r) => r.utm_source);
-  const texts = rows.flatMap((r) => [r.b2_mode_reason && `Q4 why: ${r.b2_mode_reason}`, r.b3_stoppers_other && `Q9 other: ${r.b3_stoppers_other}`].filter(Boolean) as string[]);
+  const texts = rows.flatMap((r) => (r.b3_stoppers_other ? [`Q9 other: ${r.b3_stoppers_other}`] : []));
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
-        {charts.map(([t, k, o]) => { const d = distribution(rows, k, o); return <Bars key={k} title={`${t} (n = ${d.answered})`} items={d.items} />; })}
+        {ids.map(([t, id]) => { const d = questionChart(rows, id); return <Bars key={id} title={`${t} (n = ${d.answered})`} items={d.items} />; })}
       </div>
-      <Table title="Q8 very disappointed, by channel" head={["utm_source", "Answered", "Very disappointed"]}
-        rows={pmfBySource.map(([k, g]) => [k, `${g.length}`, `${pct(g.filter((r) => r.b3_pmf === pmfOptions[0]).length, g.length)}%`])} />
+      <div className="grid gap-4 md:grid-cols-2">
+        <Table title="Q8 very disappointed, by channel" head={["utm_source", "Answered", "Very disappointed"]} rows={pmfSplit(rows, "utm_source")} />
+        <Table title="Q8 very disappointed, by household (Q1)" head={["Household", "Answered", "Very disappointed"]} rows={pmfSplit(rows, "b1_household")} />
+      </div>
       <div className="card p-5">
         <h3 className="text-[17px] font-bold">Written answers</h3>
         {texts.length === 0 ? <p className="mt-2 text-[14px] text-muted-foreground">None yet.</p> : <ul className="mt-2 space-y-1 text-[14px]">{texts.map((t, i) => <li key={i}>{t}</li>)}</ul>}
@@ -310,19 +290,8 @@ function Questions({ rows }: { rows: ExperimentSession[] }) {
   );
 }
 
-const why: [string, string, string][] = [
-  ["Q1 fallback dinners", "the dinner problem is frequent", "if under 40% say 3 or more, lead with money instead of daily decisions"],
-  ["Q2 pains", "which pain matters most", "sets our main message; many \"None\" = weak problem"],
-  ["Q3 workarounds", "people already patch the problem", "identifies early adopters; \"batch cook\" supports weekly prep"],
-  ["Q4 mode + Q4b blockers", "people will prep ahead", "under 30% Weekly prep or Both = weekly prep becomes secondary; blockers say what to fix"],
-  ["Q5 receipt + Q5b blockers", "people will scan receipts / need a fridge view", "input problem = replace scan with ticking; no need = drop the fridge"],
-  ["Q6 keep one", "which feature carries the value", "roadmap order"],
-  ["Q7 deal brand", "deals change what people buy", "supports brand/supermarket-funded revenue"],
-  ["Q8 pmf", "product/market fit signal", "40% very disappointed = strong"],
-  ["Q9 stoppers", "what blocks repeat use", "top answer becomes the next iteration"],
-];
 function WhyWeAsk() {
-  return <Table title="Why we ask (internal, never shown to testers)" head={["Question", "What it tests", "Decision rule"]} rows={why.map((r) => [...r])} plain />;
+  return <Table title="Why we ask (internal, never shown to testers)" head={["Question", "What it tests", "Decision rule"]} rows={WHY.map((r) => [...r])} plain />;
 }
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub?: string | undefined }) {

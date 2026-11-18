@@ -20,8 +20,8 @@ describe("survey rules", () => {
     expect(attributionFrom("").utm_source).toBe("direct");
     expect(attributionFrom("?ref=ab12&utm_source=instagram&utm_content=post2")).toEqual({ ref: "ab12", utm_source: "instagram", utm_content: "post2" });
   });
-  it("assigns only the two CTA variants", () => {
-    expect(["free_pilot", "paid_199"]).toContain(newSession().ab_cta_variant);
+  it("assigns only the free pilot or the paid variant", () => {
+    expect(["free_pilot", "paid"]).toContain(newSession().ab_cta_variant);
   });
 });
 

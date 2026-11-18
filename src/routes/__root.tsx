@@ -83,14 +83,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "pratico: cook twice a week, eat something different every night" },
-      { name: "description", content: "Turn this week's real deals at Pingo Doce, Continente or Lidl into a 1-tap meal plan for 1 or 2 people." },
-      { property: "og:title", content: "pratico: cook twice a week, eat something different every night" },
-      { property: "og:description", content: "Turn this week's real deals at Pingo Doce, Continente or Lidl into a 1-tap meal plan for 1 or 2 people." },
+      { title: "pratico: see what you overpaid on your last shop" },
+      { name: "description", content: "Check your last supermarket receipt and see how much you could have saved in Lisbon this week. Free, about one minute, no account." },
+      { property: "og:title", content: "pratico: see what you overpaid on your last shop" },
+      { property: "og:description", content: "Check your last supermarket receipt and see how much you could have saved in Lisbon this week. Free, about one minute, no account." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
-    ],
+          ],
     links: [
       {
         rel: "stylesheet",

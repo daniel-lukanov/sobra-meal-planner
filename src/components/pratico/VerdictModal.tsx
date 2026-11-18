@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 export const ctaCopy: Record<CtaVariant, { title: string; text: string; button: string }> = {
   free_pilot: { title: "Join the free pilot", text: "We're testing pratico with students in Lisbon. You get a new plan every Thursday.", button: "Join the free pilot" },
   paid_199: { title: "pratico Student: €1.99 a month, first month free", text: "Nothing is charged now. Cancel anytime.", button: "Reserve my spot" },
+  paid: { title: "pratico Plus", text: "Nothing is charged now. Cancel anytime.", button: "Reserve my spot" },
 };
 const IG = "https://www.instagram.com/pratico.lisboa/";
 

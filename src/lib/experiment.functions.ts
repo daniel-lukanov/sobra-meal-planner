@@ -18,6 +18,12 @@ export const sessionSchema = z.object({
   fake_door_tiktok_clicks: n, fake_door_delivery_clicks: n, whatsapp_share_clicked: n, plan_copied: n,
   tour_skipped: b, tour_completed: b, time_spent_seconds: z.number().int().min(0).max(864000), first_session: b,
   events: z.array(z.object({ e: z.enum(eventNames), at: z.string().max(40), in_tour: b, first_session: b })).max(400),
+  // Savings check (survey v3), optional so sessions from the meal-planner version stay valid.
+  survey_version: z.string().max(30).nullable().optional(), demo_receipt_used: b.optional(), path: z.string().max(20).nullable().optional(), lang: z.string().max(5).nullable().optional(),
+  b1_household: t.optional(), b1_weekly_spend: t.optional(), b1_deal_habits: arr.optional(), b1_deal_habits_order: arr.optional(),
+  b3_number_trust: t.optional(), b3_actions: arr.optional(), b3_actions_order: arr.optional(), b3_action_blockers: arr.optional(), b3_input: t.optional(), b3_frequency: t.optional(), b3_stoppers_order: arr.optional(),
+  result_saving: z.number().min(0).max(100000).nullable().optional(), result_percent: z.number().min(0).max(100).nullable().optional(), result_total: z.number().min(0).max(100000).nullable().optional(),
+  result_cheapest_store: t.optional(), result_user_store: t.optional(), shared_result_id: z.string().uuid().nullable().optional(), lists_made: arr.optional(), referral_email: z.string().max(200).nullable().optional(),
 });
 
 const admin = async () => (await import("@/integrations/supabase/client.server")).supabaseAdmin;

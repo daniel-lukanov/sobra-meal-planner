@@ -1,5 +1,5 @@
 export const planVariants = ["A_weekly_prep", "B_daily_pick"] as const;
-export const ctaVariants = ["free_pilot", "paid_199"] as const;
+export const ctaVariants = ["free_pilot", "paid_199", "paid"] as const;
 export type PlanVariant = (typeof planVariants)[number];
 export type CtaVariant = (typeof ctaVariants)[number];
 
@@ -7,6 +7,9 @@ export const eventNames = [
   "accepted_week_clicked", "mode_switched", "deal_added_to_plan", "receipt_scan_tried", "swap", "fake_door_tiktok", "fake_door_delivery",
   "whatsapp_share_clicked", "plan_copied", "ig_follow_clicked", "cta_clicked", "tour_skipped", "tour_completed",
   "referral_visit", "referral_activated", "referral_signup",
+  // savings check (v3)
+  "path_chosen", "receipt_photo_taken", "receipt_parse_failed", "receipt_confirmed", "receipt_lines_edited", "result_shown", "show_all_clicked",
+  "list_cta_clicked", "second_list_blocked", "fake_door_loyalty", "fake_door_dinners", "fake_door_delivery", "contact_left", "result_copied", "language_changed",
 ] as const;
 export type EventName = (typeof eventNames)[number];
 export type StudyEvent = { e: EventName; at: string; in_tour: boolean; first_session: boolean };
@@ -67,7 +70,35 @@ export type ExperimentSession = {
   time_spent_seconds: number;
   first_session: boolean;
   events: StudyEvent[];
+  // Savings check (survey v3). All optional: older sessions simply do not have them, and a missing survey_version means v2_mealplan.
+  survey_version?: string | null;
+  demo_receipt_used?: boolean;
+  path?: string | null;
+  lang?: string | null;
+  b1_household?: string | null;
+  b1_weekly_spend?: string | null;
+  b1_deal_habits?: string[];
+  b1_deal_habits_order?: string[];
+  b3_number_trust?: string | null;
+  b3_actions?: string[];
+  b3_actions_order?: string[];
+  b3_action_blockers?: string[];
+  b3_input?: string | null;
+  b3_frequency?: string | null;
+  b3_stoppers_order?: string[];
+  result_saving?: number | null;
+  result_percent?: number | null;
+  result_cheapest_store?: string | null;
+  result_user_store?: string | null;
+  result_total?: number | null;
+  shared_result_id?: string | null;
+  lists_made?: string[];
+  /** Raffle email left on the end screen. */
+  referral_email?: string | null;
 };
+
+/** Sessions without a survey_version come from the meal-planner version. */
+export const surveyVersionOf = (s: ExperimentSession) => s.survey_version ?? "v2_mealplan";
 
 const pick = <T,>(xs: readonly T[], r: number) => xs[Math.min(xs.length - 1, Math.floor(r * xs.length))]!;
 const clean = (v: string | null) => (v ?? "").trim().toLowerCase().replace(/[^a-z0-9_\-.]/g, "").slice(0, 60);
@@ -82,7 +113,7 @@ export function newSession(search = "", rand: () => number = Math.random): Exper
   const id = crypto.randomUUID();
   return {
     session_id: id, created_at: new Date().toISOString(), my_ref: id.slice(0, 8), ...attributionFrom(search), shared_plan_id: null, visits: 1,
-    ab_plan_variant: pick(planVariants, rand()), ab_cta_variant: pick(ctaVariants, rand()), store: null,
+    ab_plan_variant: pick(planVariants, rand()), ab_cta_variant: pick(["free_pilot", "paid"] as const, rand()), store: null,
     survey_pre_completed: false, b1_fallback_dinners: null, b1_pains: [], b1_pains_order: [], b1_workarounds: [], b1_skip: null,
     opened_weekly: false, opened_daily: false, b2_mode_pref: null, b2_mode_reason: null, b2_prep_blockers: [],
     survey_post_completed: false, b3_receipt: null, b3_receipt_blockers: [], b3_keep_one: null, b3_deal_brand: null, b3_pmf: null, b3_stoppers: [], b3_stoppers_other: null,
@@ -90,6 +121,10 @@ export function newSession(search = "", rand: () => number = Math.random): Exper
     accepted_week_clicked: false, mode_switched: false, receipt_scan_tried: false, deal_added_to_plan: 0, swap_count: 0,
     fake_door_tiktok_clicks: 0, fake_door_delivery_clicks: 0, whatsapp_share_clicked: 0, plan_copied: 0,
     tour_skipped: false, tour_completed: false, time_spent_seconds: 0, first_session: true, events: [],
+    survey_version: "v3_savings", demo_receipt_used: false, path: null, lang: null,
+    b1_household: null, b1_weekly_spend: null, b1_deal_habits: [], b1_deal_habits_order: [],
+    b3_number_trust: null, b3_actions: [], b3_actions_order: [], b3_action_blockers: [], b3_input: null, b3_frequency: null, b3_stoppers_order: [],
+    result_saving: null, result_percent: null, result_cheapest_store: null, result_user_store: null, result_total: null, shared_result_id: null, lists_made: [], referral_email: null,
   };
 }
 
@@ -113,6 +148,7 @@ export function applyEvent(s: ExperimentSession, e: EventName, tourStep: number 
     case "plan_copied": n.plan_copied++; break;
     case "ig_follow_clicked": n.ig_follow_clicked = true; break;
     case "cta_clicked": n.cta_clicked = true; break;
+    case "path_chosen": case "receipt_photo_taken": break;
     case "tour_skipped": n.tour_skipped = true; break;
     case "tour_completed": n.tour_completed = true; break;
     default: break;
