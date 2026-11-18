@@ -18,14 +18,15 @@ const pool: Meal[] = RECIPES.map((r) => {
   };
 });
 void BACKFILL;
-const titles = (rows: ReturnType<typeof planWeek>) => rows!.flatMap((r) => (r.kind === "day" ? [r.options[0]!.title] : []));
+const titles = (rows: ReturnType<typeof planWeek>) => rows!.flatMap((r) => (r.kind === "day" && r.options.length ? [r.options[0]!.title] : []));
 
 describe("planWeek", () => {
   it("builds prep, 3 dinners, prep, 3 dinners with two options each", () => {
     const rows = planWeek(pool, { prefs: dietToPrefs(["Meat", "Fish"]), types: [] })!;
-    expect(rows.map((r) => r.kind)).toEqual(["prep", "day", "day", "day", "prep", "day", "day", "day"]);
+    expect(rows.map((r) => r.kind)).toEqual(["prep", "day", "day", "day", "prep", "day", "day", "day", "day"]);
+    expect(rows.at(-1)).toMatchObject({ kind: "day", day: "Sun", options: [] });
     expect(new Set(titles(rows)).size).toBe(6);
-    for (const r of rows) if (r.kind === "day") expect(r.options.length).toBe(2);
+    for (const r of rows.slice(0, -1)) if (r.kind === "day") expect(r.options.length).toBe(2);
   });
   it("is deterministic", () => {
     const a = planWeek(pool, { prefs: dietToPrefs(["Meat", "Fish"]), types: ["Curry"] });
@@ -79,8 +80,10 @@ describe("editing the week", () => {
   it("a removed day leaves the week and becomes a free slot", () => {
     const chosen = { [firstDay]: REMOVED };
     expect(weekCards(chosen, ctx).length).toBe(5);
-    expect(emptySlots(chosen, ctx).map((s) => s.i)).toEqual([firstDay]);
-    expect(weekSlots(chosen, ctx).length).toBe(6);
+    expect(emptySlots(chosen, ctx).map((s) => s.i)).toContain(firstDay);
+    expect(emptySlots(chosen, ctx).length).toBe(2);
+    expect(weekSlots(chosen, ctx).length).toBe(7);
+    expect(weekSlots({}, ctx).at(-1)).toMatchObject({ day: "Sun", meal: null });
   });
   it("proposals are not already in the week and never break an allergy", () => {
     const chosen = { [firstDay]: REMOVED };

@@ -59,7 +59,7 @@ const tie = (t: string) => [...t].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 
 
 /**
  * Up to six dinners in two halves of three, each half built around shared prepped bases (cook once, eat three times).
- * Same shape as the static week: prep, three dinners, prep, three dinners, each dinner with two options.
+ * Same shape as the static week: prep, three dinners, prep, three dinners, each dinner with two options, then a free Sunday.
  * When fewer than six dinners fit the person's diet and allergies the week is shorter; it is empty when none fit.
  * Never adds a dinner that breaks an allergy. Deterministic: the same inputs give the same week.
  */
@@ -116,5 +116,7 @@ export function planWeek(pool: Meal[], o: PlanOpts): PlanRow[] {
     };
     rows.push(prep, ...days);
   }
+  // The seventh day. Sunday is a prep day, so it starts free: the person adds a dinner from the suggestions if they want one.
+  rows.push({ kind: "day", day: "Sun", options: [] });
   return rows;
 }

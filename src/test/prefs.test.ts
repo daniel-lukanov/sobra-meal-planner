@@ -49,7 +49,7 @@ describe("planWeek with allergies", () => {
   it("saving money ranks the cheaper dinner first", () => {
     const cheap = { ...dinner({ title: "Cheap", uses: ["a"] }), price: 1 }, dear = { ...dinner({ title: "Dear", uses: ["b"] }), price: 6 };
     const rows = planWeek([dear, cheap], { prefs: { ...base, goals: ["budget"] }, types: [], cheaper: (m) => m.price });
-    const first = rows.find((r) => r.kind === "day");
+    const first = rows.find((r) => r.kind === "day" && r.options.length > 0);
     expect(first && first.kind === "day" && first.options[0]!.title).toBe("Cheap");
   });
 });

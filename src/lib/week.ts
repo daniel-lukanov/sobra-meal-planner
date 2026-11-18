@@ -22,7 +22,8 @@ export function buildWeek(chosen: Record<string, string>, ctx: WeekCtx = STATIC_
     if (row.kind === "prep") { chapters.push({ prep: row, days: [] }); return; }
     const r = row as DayRow;
     if (chosen[i] === REMOVED) return;
-    const meal = (chosen[i] && mealByTitle(chosen[i]!, ctx)) || r.options[0]!;
+    const meal = (chosen[i] && mealByTitle(chosen[i]!, ctx)) || r.options[0];
+    if (!meal) return;
     chapters.at(-1)!.days.push({ i, day: r.day, meal });
   });
   return chapters;
@@ -32,7 +33,7 @@ export function weekSlots(chosen: Record<string, string>, ctx: WeekCtx = STATIC_
   return ctx.plan.flatMap((row, i): { i: number; day: string; meal: Meal | null }[] => {
     if (row.kind !== "day") return [];
     if (chosen[i] === REMOVED) return [{ i, day: row.day, meal: null }];
-    return [{ i, day: row.day, meal: (chosen[i] && mealByTitle(chosen[i]!, ctx)) || row.options[0]! }];
+    return [{ i, day: row.day, meal: (chosen[i] && mealByTitle(chosen[i]!, ctx)) || row.options[0] || null }];
   });
 }
 export const emptySlots = (chosen: Record<string, string>, ctx: WeekCtx = STATIC_CTX) => weekSlots(chosen, ctx).filter((s) => !s.meal);

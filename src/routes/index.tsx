@@ -59,8 +59,8 @@ function Home() {
       </header>
       <ModeQuestion />
       <WeekStatusNote />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">{mode === "prep" ? <WeekSection /> : <TonightSection />}</div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+        <div className="lg:col-span-3">{mode === "prep" ? <WeekSection /> : <TonightSection />}</div>
         {/* The plan sets the height; the list scrolls inside it. */}
         <div className="relative min-h-[360px]"><MissingPanel /></div>
       </div>
@@ -135,32 +135,32 @@ function WeekSection() {
         </p>
       )}
 
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <ul className="flex gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-7 md:overflow-visible">
         {slots.map((s, k) => {
           const isToday = s.day === day;
           if (!s.meal) return (
-            <li key={s.i} className={cn("flex min-h-[170px] flex-col rounded-[8px] border-2 border-dashed border-rule p-2.5", isToday && "border-basil")}>
-              <Tape alt={k % 2 === 1}>{s.day}</Tape>
-              <p className="mt-3 text-[14px] font-semibold">Free</p>
-              <p className="text-[12.5px] text-muted-foreground">Add one of the suggestions below.</p>
+            <li key={s.i} className={cn("flex min-w-[104px] flex-col rounded-[8px] border-2 border-dashed border-rule p-2 md:min-w-0", isToday && "border-basil")}>
+              <Tape alt={k % 2 === 1}>{isToday ? `${s.day} · today` : s.day}</Tape>
+              <p className="mt-2 text-[13px] font-semibold">Free</p>
+              <p className="text-[11.5px] leading-snug text-muted-foreground">Add a suggestion below.</p>
             </li>
           );
           return (
-            <li key={s.i} className={cn("flex flex-col overflow-hidden rounded-[8px] bg-sheet-2", isToday && "ring-2 ring-basil")}>
-              <div className="relative h-24">
+            <li key={s.i} className={cn("flex min-w-[104px] flex-col overflow-hidden rounded-[8px] bg-sheet-2 md:min-w-0", isToday && "ring-2 ring-basil")}>
+              <div className="relative h-16">
                 <img src={imageOf(s.meal)} alt="" width={320} height={200} loading="lazy" className="size-full object-cover" />
                 <div className="absolute left-1.5 top-1.5"><Tape alt={k % 2 === 1}>{isToday ? `${s.day} · today` : s.day}</Tape></div>
               </div>
-              <div className="flex flex-1 flex-col p-2.5">
-                {s.meal.slug ? <Link to="/recipe/$slug" params={{ slug: s.meal.slug }} className="line-clamp-2 text-[13.5px] font-semibold leading-snug hover:underline">{s.meal.title}</Link>
-                  : <p className="line-clamp-2 text-[13.5px] font-semibold leading-snug">{s.meal.title}</p>}
+              <div className="flex flex-1 flex-col p-2">
+                {s.meal.slug ? <Link to="/recipe/$slug" params={{ slug: s.meal.slug }} className="line-clamp-3 text-[12.5px] font-semibold leading-snug hover:underline">{s.meal.title}</Link>
+                  : <p className="line-clamp-3 text-[12.5px] font-semibold leading-snug">{s.meal.title}</p>}
                 <div className="mt-auto space-y-1 pt-2">
-                  <button type="button" onClick={() => cook.start(s.meal!, s.i)} className="press inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-[6px] bg-basil px-2 text-[13px] font-semibold text-basil-ink">
+                  <button type="button" onClick={() => cook.start(s.meal!, s.i)} className="press inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-[6px] bg-basil px-1 text-[12.5px] font-semibold text-basil-ink">
                     <ChefHat className="size-3.5" aria-hidden />Cook
                   </button>
                   <div className="flex gap-1">
-                    <button type="button" onClick={() => setSwapping(s.i)} className="press inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-[6px] text-[12.5px] hover:bg-sheet-hover"><RefreshCw className="size-3.5" aria-hidden />Swap</button>
-                    <button type="button" aria-label={`Remove ${s.meal.title}`} onClick={() => remove(s.i, s.day)} className="press inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-[6px] text-[12.5px] hover:bg-sheet-hover"><Trash2 className="size-3.5" aria-hidden />Remove</button>
+                    <button type="button" title="Swap" aria-label={`Swap ${s.meal.title}`} onClick={() => setSwapping(s.i)} className="press flex min-h-9 flex-1 items-center justify-center rounded-[6px] hover:bg-sheet-hover"><RefreshCw className="size-3.5" aria-hidden /></button>
+                    <button type="button" title="Remove" aria-label={`Remove ${s.meal.title}`} onClick={() => remove(s.i, s.day)} className="press flex min-h-9 flex-1 items-center justify-center rounded-[6px] hover:bg-sheet-hover"><Trash2 className="size-3.5" aria-hidden /></button>
                   </div>
                 </div>
               </div>
