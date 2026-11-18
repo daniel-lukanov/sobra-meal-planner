@@ -100,7 +100,7 @@ export function goalScore(m: Meal, goals: string[]): number {
   return GOALS.filter((g) => goals.includes(g.code) && tags.has(g.tag)).length;
 }
 
-/** One household eats one plan: the strictest diet, only proteins everyone eats, every allergen of every member. */
+/** One household eats one plan: the strictest diet, only proteins everyone eats, every allergen of every member. Goals are everyone's, so the shared plan leans towards all of them. */
 export function combinePrefs(list: Prefs[]): Prefs {
   if (list.length === 0) return DEFAULT_PREFS;
   const rank = { none: 0, vegetarian: 1, vegan: 2 } as const;
@@ -109,6 +109,6 @@ export function combinePrefs(list: Prefs[]): Prefs {
     lifestyle,
     proteins: ALL_PROTEINS.filter((c) => list.every((p) => p.proteins.includes(c))),
     allergens: [...new Set(list.flatMap((p) => p.allergens))],
-    goals: [],
+    goals: [...new Set(list.flatMap((p) => p.goals))],
   };
 }

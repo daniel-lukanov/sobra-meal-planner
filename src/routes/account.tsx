@@ -10,7 +10,7 @@ import { StoreBadge } from "@/components/pratico/Brand";
 import { categoryPhoto } from "@/data/photos";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { signOut, useSession } from "@/lib/account";
+import { signOut, useHousehold, useSession } from "@/lib/account";
 import { AccountForm } from "@/components/pratico/AccountForm";
 import { Button } from "@/components/pratico/ui";
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -69,6 +69,7 @@ function Account() {
   const setLifestyle = (l: Lifestyle) => change({ lifestyle: l, proteins: l === "none" ? ALL_PROTEINS : [] });
   const allergyCodes = new Set<string>(ALLERGENS.map((a) => a.code));
   const user = session?.user;
+  const mates = (useHousehold(user?.id).data?.members.length ?? 1) - 1;
 
   return (
     <div className="mx-auto max-w-[860px]">
@@ -86,7 +87,13 @@ function Account() {
         ) : <div className="mt-3 max-w-md rounded-sheet bg-sheet p-5"><AccountForm /></div>}
       </section>
 
-      <Block id="stores" title="Where do you shop?" hint="Pick one or more. Each item is priced at the cheapest of your stores, and the shopping list is grouped by store.">
+      {mates > 0 && (
+        <p role="note" className="mb-2 rounded-sheet bg-sheet p-4 text-[14px]">
+          You share your plan with {mates === 1 ? "1 other person" : `${mates} other people`}. The plan uses the strictest diet and every allergy in your household, so it can exclude more than your own settings below. Stores are shared too. Your own settings stay yours.
+        </p>
+      )}
+
+      <Block id="stores" title="Where does your household shop?" hint="Pick one or more. Each item is priced at the cheapest of your stores, and the shopping list is grouped by store.">
         <div className="flex flex-wrap gap-2">
           {stores.map((st) => {
             const on = s.stores.includes(st);

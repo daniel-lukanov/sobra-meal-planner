@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { useApp } from "@/lib/store";
 import { PraticoLogo } from "./Brand";
 import { UserMenu } from "./UserMenu";
+import { SyncChoice } from "./SyncChoice";
 import { useExp } from "@/lib/experiment";
 import { PreSurvey } from "./PreSurvey";
 import { FeedbackPill } from "./VerdictModal";
@@ -17,7 +18,7 @@ import { useHouseholdSync } from "@/lib/household-sync";
 const nav = [
   { to: "/", label: "Home", icon: House },
   { to: "/deals", label: "Deals", icon: Tag },
-  { to: "/list", label: "List", icon: ShoppingBasket },
+  { to: "/list", label: "Shopping list", icon: ShoppingBasket },
   { to: "/fridge", label: "Fridge", icon: Refrigerator },
 ] as const;
 const topNav = nav;
@@ -90,6 +91,7 @@ export function Shell({ children }: { children: ReactNode }) {
       <main className="mx-auto max-w-6xl px-4 pb-32 pt-7 sm:px-8">
         {showSurvey ? <PreSurvey /> : <div key={pathname} className="fade-route">{children}</div>}
       </main>
+      <SyncChoice />
       {showStudy && <><GuidedTour /><FeedbackPill /></>}
       {ghost && (
         <span className="fixed bottom-20 left-3 z-50 inline-flex items-center gap-1.5 rounded-[6px] bg-ink px-3 py-1.5 text-[12px] font-semibold text-sheet md:bottom-4">

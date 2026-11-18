@@ -65,6 +65,7 @@ describe("goals, household and migration", () => {
     expect(c.lifestyle).toBe("vegetarian");
     expect(c.proteins).toEqual([]);
     expect(c.allergens.sort()).toEqual(["gluten", "soy"]);
+    expect(c.goals).toEqual(["budget"]);
     expect(combinePrefs([a, { ...base, proteins: ["poultry", "beef"] }]).proteins).toEqual(["poultry"]);
   });
   it("turns an old saved diet into the new settings", () => {

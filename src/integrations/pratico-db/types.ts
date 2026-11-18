@@ -323,9 +323,15 @@ export type Database = {
         ]
       }
       household_plan_state: {
-        Row: { checked: Json; chosen: Json; accepted: boolean; household_id: string; updated_at: string; updated_by: string | null }
-        Insert: { checked?: Json; chosen?: Json; accepted?: boolean; household_id: string; updated_at?: string; updated_by?: string | null }
-        Update: { checked?: Json; chosen?: Json; accepted?: boolean; household_id?: string; updated_at?: string; updated_by?: string | null }
+        Row: { checked: Json; chosen: Json; accepted: boolean; household_id: string; updated_at: string; updated_by: string | null; stores: string[]; have: string[] }
+        Insert: { checked?: Json; chosen?: Json; accepted?: boolean; household_id: string; updated_at?: string; updated_by?: string | null; stores?: string[]; have?: string[] }
+        Update: { checked?: Json; chosen?: Json; accepted?: boolean; household_id?: string; updated_at?: string; updated_by?: string | null; stores?: string[]; have?: string[] }
+        Relationships: []
+      }
+      profile_prefs: {
+        Row: { profile_id: string; lifestyle: string; proteins: string[]; allergens: string[]; goals: string[]; cooking_mode: string; meals: string[]; updated_at: string }
+        Insert: { profile_id: string; lifestyle?: string; proteins?: string[]; allergens?: string[]; goals?: string[]; cooking_mode?: string; meals?: string[]; updated_at?: string }
+        Update: { profile_id?: string; lifestyle?: string; proteins?: string[]; allergens?: string[]; goals?: string[]; cooking_mode?: string; meals?: string[]; updated_at?: string }
         Relationships: []
       }
       household_member: {

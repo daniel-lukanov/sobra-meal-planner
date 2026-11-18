@@ -5,7 +5,8 @@ import { CHAIN_OF } from "@/lib/deals-from-db";
 import { useIngredients, usePriceRows, useRecipeDetails, useRecipes } from "@/lib/db-queries";
 import { recipeCost, type Catalog } from "@/lib/plan-from-db";
 import { buildPool, planWeek } from "@/lib/recipe-pool";
-import { fitsPrefs } from "@/lib/prefs";
+import { combinePrefs, fitsPrefs } from "@/lib/prefs";
+import { useHousemates } from "@/lib/household-prefs";
 import { EMPTY_CTX, buildWeek, weekCards, type WeekCtx } from "@/lib/week";
 
 export type WeekStatus = "loading" | "error" | "ready" | "none";
@@ -13,8 +14,12 @@ export type WeekStatus = "loading" | "error" | "ready" | "none";
 /** `none`: data loaded but no dinner fits the person's diet and allergies. `short`: fewer than 6 fit, so the week is shorter. */
 export function useWeek() {
   const app = useApp();
-  const { stores, people, meals, chosen } = app;
-  const prefs = useMemo(() => prefsOf(app), [app.lifestyle, app.proteins, app.allergens, app.goals]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { stores, people, chosen } = app;
+  // Housemates share the plan: it respects the strictest diet and every allergy among them.
+  const mates = useHousemates();
+  const own = useMemo(() => prefsOf(app), [app.lifestyle, app.proteins, app.allergens, app.goals]); // eslint-disable-line react-hooks/exhaustive-deps
+  const prefs = useMemo(() => (mates.length ? combinePrefs([own, ...mates]) : own), [own, mates]);
+  const meals = useMemo(() => (mates.length ? [...new Set([...app.meals, ...mates.flatMap((m) => m.meals)])] : app.meals), [app.meals, mates]);
   const prices = usePriceRows(), ings = useIngredients(), recipes = useRecipes(), details = useRecipeDetails();
   const chains = useMemo(() => stores.map((s) => CHAIN_OF[s]), [stores]);
   const failed = prices.isError || ings.isError || recipes.isError || details.isError;

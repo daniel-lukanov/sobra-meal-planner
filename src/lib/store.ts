@@ -32,6 +32,8 @@ type State = {
   have: string[];
   /** Daily pick: tonight's dinner (recipe title) and the day it was picked for (yyyy-mm-dd). */
   today: { date: string; title: string } | null;
+  /** The account this browser's data was last matched with, so a returning login is not asked which data to keep. */
+  syncedFor: string | null;
   people: number;
   checked: Record<string, boolean>;
   set: (p: Partial<State>) => void;
@@ -58,6 +60,7 @@ export const useApp = create<State>()(
       addedDeals: [],
       have: [],
       today: null,
+      syncedFor: null,
       people: 2,
       checked: {},
       set: (p) => set(p),
