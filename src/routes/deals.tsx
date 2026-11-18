@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { DealRecipes } from "@/components/pratico/DealRecipes";
+import { usePlaceFlow } from "@/components/pratico/PlanFlows";
 import { BadgeCheck, BellRing, ShieldAlert } from "lucide-react";
 import { eur, storesLabel, useApp } from "@/lib/store";
 import { pageHead } from "@/lib/head";
@@ -7,7 +9,6 @@ import { dealsByStore, isRealDeal, realSaving } from "@/data/deals";
 import { dealPhoto } from "@/data/photos";
 import { Button, PageHeader } from "@/components/pratico/ui";
 import { Switch } from "@/components/ui/switch";
-import { useExp } from "@/lib/experiment";
 import { useLiveDeals } from "@/lib/live-deals";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +24,8 @@ const alertItems = [
 ];
 
 function Deals() {
-  const { stores, alerts, set, addedDeals } = useApp();
+  const { stores, alerts, set } = useApp();
+  const place = usePlaceFlow();
   const store = storesLabel(stores);
   const liveByStore = useLiveDeals().data;
   // Deals from every store the household shops at; a store without live data shows the sample deals.
@@ -60,15 +62,14 @@ function Deals() {
                 {real ? `${eur(realSaving(d))} cheaper than the regular price` : `The regular one costs ${eur(d.cheapestRegular)}, so skip this deal`}
               </p>
               <div className="px-4 pb-4 pt-3">
-                {addedDeals.includes(d.name) ? <span className="inline-flex min-h-10 items-center text-[14px] font-semibold text-basil">Added to your plan</span> : (
-                  <Button variant="secondary" className="min-h-10" onClick={() => { useExp.getState().track("deal_added_to_plan"); set({ addedDeals: [...addedDeals, d.name] }); toast(`${d.name} added to your plan.`); }}>Add to plan</Button>
-                )}
+                {real ? <DealRecipes deal={d} place={place} label="Use in a dinner" /> : <p className="text-[13px] text-muted-foreground">Not worth planning a dinner around.</p>}
               </div>
             </li>
           );
         })}
       </ul>
 
+      {place.dialogs}
       <section aria-labelledby="pa" className="p-1">
         <h2 id="pa" className="flex items-center gap-2 text-[20px] font-bold"><BellRing className="size-5 text-basil" aria-hidden />Price alerts</h2>
         <p className="mb-4 mt-1 text-[13.5px] text-muted-foreground">Turn one on and we tell you when it drops below what you usually pay.</p>

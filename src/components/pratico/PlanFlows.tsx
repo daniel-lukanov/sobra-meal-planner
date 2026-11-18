@@ -6,7 +6,7 @@ import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/lib/store";
 import { useWeek } from "@/lib/use-week";
-import { REMOVED, weekSlots } from "@/lib/week";
+import { REMOVED, weekSlots, type Card } from "@/lib/week";
 import type { Meal } from "@/data/plan";
 import { Button } from "./ui";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -29,6 +29,15 @@ export function useTonight(): Meal | null {
   const { ctx } = useWeek();
   if (!today || today.date !== todayDate()) return null;
   return ctx.pool.find((m) => m.title === today.title) ?? null;
+}
+
+/** The dinners Home is about: the week in Weekly prep, tonight's in Daily pick. */
+export function usePlanned(): Card[] {
+  const { mode } = useApp();
+  const { cards } = useWeek();
+  const tonight = useTonight();
+  if (mode === "prep") return cards;
+  return tonight ? [{ i: -1, day: "Tonight", meal: tonight }] : [];
 }
 
 function Pop({ open, onClose, title, sub, children, footer }: { open: boolean; onClose: () => void; title: string; sub?: string; children?: ReactNode; footer: ReactNode }) {

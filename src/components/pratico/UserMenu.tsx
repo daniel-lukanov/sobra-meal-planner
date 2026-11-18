@@ -1,8 +1,9 @@
-import { Link } from "@tanstack/react-router";
-import { ChevronDown, Lock, User, UserRound, Users } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ChevronDown, Lock, RotateCcw, User, UserRound, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "@/lib/account";
 import { cn } from "@/lib/utils";
+import { useExp } from "@/lib/experiment";
 
 /** Top-right menu: who you are, and the way to Account (your food settings), Household and the admin login. */
 export function UserMenu() {
@@ -12,6 +13,7 @@ export function UserMenu() {
   const name = meta?.name ?? meta?.full_name ?? user?.email?.split("@")[0] ?? "Guest";
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent | KeyboardEvent) => {
@@ -42,6 +44,12 @@ export function UserMenu() {
               </Link>
             </li>
           ))}
+          <li role="none">
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); useExp.getState().setTour(null); useExp.getState().update({ survey_pre_completed: false }, true); navigate({ to: "/" }); }}
+              className="flex min-h-11 w-full items-center gap-3 px-4 text-left text-[14.5px] hover:bg-sheet-2">
+              <RotateCcw className="size-4 text-muted-foreground" aria-hidden />Restart setup
+            </button>
+          </li>
         </ul>
       )}
     </div>

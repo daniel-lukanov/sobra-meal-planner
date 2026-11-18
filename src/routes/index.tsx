@@ -12,7 +12,8 @@ import { Button, Tape } from "@/components/pratico/ui";
 import { ModeQuestion } from "@/components/pratico/ModeQuestion";
 import { SharePlan } from "@/components/pratico/SharePlan";
 import { StoreBadge } from "@/components/pratico/Brand";
-import { labelOf, todayName, useCookFlow, useCovered, usePlaceFlow, useTonight } from "@/components/pratico/PlanFlows";
+import { DealRecipes } from "@/components/pratico/DealRecipes";
+import { labelOf, todayName, useCookFlow, useCovered, usePlaceFlow, usePlanned, useTonight } from "@/components/pratico/PlanFlows";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { REMOVED, alternatives, proposals, weekSlots, type Card } from "@/lib/week";
 import { useWeek } from "@/lib/use-week";
@@ -34,15 +35,6 @@ export const Route = createFileRoute("/")({
 });
 
 const imageOf = (m: Meal) => m.image ?? mealPhoto[m.title] ?? photo.prep;
-
-/** The dinners Home is about: the week in Weekly prep, tonight's in Daily pick. */
-function usePlanned(): Card[] {
-  const { mode } = useApp();
-  const { cards } = useWeek();
-  const tonight = useTonight();
-  if (mode === "prep") return cards;
-  return tonight ? [{ i: -1, day: "Tonight", meal: tonight }] : [];
-}
 
 function Home() {
   const { stores, mode, weekAccepted } = useApp();
@@ -324,14 +316,11 @@ type DealRow = { key: string; store: StoreName; deal: Deal; base: string; name: 
 
 /** The best real deals at the person's stores, for ingredients we have recipes for. */
 function TopDeals() {
-  const { stores, mode } = useApp();
+  const { stores } = useApp();
   const live = useLiveDeals().data;
   const ings = useIngredients();
   const { ctx, prefs, status } = useWeek();
-  const covered = useCovered();
-  const planned = usePlanned();
   const place = usePlaceFlow();
-  const [open, setOpen] = useState<string | null>(null);
   const rows = useMemo<DealRow[]>(() => {
     if (!live || !ings.data || status !== "ready") return [];
     const bySlug = new Map(ings.data.map((i) => [i.slug, i]));
@@ -362,7 +351,6 @@ function TopDeals() {
       </section>
     );
   }
-  const weekTitles = new Set(planned.map((c) => c.meal.title));
   return (
     <section aria-labelledby="deals" className="mt-10">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
@@ -371,9 +359,6 @@ function TopDeals() {
       </div>
       <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {rows.map((r) => {
-          const usedBy = planned.filter((c) => c.meal.uses.includes(r.base));
-          const atHome = covered(r.base);
-          const options = r.recipes.filter((m) => !weekTitles.has(m.title)).slice(0, 4);
           return (
             <li key={r.key} className="flex flex-col overflow-hidden rounded-sheet bg-sheet">
               <div className="flex gap-3 p-4">
@@ -384,29 +369,7 @@ function TopDeals() {
                   <p className="num text-[13.5px]"><span className="font-bold">{eur(r.deal.price)}</span> <span className="text-muted-foreground line-through">{eur(r.deal.was)}</span> <span className="text-basil">−{eur(realSaving(r.deal))}</span></p>
                 </div>
               </div>
-              <div className="mt-auto border-t border-rule px-4 py-3">
-                <Button variant="secondary" className="min-h-10 w-full" aria-expanded={open === r.key} onClick={() => setOpen(open === r.key ? null : r.key)}>Include in a recipe</Button>
-                {open === r.key && (
-                  <div className="slide-in mt-3 space-y-3">
-                    {(usedBy.length > 0 || atHome) && (
-                      <p className="rounded-[6px] bg-basil-tint px-3 py-2 text-[13px] text-basil">
-                        {usedBy.length > 0 ? `Already in your plan: ${usedBy.map((c) => `${c.meal.title} (${c.day})`).join(", ")}.` : ""}
-                        {atHome ? ` You already have ${r.name.toLowerCase()} at home.` : ""}
-                      </p>
-                    )}
-                    {options.length === 0 ? <p className="text-[13.5px] text-muted-foreground">Every recipe with {r.name.toLowerCase()} that fits you is already planned.</p> : (
-                      <ul className="space-y-2">
-                        {options.map((m) => (
-                          <li key={m.title} className="flex items-center justify-between gap-2">
-                            {m.slug ? <Link to="/recipe/$slug" params={{ slug: m.slug }} className="min-w-0 text-[14px] font-medium hover:underline">{m.title}</Link> : <span className="text-[14px] font-medium">{m.title}</span>}
-                            <Button variant="secondary" className="min-h-9 shrink-0 px-3 text-[13px]" onClick={() => place.add(m)}>{mode === "prep" ? "Add to plan" : "Pick for tonight"}</Button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-              </div>
+              <div className="mt-auto border-t border-rule px-4 py-3"><DealRecipes deal={r.deal} place={place} /></div>
             </li>
           );
         })}
