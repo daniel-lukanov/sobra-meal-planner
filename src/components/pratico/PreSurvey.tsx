@@ -6,10 +6,11 @@ import { Button } from "./ui";
 import { PraticoLogo, StoreBadge } from "./Brand";
 import { Multi, Question, Single, useRequired } from "./form";
 import { cn } from "@/lib/utils";
+import { surveyDone, surveyRegister } from "@/lib/survey-registry";
 import type { StoreName } from "@/data/stores";
 
 /** Block 1: one required screen before the app. */
-export function PreSurvey({ onDone }: { onDone: () => void }) {
+export function PreSurvey({ onDone, onSkip }: { onDone: () => void; onSkip: (how: "matched" | "not_matched") => void }) {
   const update = useExp((s) => s.update);
   const session = useExp((s) => s.session)!;
   const setApp = useApp((s) => s.set);
@@ -25,6 +26,16 @@ export function PreSurvey({ onDone }: { onDone: () => void }) {
   }, [session.b1_pains_order.length, update]);
   const painOrder = session.b1_pains_order.length ? session.b1_pains_order : [...painShuffled, PAIN_NONE];
 
+  const [checking, setChecking] = useState(false);
+  /** "I already did the survey": a matching device or account skips it; otherwise we take their word and mark it. */
+  const alreadyDone = async () => {
+    setChecking(true);
+    const found = await surveyDone().catch(() => false);
+    if (!found) void surveyRegister(session.session_id, "self_reported_not_matched").catch(() => {});
+    setChecking(false);
+    onSkip(found ? "matched" : "not_matched");
+  };
+
   const finish = () => {
     if (!check([
       { id: "store", ok: picked.length > 0, msg: "Pick at least one store to continue" },
@@ -34,6 +45,7 @@ export function PreSurvey({ onDone }: { onDone: () => void }) {
     ])) return;
     update({ store: picked[0]!, b1_fallback_dinners: fb, b1_pains: pains, b1_workarounds: work }, true);
     setApp({ stores: picked });
+    void surveyRegister(session.session_id, "completed").catch(() => {});
     onDone();
   };
 
@@ -42,6 +54,11 @@ export function PreSurvey({ onDone }: { onDone: () => void }) {
       <PraticoLogo />
       <h1 className="mt-6 text-[26px] font-bold">Let's build your week</h1>
       <p className="mt-2 text-muted-foreground">Pratico plans your week's dinners around what's on promotion at your Lisbon supermarkets and what's already in your fridge. Pick meals you'll actually enjoy, get a shopping list priced from this week's deals, and waste less food. Free to try, no account needed.</p>
+
+      <p className="mt-4 text-[14px]">
+        Already answered these before?{" "}
+        <button type="button" disabled={checking} onClick={alreadyDone} className="font-semibold underline underline-offset-4">{checking ? "Checking…" : "I already did the survey"}</button>
+      </p>
 
       <div className="mt-6 space-y-6">
         <Question id="store" title="Which supermarkets do you shop at?" hint="Pick one or more. We price each item at the cheapest of them." error={errors["store"]}>

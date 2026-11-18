@@ -1,13 +1,16 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useApp, prefsOf } from "@/lib/store";
 import { useExp } from "@/lib/experiment";
 import { useWeek } from "@/lib/use-week";
 import { ALLERGENS, GOALS, PROTEINS, ALL_PROTEINS, fitsPrefs } from "@/lib/prefs";
 import { Button } from "./ui";
-import { PraticoLogo } from "./Brand";
+import { PraticoLogo, StoreBadge } from "./Brand";
+import { storeOptions } from "@/data/survey";
 import { PreSurvey } from "./PreSurvey";
 import { cn } from "@/lib/utils";
+import { surveyDone } from "@/lib/survey-registry";
+import { useSession } from "@/lib/account";
 
 const STEPS = ["Survey", "Goals", "Allergies", "Proteins", "Meals", "Fridge"] as const;
 const ICON: Record<string, string> = { poultry: "🐔", beef: "🐄", pork: "🐖", other_meat: "🐑", fish: "🐟", shellfish: "🦐", vegetarian: "🥕", vegan: "🌱" };
@@ -27,11 +30,19 @@ export function Onboarding() {
   const app = useApp();
   const set = app.set;
   const navigate = useNavigate();
-  const [step, setStep] = useState(session.b1_fallback_dinners ? 1 : 0);
+  const [step, setStep] = useState(session.b1_fallback_dinners || session.b1_skip ? 1 : 0);
   const [picked, setPicked] = useState<string[]>([]);
   const [newItem, setNewItem] = useState("");
   const [tooFew, setTooFew] = useState(false);
   const { ctx } = useWeek();
+  const account = useSession()?.user?.id;
+  // A visitor we already know (this device, or the account they log in with) never sees the survey again.
+  useEffect(() => {
+    if (step !== 0) return;
+    let live = true;
+    surveyDone().then((found) => { if (live && found) { useExp.getState().update({ b1_skip: "matched" }, true); setStep(1); } }).catch(() => {});
+    return () => { live = false; };
+  }, [step, account]);
   const prefs = prefsOf(app);
   const fitting = useMemo(() => (ctx.pool ?? []).filter((m) => fitsPrefs(m, prefs)), [ctx.pool, app.lifestyle, app.proteins, app.allergens]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -45,7 +56,7 @@ export function Onboarding() {
     navigate({ to: "/" });
   };
 
-  if (step === 0) return <PreSurvey onDone={() => { setStep(1); window.scrollTo({ top: 0 }); }} />;
+  if (step === 0) return <PreSurvey onDone={() => { setStep(1); window.scrollTo({ top: 0 }); }} onSkip={(how) => { useExp.getState().update({ b1_skip: how }, true); setStep(1); window.scrollTo({ top: 0 }); }} />;
   const next = () => { setStep(step + 1); window.scrollTo({ top: 0 }); };
   const back = () => setStep(step - 1);
   const veg = app.lifestyle !== "none";
@@ -66,6 +77,21 @@ export function Onboarding() {
       {step === 1 && (<>
         <h1 className="mt-6 text-[24px] font-bold">What do you want from your dinners?</h1>
         <p className="mt-2 text-muted-foreground">Pick any. We lean your week towards dinners labelled this way.</p>
+        {session.b1_skip && (
+          <div className="mt-5 border-b border-rule pb-5">
+            <p className="text-[15.5px] font-semibold">Which supermarkets do you shop at?</p>
+            <p className="text-[13px] font-medium text-muted-foreground">Pick one or more. We price each item at the cheapest of them.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {storeOptions.map((st) => (
+                <button key={st} type="button" aria-label={st} aria-pressed={app.stores.includes(st)}
+                  onClick={() => { const on = app.stores.includes(st); if (on && app.stores.length === 1) return; set({ stores: on ? app.stores.filter((x) => x !== st) : [...app.stores, st] }); }}
+                  className={cn("press min-h-11 rounded-full p-1 ring-2", app.stores.includes(st) ? "ring-ink" : "ring-transparent hover:ring-rule")}>
+                  <StoreBadge name={st} className="h-9 px-3" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="mt-5 flex flex-wrap gap-2">{GOALS.map((g) => <Chip key={g.code} on={app.goals.includes(g.code)} onClick={() => set({ goals: toggle(app.goals, g.code) })}>{g.label}</Chip>)}</div>
       </>)}
 

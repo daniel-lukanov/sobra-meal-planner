@@ -62,7 +62,7 @@ export function useRecipeDetails() {
     queryKey: ["pratico", "recipe-details"], ...opts,
     queryFn: async (): Promise<{ recipes: DbRecipe[]; flags: DbFlags[]; tags: { recipe_id: string; tag: string }[]; allergens: { recipe_id: string; allergen_code: string }[] }> => {
       const [r, f, t, a] = await Promise.all([
-        praticoDb.from("recipe").select("id, slug, title, meal_type, summary, how, minutes, image_url, steps_relaxed, steps_fast").eq("status", "published"),
+        praticoDb.from("recipe").select("id, slug, title, meal_type, summary, how, minutes, image_url, cuisine, steps_relaxed, steps_fast").eq("status", "published"),
         praticoDb.from("recipe_diet_flags").select("recipe_id, has_pork, has_beef, has_poultry, has_other_meat, has_fish, has_shellfish, has_dairy, has_egg"),
         praticoDb.from("recipe_tag").select("recipe_id, tag"),
         praticoDb.from("recipe_allergen").select("recipe_id, allergen_code"),

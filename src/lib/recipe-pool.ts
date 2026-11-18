@@ -5,7 +5,7 @@ import type { Step } from "@/data/cook";
 import type { CatIngredient, CatLine } from "@/lib/plan-from-db";
 import { fitsPrefs, goalScore, type Prefs } from "@/lib/prefs";
 
-export type DbRecipe = { id: string; slug: string; title: string; meal_type: string; summary: string | null; how: string | null; minutes: number | null; image_url: string | null; steps_relaxed: unknown; steps_fast: unknown };
+export type DbRecipe = { id: string; slug: string; title: string; meal_type: string; summary: string | null; how: string | null; minutes: number | null; image_url: string | null; cuisine?: string | null; steps_relaxed: unknown; steps_fast: unknown };
 export type DbFlags = { recipe_id: string; has_pork: boolean; has_beef: boolean; has_poultry: boolean; has_other_meat: boolean; has_fish: boolean; has_shellfish: boolean; has_dairy: boolean; has_egg: boolean };
 export type PoolInput = { recipes: DbRecipe[]; lines: CatLine[]; ingredients: CatIngredient[]; flags: DbFlags[]; tags: { recipe_id: string; tag: string }[]; allergens?: { recipe_id: string; allergen_code: string }[] };
 
@@ -30,7 +30,7 @@ export function buildPool(inp: PoolInput, fallbackPrice = 2): Meal[] {
     const f = flags.get(r.id);
     out.push({
       title: r.title, how: r.how ?? "", uses, names, price: fallbackPrice, slug: r.slug, type: r.meal_type, summary: r.summary ?? "",
-      ...(r.minutes ? { minutes: r.minutes } : {}), ...(r.image_url ? { image: r.image_url } : {}),
+      ...(r.minutes ? { minutes: r.minutes } : {}), ...(r.image_url ? { image: r.image_url } : {}), ...(r.cuisine ? { cuisine: r.cuisine } : {}),
       flags: {
         meat: !!f && (f.has_pork || f.has_beef || f.has_poultry || f.has_other_meat), fish: !!f && (f.has_fish || f.has_shellfish), egg: !!f?.has_egg, dairy: !!f?.has_dairy, pork: !!f?.has_pork,
         poultry: !!f?.has_poultry, beef: !!f?.has_beef, otherMeat: !!f?.has_other_meat, shellfish: !!f?.has_shellfish, finfish: !!f?.has_fish,

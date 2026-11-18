@@ -31,6 +31,8 @@ export type ExperimentSession = {
   b1_pains: string[];
   b1_pains_order: string[];
   b1_workarounds: string[];
+  /** Survey skipped: matched = we found the earlier answers (device or account); not_matched = the visitor said they did it but we found no record. */
+  b1_skip: "matched" | "not_matched" | null;
   // Block 2
   opened_weekly: boolean;
   opened_daily: boolean;
@@ -81,7 +83,7 @@ export function newSession(search = "", rand: () => number = Math.random): Exper
   return {
     session_id: id, created_at: new Date().toISOString(), my_ref: id.slice(0, 8), ...attributionFrom(search), shared_plan_id: null, visits: 1,
     ab_plan_variant: pick(planVariants, rand()), ab_cta_variant: pick(ctaVariants, rand()), store: null,
-    survey_pre_completed: false, b1_fallback_dinners: null, b1_pains: [], b1_pains_order: [], b1_workarounds: [],
+    survey_pre_completed: false, b1_fallback_dinners: null, b1_pains: [], b1_pains_order: [], b1_workarounds: [], b1_skip: null,
     opened_weekly: false, opened_daily: false, b2_mode_pref: null, b2_mode_reason: null, b2_prep_blockers: [],
     survey_post_completed: false, b3_receipt: null, b3_receipt_blockers: [], b3_keep_one: null, b3_deal_brand: null, b3_pmf: null, b3_stoppers: [], b3_stoppers_other: null,
     cta_clicked: false, cta_contact: null, raffle_email: null, ig_follow_clicked: false,
