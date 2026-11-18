@@ -5,7 +5,9 @@
 // Safe to re-run (everything is an upsert by slug). Needs db/.env (SUPABASE_URL, SUPABASE_SECRET_KEY); the key is never printed.
 
 import { readFileSync, existsSync } from "node:fs";
-import { BACKFILL, NEW_STAPLES, RECIPES } from "../seed/recipes";
+import { BACKFILL, NEW_STAPLES, RECIPES as BASE_RECIPES } from "../seed/recipes";
+import { PROTEIN_RECIPES, PROTEIN_CUISINE } from "../seed/proteins";
+const RECIPES = [...BASE_RECIPES, ...PROTEIN_RECIPES];
 
 function loadEnv(): { url: string; key: string } {
   const f = new URL("../.env", import.meta.url).pathname;
@@ -45,6 +47,8 @@ async function main() {
   const rows: { id: string; slug: string }[] = await upsert("recipe", "slug", RECIPES.map((r) => ({ slug: r.slug, title: r.title, meal_type: r.type, summary: r.summary, how: r.how,
     minutes: r.minutes, servings: 2, steps_relaxed: r.relaxed, steps_fast: r.fast, source: "generated", status: "published", fingerprint: fp(r) })), "id,slug");
   const rid = new Map(rows.map((r) => [r.slug, r.id]));
+  // cuisine labels for the protein recipes (a separate update so the other recipes keep the labels they have)
+  for (const [slug, cuisine] of Object.entries(PROTEIN_CUISINE)) await rest(`recipe?slug=eq.${slug}`, { method: "PATCH", body: JSON.stringify({ cuisine }) });
 
   // 3) ingredients, tags
   await upsert("recipe_ingredient", "recipe_id,ingredient_id", RECIPES.flatMap((r) => Object.entries(r.ing).map(([slug, quantity]) =>

@@ -10,6 +10,7 @@ import { storeOptions } from "@/data/survey";
 import { PreSurvey } from "./PreSurvey";
 import { cn } from "@/lib/utils";
 import { representative } from "@/lib/representative";
+import { matchIngredient } from "@/lib/fridge-match";
 import { surveyDone } from "@/lib/survey-registry";
 import { useSession } from "@/lib/account";
 
@@ -168,7 +169,7 @@ export function Onboarding() {
           ))}
           {app.fridge.length === 0 && <li className="text-[14.5px] text-muted-foreground">Nothing yet.</li>}
         </ul>
-        <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); const name = newItem.trim(); if (!name) return; set({ fridge: [...app.fridge, { id: `manual-${Date.now()}`, name, daysLeft: null, maxDays: 7 }] }); setNewItem(""); }}>
+        <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); const name = newItem.trim(); if (!name) return; const slug = matchIngredient(name); if (slug && app.fridge.some((x) => x.id === slug)) { setNewItem(""); return; } set({ fridge: [...app.fridge, { id: slug ?? `manual-${Date.now()}`, name, daysLeft: null, maxDays: 7 }] }); setNewItem(""); }}>
           <label htmlFor="ob-fridge" className="sr-only">Add a fridge item</label>
           <input id="ob-fridge" value={newItem} maxLength={60} onChange={(e) => setNewItem(e.target.value)} placeholder="Add an item, e.g. milk" className="min-h-11 flex-1 rounded-ctl bg-sheet-2 px-3 text-[14.5px]" />
           <Button type="submit">Add</Button>

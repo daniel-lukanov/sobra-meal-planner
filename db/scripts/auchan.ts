@@ -33,6 +33,9 @@ const SHOP: Record<string, { paths: string[]; include?: RegExp }> = {
   limão: { paths: ["produtos-frescos/fruta/laranjas-clementinas-e-limoes"] },
   "molho de soja": { paths: ["alimentacao/sabores-do-mundo/cozinha-asiatica/molhos-e-temperos"] },
   azeite: { paths: ["alimentacao/mercearia/azeite-oleo-e-vinagre/azeite-virgem-e-extra-virgem", "alimentacao/mercearia/azeite-oleo-e-vinagre/azeite"] },
+  "carne picada de vaca": { paths: ["produtos-frescos/talho/hamburgueres-e-carne-picada", "produtos-frescos/talho/vitela-e-novilho"] },
+  "lombo de porco": { paths: ["produtos-frescos/talho/porco"] },
+  pescada: { paths: ["congelados/peixe/postas-de-peixe"] },
 };
 
 // ---------- parsing ----------
