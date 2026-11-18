@@ -50,15 +50,16 @@ export function PreSurvey({ onDone, onSkip }: { onDone: () => void; onSkip: (how
   };
 
   return (
-    <div className="mx-auto my-8 max-w-2xl rounded-sheet bg-sheet p-6 sm:p-8">
+    <>
+    {/* Always in reach: someone who did the survey before should not have to scroll for this. */}
+    <div className="fixed inset-x-4 bottom-20 z-30 flex justify-center sm:inset-x-auto sm:bottom-6 sm:right-6 md:bottom-6">
+      <Button className="min-h-12 w-full max-w-sm px-5 shadow-float sm:w-auto" disabled={checking} onClick={alreadyDone}>{checking ? "Checking…" : "I already did the survey"}</Button>
+    </div>
+    <div className="mx-auto my-8 max-w-2xl rounded-sheet bg-sheet p-6 pb-24 sm:p-8 sm:pb-8">
       <PraticoLogo />
       <h1 className="mt-6 text-[26px] font-bold">Let's build your week</h1>
       <p className="mt-2 text-muted-foreground">Pratico plans your week's dinners around what's on promotion at your Lisbon supermarkets and what's already in your fridge. Pick meals you'll actually enjoy, get a shopping list priced from this week's deals, and waste less food. Free to try, no account needed.</p>
 
-      <p className="mt-4 text-[14px]">
-        Already answered these before?{" "}
-        <button type="button" disabled={checking} onClick={alreadyDone} className="font-semibold underline underline-offset-4">{checking ? "Checking…" : "I already did the survey"}</button>
-      </p>
 
       <div className="mt-6 space-y-6">
         <Question id="store" title="Which supermarkets do you shop at?" hint="Pick one or more. We price each item at the cheapest of them." error={errors["store"]}>
@@ -88,5 +89,6 @@ export function PreSurvey({ onDone, onSkip }: { onDone: () => void; onSkip: (how
         <Button className="w-full sm:w-auto" onClick={finish}>Continue</Button>
       </div>
     </div>
+    </>
   );
 }

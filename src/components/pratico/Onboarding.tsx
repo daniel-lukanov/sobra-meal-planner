@@ -9,6 +9,7 @@ import { PraticoLogo, StoreBadge } from "./Brand";
 import { storeOptions } from "@/data/survey";
 import { PreSurvey } from "./PreSurvey";
 import { cn } from "@/lib/utils";
+import { representative } from "@/lib/representative";
 import { surveyDone } from "@/lib/survey-registry";
 import { useSession } from "@/lib/account";
 
@@ -45,6 +46,11 @@ export function Onboarding() {
   }, [step, account]);
   const prefs = prefsOf(app);
   const fitting = useMemo(() => (ctx.pool ?? []).filter((m) => fitsPrefs(m, prefs)), [ctx.pool, app.lifestyle, app.proteins, app.allergens]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Not all of them: a varied 15 across cuisines, proteins and meal types. Anything already picked stays in the list.
+  const shown = useMemo(() => {
+    const first = representative(fitting, 15, app.goals);
+    return [...first, ...fitting.filter((m) => picked.includes(m.title) && !first.includes(m))];
+  }, [fitting, app.goals]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const finish = () => {
     // The chosen dinners decide which kinds of dinner the week is built from.
@@ -133,7 +139,7 @@ export function Onboarding() {
         <p className="mt-2 text-muted-foreground">Choose at least {MIN_MEALS}. Only dinners that fit your proteins and allergies are shown.</p>
         {fitting.length === 0 ? <p className="mt-5 text-[15px]">{ctx.live ? "No dinner fits these settings yet. Go back and relax one, or continue and we will tell you on Home." : "Loading dinners…"}</p> : (
           <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {fitting.map((m) => {
+            {shown.map((m) => {
               const on = picked.includes(m.title);
               return (
                 <li key={m.title}>
