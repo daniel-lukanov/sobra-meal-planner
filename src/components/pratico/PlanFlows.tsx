@@ -58,19 +58,21 @@ export function useCookFlow() {
   const todaySlot = slots.find((s) => s.day === todayName());
   const missingOf = (m: Meal) => m.uses.filter((u) => !covered(u));
   const go = (m: Meal) => { setStep(null); if (m.slug) navigate({ to: "/cook", search: { recipe: m.slug } }); };
-  const check = (m: Meal, from?: number) => (missingOf(m).length ? setStep({ meal: m, ...(from !== undefined ? { from } : {}), stage: "gaps" }) : go(m));
+  const needsMove = (from?: number) => mode === "prep" && from !== undefined && !!todaySlot && todaySlot.i !== from;
+  /** Ingredients are settled. A dinner from another day then asks whether to move it to today, otherwise cooking starts. */
+  const afterGaps = (m: Meal, from?: number) => (needsMove(from) ? setStep({ meal: m, ...(from !== undefined ? { from } : {}), stage: "move" }) : go(m));
 
-  /** Start cooking `meal`; `from` is its day row when it comes from the week. */
+  /** Start cooking `meal`; `from` is its day row when it comes from the week. Ingredients come first, so the person can still back out. */
   const start = (meal: Meal, from?: number) => {
-    if (mode === "prep" && from !== undefined && todaySlot && todaySlot.i !== from) { setStep({ meal, from, stage: "move" }); return; }
-    check(meal, from);
+    if (missingOf(meal).length) setStep({ meal, ...(from !== undefined ? { from } : {}), stage: "gaps" });
+    else afterGaps(meal, from);
   };
   const swapWithToday = () => {
     if (!step || step.from === undefined || !todaySlot) return;
     const fromSlot = slots.find((s) => s.i === step.from)!;
     set({ chosen: { ...chosen, [todaySlot.i]: step.meal.title, [step.from]: todaySlot.meal?.title ?? REMOVED }, weekAccepted: false });
     toast(todaySlot.meal ? `${step.meal.title} is today now, ${todaySlot.meal.title} moved to ${fromSlot.day}.` : `${step.meal.title} is today now.`);
-    check(step.meal, todaySlot.i);
+    go(step.meal);
   };
 
   const missing = step ? missingOf(step.meal) : [];
@@ -82,7 +84,7 @@ export function useCookFlow() {
         sub={todaySlot?.meal ? `${step?.meal.title} moves to today, and today's ${todaySlot.meal.title} moves to ${fromDay}. Your shopping list stays the same.` : `${step?.meal.title} moves to today.`}
         footer={<>
           <Button variant="quiet" onClick={() => setStep(null)}>Cancel</Button>
-          <Button variant="secondary" onClick={() => step && check(step.meal, step.from)}>Keep the order</Button>
+          <Button variant="secondary" onClick={() => step && go(step.meal)}>Keep the order</Button>
           <Button onClick={swapWithToday}>Swap the days</Button>
         </>} />
       <Pop open={step?.stage === "gaps"} onClose={() => setStep(null)}
@@ -90,7 +92,7 @@ export function useCookFlow() {
         sub={missing.length ? `${step?.meal.title} needs these, and we can't see them in your fridge. Mark what you have, or pick another dinner.` : "Ready when you are."}
         footer={<>
           <Button variant="secondary" onClick={() => setStep(null)}>Pick another dinner</Button>
-          <Button disabled={missing.length > 0} onClick={() => step && go(step.meal)}>Start cooking</Button>
+          <Button disabled={missing.length > 0} onClick={() => step && afterGaps(step.meal, step.from)}>{needsMove(step?.from) ? "Continue" : "Start cooking"}</Button>
         </>}>
         {missing.length > 0 && (
           <ul className="divide-y divide-rule">

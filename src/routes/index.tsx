@@ -61,7 +61,8 @@ function Home() {
       <WeekStatusNote />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">{mode === "prep" ? <WeekSection /> : <TonightSection />}</div>
-        <MissingPanel />
+        {/* The plan sets the height; the list scrolls inside it. */}
+        <div className="relative min-h-[360px]"><MissingPanel /></div>
       </div>
       <Suggested />
       <TopDeals />
@@ -134,11 +135,11 @@ function WeekSection() {
         </p>
       )}
 
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {slots.map((s, k) => {
           const isToday = s.day === day;
           if (!s.meal) return (
-            <li key={s.i} className={cn("flex min-h-[188px] flex-col rounded-[8px] border-2 border-dashed border-rule p-2.5", isToday && "border-basil")}>
+            <li key={s.i} className={cn("flex min-h-[170px] flex-col rounded-[8px] border-2 border-dashed border-rule p-2.5", isToday && "border-basil")}>
               <Tape alt={k % 2 === 1}>{s.day}</Tape>
               <p className="mt-3 text-[14px] font-semibold">Free</p>
               <p className="text-[12.5px] text-muted-foreground">Add one of the suggestions below.</p>
@@ -146,19 +147,21 @@ function WeekSection() {
           );
           return (
             <li key={s.i} className={cn("flex flex-col overflow-hidden rounded-[8px] bg-sheet-2", isToday && "ring-2 ring-basil")}>
-              <div className="relative h-20">
-                <img src={imageOf(s.meal)} alt="" width={240} height={160} loading="lazy" className="size-full object-cover" />
+              <div className="relative h-24">
+                <img src={imageOf(s.meal)} alt="" width={320} height={200} loading="lazy" className="size-full object-cover" />
                 <div className="absolute left-1.5 top-1.5"><Tape alt={k % 2 === 1}>{isToday ? `${s.day} · today` : s.day}</Tape></div>
               </div>
               <div className="flex flex-1 flex-col p-2.5">
                 {s.meal.slug ? <Link to="/recipe/$slug" params={{ slug: s.meal.slug }} className="line-clamp-2 text-[13.5px] font-semibold leading-snug hover:underline">{s.meal.title}</Link>
                   : <p className="line-clamp-2 text-[13.5px] font-semibold leading-snug">{s.meal.title}</p>}
-                <div className="mt-auto flex items-center gap-1 pt-2">
-                  <button type="button" onClick={() => cook.start(s.meal!, s.i)} className="press inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-[6px] bg-basil px-2 text-[12.5px] font-semibold text-basil-ink">
+                <div className="mt-auto space-y-1 pt-2">
+                  <button type="button" onClick={() => cook.start(s.meal!, s.i)} className="press inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-[6px] bg-basil px-2 text-[13px] font-semibold text-basil-ink">
                     <ChefHat className="size-3.5" aria-hidden />Cook
                   </button>
-                  <button type="button" aria-label={`Swap ${s.meal.title}`} onClick={() => setSwapping(s.i)} className="press flex size-9 items-center justify-center rounded-[6px] hover:bg-sheet-hover"><RefreshCw className="size-3.5" aria-hidden /></button>
-                  <button type="button" aria-label={`Remove ${s.meal.title}`} onClick={() => remove(s.i, s.day)} className="press flex size-9 items-center justify-center rounded-[6px] hover:bg-sheet-hover"><Trash2 className="size-3.5" aria-hidden /></button>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => setSwapping(s.i)} className="press inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-[6px] text-[12.5px] hover:bg-sheet-hover"><RefreshCw className="size-3.5" aria-hidden />Swap</button>
+                    <button type="button" aria-label={`Remove ${s.meal.title}`} onClick={() => remove(s.i, s.day)} className="press inline-flex min-h-9 flex-1 items-center justify-center gap-1 rounded-[6px] text-[12.5px] hover:bg-sheet-hover"><Trash2 className="size-3.5" aria-hidden />Remove</button>
+                  </div>
                 </div>
               </div>
             </li>
@@ -242,14 +245,14 @@ function MissingPanel() {
   const marked = all.filter((i) => have.includes(i.id));
   if (status !== "ready") return null;
   return (
-    <aside aria-labelledby="missing" className="flex flex-col rounded-sheet bg-sheet p-4 md:p-5">
+    <aside aria-labelledby="missing" className="flex flex-col rounded-sheet bg-sheet p-4 md:p-5 lg:absolute lg:inset-0">
       <h2 id="missing" className="text-[20px]">Missing ingredients</h2>
       <p className="mt-1 text-[13.5px] text-muted-foreground">
         {planned.length === 0 ? (mode === "daily" ? "Pick tonight's dinner to see what it needs." : "Add dinners to see what they need.")
           : `What ${mode === "daily" ? "tonight's dinner needs" : "this week's dinners need"} and we can't see in your fridge. Anything you don't mark stays on your shopping list.`}
       </p>
       {planned.length > 0 && (missing.length === 0 ? <p className="mt-4 flex items-center gap-2 text-[15px] font-medium text-basil"><Check className="size-4" aria-hidden />You have everything.</p> : (
-        <ul className="mt-3 divide-y divide-rule">
+        <ul className="mt-3 min-h-0 flex-1 divide-y divide-rule overflow-y-auto pr-1">
           {missing.map((it) => (
             <li key={it.id} className="flex items-center justify-between gap-2 py-2">
               <span className="min-w-0">
@@ -267,7 +270,7 @@ function MissingPanel() {
           <button type="button" className="underline underline-offset-4" onClick={() => set({ have: have.filter((h) => !marked.some((m) => m.id === h)) })}>Undo</button>
         </p>
       )}
-      <div className="mt-auto pt-4">
+      <div className="mt-auto shrink-0 pt-4">
         <Link to="/list" className="inline-flex min-h-11 w-full items-center justify-center rounded-ctl bg-sheet-2 px-4 text-[14.5px] font-semibold hover:bg-sheet-hover">
           Shopping list ({missing.length}){missing.length ? ` · ${eur(missing.reduce((a, i) => a + (i.price ?? 0), 0))}` : ""}
         </Link>
