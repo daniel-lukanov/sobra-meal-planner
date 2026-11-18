@@ -4,7 +4,7 @@ import { applyEvent, newSession, type EventName, type ExperimentSession } from "
 import { saveExperimentSession } from "./experiment.functions";
 
 /** Tour steps 1 to 3 point at a feature, step 4 is the closing card. */
-export type TourStep = 1 | 2 | 3 | 4;
+export type TourStep = 1 | 2 | 3 | 4 | 5 | 6;
 export const GHOST_KEY = "sobra_admin_ghost_mode";
 export const isGhost = () => typeof window !== "undefined" && window.localStorage.getItem(GHOST_KEY) === "1";
 

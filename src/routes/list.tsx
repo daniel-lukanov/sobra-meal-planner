@@ -34,7 +34,7 @@ function List() {
   return (
     <>
       <PageHeader small={`Prices from ${store}`} title="Your shopping list" sub="Only what your dinners need. Things already in your fridge are crossed out." />
-      <section aria-label="List total" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sheet bg-sheet p-5">
+      <section aria-label="List total" data-tour="4" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sheet bg-sheet p-5">
         <div className="num">
           <p className="text-[26px] font-bold leading-none">{eur(listTotal(items))}</p>
           <p className="mt-1 text-[13.5px] text-muted-foreground">{toBuy.length} items to buy. {planning.listNote(cards)}</p>
