@@ -1,4 +1,3 @@
-import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useApp } from "@/lib/store";
 import { useExp } from "@/lib/experiment";
@@ -10,11 +9,10 @@ import { cn } from "@/lib/utils";
 import type { StoreName } from "@/data/stores";
 
 /** Block 1: one required screen before the app. */
-export function PreSurvey() {
+export function PreSurvey({ onDone }: { onDone: () => void }) {
   const update = useExp((s) => s.update);
   const session = useExp((s) => s.session)!;
   const setApp = useApp((s) => s.set);
-  const navigate = useNavigate();
   const [picked, setPicked] = useState<StoreName[]>(session.store ? [session.store as StoreName] : []);
   const [fb, setFb] = useState<string | null>(session.b1_fallback_dinners);
   const [pains, setPains] = useState<string[]>(session.b1_pains);
@@ -34,11 +32,9 @@ export function PreSurvey() {
       { id: "pains", ok: pains.length > 0 },
       { id: "work", ok: work.length > 0 },
     ])) return;
-    update({ store: picked[0]!, b1_fallback_dinners: fb, b1_pains: pains, b1_workarounds: work, survey_pre_completed: true }, true);
-    if (session.ref && session.utm_source === "whatsapp_share") useExp.getState().track("referral_activated");
-    setApp({ setupDone: true, stores: picked, ...(session.shared_plan_id ? {} : { mode: session.ab_plan_variant === "A_weekly_prep" ? "prep" : "daily" }) });
-    useExp.getState().setTour(1);
-    navigate({ to: "/" });
+    update({ store: picked[0]!, b1_fallback_dinners: fb, b1_pains: pains, b1_workarounds: work }, true);
+    setApp({ stores: picked });
+    onDone();
   };
 
   return (
@@ -72,7 +68,7 @@ export function PreSurvey() {
       </div>
 
       <div className="mt-8 border-t border-rule pt-6">
-        <Button className="w-full sm:w-auto" onClick={finish}>Show my plan</Button>
+        <Button className="w-full sm:w-auto" onClick={finish}>Continue</Button>
       </div>
     </div>
   );

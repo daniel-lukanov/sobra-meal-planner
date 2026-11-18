@@ -6,7 +6,7 @@ import { PraticoLogo } from "./Brand";
 import { UserMenu } from "./UserMenu";
 import { SyncChoice } from "./SyncChoice";
 import { useExp } from "@/lib/experiment";
-import { PreSurvey } from "./PreSurvey";
+import { Onboarding } from "./Onboarding";
 import { FeedbackPill } from "./VerdictModal";
 import { GuidedTour } from "./GuidedTour";
 import { isGhost } from "@/lib/experiment";
@@ -89,7 +89,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <div className="min-h-screen">
       <TopNav minimal={showSurvey || isInsights || isShared} />
       <main className="mx-auto max-w-6xl px-4 pb-32 pt-7 sm:px-8">
-        {showSurvey ? <PreSurvey /> : <div key={pathname} className="fade-route">{children}</div>}
+        {showSurvey ? <Onboarding /> : <div key={pathname} className="fade-route">{children}</div>}
       </main>
       <SyncChoice />
       {showStudy && <><GuidedTour /><FeedbackPill /></>}
