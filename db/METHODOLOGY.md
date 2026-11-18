@@ -30,6 +30,15 @@ Shelf life and allergens decide what someone eats, so they follow stricter rules
 - Every new table gets row level security in the same migration. Run the Supabase security advisor after each migration.
 - Work on a branch in the fork and let the repo owner merge; do not rewrite pushed history.
 
+## 3b. The pivot (savings check): additive only
+
+The meal-planner version is kept as git tag `mealplanner-final` (commit 760badc) and a database backup (db/scripts/backup.sh).
+To keep that version runnable on the same database:
+- Only add: new tables, new views, new nullable columns. Never drop, rename or change the type of an existing table or column.
+- Never delete or rewrite meal-planner rows (recipes, plans, fridge, households, sessions). Old sessions get survey_version = 'v2_mealplan', nothing else.
+- Check every migration Lovable proposes against these two rules before it is applied.
+- The scrapers keep running as they are.
+
 ## 4. Email
 
 Lovable's built-in emails work only with Lovable Cloud (and a paid plan). Because our data lives in our own Supabase project, email (invites, sign-up confirmation) is sent through our own sender, for example Resend with a verified domain, set up as custom SMTP in Supabase. Supabase's built-in sender is not for real users.

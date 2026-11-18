@@ -34,3 +34,5 @@ dist-ssr
 # Sobra data layer: raw scrapes and local secrets
 data/raw/
 db/.env
+db/backups/
+supabase/.temp/
