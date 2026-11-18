@@ -101,7 +101,7 @@ async function download(): Promise<string> {
   let last = "";
   for (const url of urls) {
     try {
-      const res = await fetch(url, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; sobra-prototype)", Accept: "application/json,*/*" } });
+      const res = await fetch(url, { redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (compatible; pratico-prototype)", Accept: "application/json,*/*" } });
       const body = await res.text();
       if (body.trimStart().startsWith("{")) return body;
       last = `${url} answered ${res.status} with a web page instead of JSON: ${body.trimStart().slice(0, 120).replace(/\s+/g, " ")}`;

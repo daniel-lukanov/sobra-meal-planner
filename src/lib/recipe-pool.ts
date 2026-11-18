@@ -3,11 +3,11 @@
 import type { DayRow, Meal, PlanRow, PrepRow } from "@/data/plan";
 import type { Step } from "@/data/cook";
 import type { CatIngredient, CatLine } from "@/lib/plan-from-db";
-import { fitsDiet } from "@/lib/week";
+import { fitsPrefs, goalScore, type Prefs } from "@/lib/prefs";
 
-export type DbRecipe = { id: string; slug: string; title: string; meal_type: string; summary: string | null; how: string | null; minutes: number | null; image_url: string | null; steps_relaxed: unknown; steps_fast: unknown };
+export type DbRecipe = { id: string; slug: string; title: string; meal_type: string; summary: string | null; how: string | null; minutes: number | null; image_url: string | null; cuisine?: string | null; steps_relaxed: unknown; steps_fast: unknown };
 export type DbFlags = { recipe_id: string; has_pork: boolean; has_beef: boolean; has_poultry: boolean; has_other_meat: boolean; has_fish: boolean; has_shellfish: boolean; has_dairy: boolean; has_egg: boolean };
-export type PoolInput = { recipes: DbRecipe[]; lines: CatLine[]; ingredients: CatIngredient[]; flags: DbFlags[]; tags: { recipe_id: string; tag: string }[] };
+export type PoolInput = { recipes: DbRecipe[]; lines: CatLine[]; ingredients: CatIngredient[]; flags: DbFlags[]; tags: { recipe_id: string; tag: string }[]; allergens?: { recipe_id: string; allergen_code: string }[] };
 
 const asSteps = (v: unknown): Step[] => (Array.isArray(v) ? v.filter((x): x is Step => !!x && typeof (x as Step).text === "string") : []);
 
@@ -30,8 +30,12 @@ export function buildPool(inp: PoolInput, fallbackPrice = 2): Meal[] {
     const f = flags.get(r.id);
     out.push({
       title: r.title, how: r.how ?? "", uses, names, price: fallbackPrice, slug: r.slug, type: r.meal_type, summary: r.summary ?? "",
-      ...(r.minutes ? { minutes: r.minutes } : {}), ...(r.image_url ? { image: r.image_url } : {}),
-      flags: { meat: !!f && (f.has_pork || f.has_beef || f.has_poultry || f.has_other_meat), fish: !!f && (f.has_fish || f.has_shellfish), egg: !!f?.has_egg, dairy: !!f?.has_dairy, pork: !!f?.has_pork },
+      ...(r.minutes ? { minutes: r.minutes } : {}), ...(r.image_url ? { image: r.image_url } : {}), ...(r.cuisine ? { cuisine: r.cuisine } : {}),
+      flags: {
+        meat: !!f && (f.has_pork || f.has_beef || f.has_poultry || f.has_other_meat), fish: !!f && (f.has_fish || f.has_shellfish), egg: !!f?.has_egg, dairy: !!f?.has_dairy, pork: !!f?.has_pork,
+        poultry: !!f?.has_poultry, beef: !!f?.has_beef, otherMeat: !!f?.has_other_meat, shellfish: !!f?.has_shellfish, finfish: !!f?.has_fish,
+      },
+      allergens: (inp.allergens ?? []).filter((a) => a.recipe_id === r.id).map((a) => a.allergen_code),
       tags: inp.tags.filter((t) => t.recipe_id === r.id).map((t) => t.tag),
       steps: { relaxed, fast: fast.length ? fast : relaxed },
     });
@@ -42,7 +46,7 @@ export function buildPool(inp: PoolInput, fallbackPrice = 2): Meal[] {
 /** Survey meal-type labels ("Rice bowls") to database slugs ("rice-bowls"). */
 export const typeSlug = (label: string) => label.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-export type PlanOpts = { diet: string[]; types: string[]; priced?: (m: Meal) => boolean };
+export type PlanOpts = { prefs: Prefs; types: string[]; priced?: (m: Meal) => boolean; cheaper?: (m: Meal) => number };
 
 const HALVES: { prep: { day: string; title: string }; days: string[] }[] = [
   { prep: { day: "Sun", title: "Prep session 1" }, days: ["Mon", "Tue", "Wed"] },
@@ -54,16 +58,16 @@ const protein = (m: Meal) => (m.flags?.meat ? "meat" : m.flags?.fish ? "fish" : 
 const tie = (t: string) => [...t].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 997, 7) / 10000;
 
 /**
- * Six dinners in two halves of three, each half built around shared prepped bases (cook once, eat three times).
- * Same shape as the static week: prep, three dinners, prep, three dinners, each dinner with two options.
- * Returns null when too few dinners fit the diet. Deterministic: the same inputs give the same week.
+ * Up to six dinners in two halves of three, each half built around shared prepped bases (cook once, eat three times).
+ * Same shape as the static week: prep, three dinners, prep, three dinners, each dinner with two options, then a free Sunday.
+ * When fewer than six dinners fit the person's diet and allergies the week is shorter; it is empty when none fit.
+ * Never adds a dinner that breaks an allergy. Deterministic: the same inputs give the same week.
  */
-export function planWeek(pool: Meal[], o: PlanOpts): PlanRow[] | null {
-  const eligible = pool.filter((m) => fitsDiet(m, o.diet));
-  if (eligible.length < 6) return null;
+export function planWeek(pool: Meal[], o: PlanOpts): PlanRow[] {
+  const eligible = pool.filter((m) => fitsPrefs(m, o.prefs));
+  if (eligible.length === 0) return [];
   const wanted = new Set(o.types.map(typeSlug));
-  const wantProtein = o.diet.includes("High protein");
-  const popularity = new Map<string, number>();
+    const popularity = new Map<string, number>();
   for (const m of eligible) for (const u of m.uses) popularity.set(u, (popularity.get(u) ?? 0) + 1);
 
   const used = new Set<string>();
@@ -73,7 +77,8 @@ export function planWeek(pool: Meal[], o: PlanOpts): PlanRow[] | null {
     const pop = half.length === 0 ? m.uses.reduce((a, u) => a + (popularity.get(u) ?? 0), 0) / (eligible.length * 4) : 0;
     return 2 * shared + pop
       + (m.type && wanted.has(m.type) ? 2 : 0)
-      + (wantProtein && m.tags?.includes("high-protein") ? 1.5 : 0)
+      + 1.5 * goalScore(m, o.prefs.goals)
+      + (o.prefs.goals.includes("budget") && o.cheaper ? -0.8 * o.cheaper(m) : 0)
       + (o.priced?.(m) ? 1.5 : 0)
       - 2 * (usedTypes.get(m.type ?? "") ?? 0) - 1 * (usedProtein.get(protein(m)) ?? 0)
       + tie(m.title);
@@ -85,11 +90,12 @@ export function planWeek(pool: Meal[], o: PlanOpts): PlanRow[] | null {
     const picks: Meal[] = [];
     for (let k = 0; k < 3; k++) {
       const best = rank(picks, new Set())[0]?.m;
-      if (!best) return null;
+      if (!best) break;
       picks.push(best); used.add(best.title);
       usedTypes.set(best.type ?? "", (usedTypes.get(best.type ?? "") ?? 0) + 1);
       usedProtein.set(protein(best), (usedProtein.get(protein(best)) ?? 0) + 1);
     }
+    if (picks.length === 0) break;
     // Second option for each day: the best remaining dinner that shares bases with this half.
     const shown = new Set(picks.map((p) => p.title));
     const days: DayRow[] = picks.map((p, k) => {
@@ -110,5 +116,7 @@ export function planWeek(pool: Meal[], o: PlanOpts): PlanRow[] | null {
     };
     rows.push(prep, ...days);
   }
+  // The seventh day. Sunday is a prep day, so it starts free: the person adds a dinner from the suggestions if they want one.
+  rows.push({ kind: "day", day: "Sun", options: [] });
   return rows;
 }

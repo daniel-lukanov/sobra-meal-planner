@@ -1,4 +1,4 @@
-# How we work on the Sobra data layer
+# How we work on the pratico data layer
 
 Working principles for everyone (and every AI agent) touching `db/`, the scrapers and the imports.
 They exist because the database runs on Supabase's free plan and because some of the data is food-safety data.

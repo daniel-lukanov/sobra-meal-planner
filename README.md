@@ -1,4 +1,4 @@
-# Sobra
+# pratico
 
 Pls follow the instructions in the attached md slide and start building.
 

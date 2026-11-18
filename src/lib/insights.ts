@@ -121,7 +121,7 @@ export function referralEntries(rows: R[]) {
 
 const csvCols: (keyof R)[] = [
   "session_id", "created_at", "my_ref", "ref", "utm_source", "utm_content", "shared_plan_id", "visits", "first_session", "ab_plan_variant", "ab_cta_variant", "store",
-  "survey_pre_completed", "b1_fallback_dinners", "b1_pains", "b1_pains_order", "b1_workarounds",
+  "survey_pre_completed", "b1_fallback_dinners", "b1_pains", "b1_pains_order", "b1_workarounds", "b1_skip",
   "opened_weekly", "opened_daily", "b2_mode_pref", "b2_mode_reason", "b2_prep_blockers",
   "survey_post_completed", "b3_receipt", "b3_receipt_blockers", "b3_keep_one", "b3_deal_brand", "b3_pmf", "b3_stoppers", "b3_stoppers_other",
   "cta_clicked", "cta_contact", "raffle_email", "ig_follow_clicked",

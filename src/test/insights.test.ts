@@ -3,6 +3,7 @@ import { applyEvent, attributionFrom, newSession, type ExperimentSession } from 
 import { activation, costPerTester, funnel, isBounce } from "@/lib/insights";
 import { normalizePasscode } from "@/lib/experiment.functions";
 import { PAIN_NONE, toggleMulti } from "@/data/survey";
+import { dietToPrefs } from "@/lib/prefs";
 import { alternatives, neededItems, perPerson, shareText, weekCards, weekTotal } from "@/lib/week";
 
 const row = (p: Partial<ExperimentSession> = {}) => ({ ...newSession(), ...p });
@@ -56,7 +57,7 @@ describe("plan", () => {
     expect(weekTotal(weekCards({}))).toBe(11.85);
   });
   it("swapping a dinner changes the total and shopping list", () => {
-    const alt = alternatives(1, {}, ["Meat", "Fish"]);
+    const alt = alternatives(1, {}, dietToPrefs(["Meat", "Fish"]));
     expect(alt.length).toBeGreaterThan(0);
     expect(alt.length).toBeLessThanOrEqual(3);
     const chosen = { 1: "Chicken fried rice" };
@@ -64,7 +65,7 @@ describe("plan", () => {
     expect(neededItems(weekCards(chosen)).find((i) => i.id === "rice")!.dinners).toBe(3);
   });
   it("never offers meat to a vegetarian", () => {
-    expect(alternatives(1, {}, ["Vegetarian"]).some((m) => m.uses.includes("chicken") || m.uses.includes("tuna"))).toBe(false);
+    expect(alternatives(1, {}, dietToPrefs(["Vegetarian"])).some((m) => m.uses.includes("chicken") || m.uses.includes("tuna"))).toBe(false);
   });
   it("splits the share text per person and drops the link when it failed", () => {
     expect(perPerson(11.85, 2)).toBe(5.93);

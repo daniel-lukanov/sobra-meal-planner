@@ -3,8 +3,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { pageHead } from "@/lib/head";
 import { inviteLink, signOut, useHousehold, useHouseholdActions, useSession } from "@/lib/account";
-import { AccountForm } from "@/components/sobra/AccountForm";
-import { Button, Chip, PageHeader } from "@/components/sobra/ui";
+import { AccountForm } from "@/components/pratico/AccountForm";
+import { Button, Chip, PageHeader } from "@/components/pratico/ui";
 
 export const Route = createFileRoute("/household")({
   head: pageHead("Household", "Invite the people you cook and shop with, and share one fridge and one plan."),
@@ -22,7 +22,7 @@ function HouseholdPage() {
     return (
       <>
         <PageHeader small="Household" title="Cook and shop together" sub="Create an account, then invite the people you live with. Everyone sees the same fridge, the same plan and the same ticks on the shopping list." />
-        <div className="max-w-md rounded-sheet bg-sheet p-5"><AccountForm /></div>
+        <div data-tour="5" className="max-w-md rounded-sheet bg-sheet p-5"><AccountForm /></div>
       </>
     );
   }
@@ -37,7 +37,7 @@ function HouseholdPage() {
       {house.error && <p role="alert" className="mb-4 text-tomato">Could not load your household. Reload the page and try again.</p>}
       {h && (
         <div className="grid max-w-3xl grid-cols-1 gap-5 md:grid-cols-2">
-          <section aria-labelledby="mem" className="card bg-sheet p-5">
+          <section aria-labelledby="mem" data-tour="5" className="card bg-sheet p-5">
             <h2 id="mem" className="text-[18px] font-bold">People ({h.members.length})</h2>
             <ul className="mt-3 divide-y divide-rule">
               {h.members.map((m) => (

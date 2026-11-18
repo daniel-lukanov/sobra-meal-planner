@@ -1,4 +1,4 @@
-# Sobra data layer (own Supabase project)
+# pratico data layer (own Supabase project)
 
 SQL for the Supabase project that holds products, prices, promotions, recipes, users, households,
 fridge, plans and receipts. It lives in `db/` on purpose: Lovable owns `supabase/migrations/` and
@@ -28,7 +28,7 @@ Run the files in order (they are already applied to project `pjwepyjcahvascttlar
 
 ## App connection
 
-`src/integrations/sobra-db/client.ts` is the app's client for this project (publishable key only) and `types.ts` is generated from it. Both are new files; Lovable's `src/integrations/supabase/*` is untouched.
+`src/integrations/pratico-db/client.ts` is the app's client for this project (publishable key only) and `types.ts` is generated from it. Both are new files; Lovable's `src/integrations/supabase/*` is untouched.
 
 ## Scripts (run on your own machine with Bun)
 

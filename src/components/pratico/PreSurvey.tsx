@@ -1,21 +1,20 @@
-import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useApp } from "@/lib/store";
 import { useExp } from "@/lib/experiment";
 import { PAIN_NONE, WORK_NONE, fallbackOptions, painShuffled, shuffle, storeOptions, workaroundOptions } from "@/data/survey";
 import { Button } from "./ui";
-import { SobraLogo, StoreBadge } from "./Brand";
+import { PraticoLogo, StoreBadge } from "./Brand";
 import { Multi, Question, Single, useRequired } from "./form";
 import { cn } from "@/lib/utils";
+import { surveyDone, surveyRegister } from "@/lib/survey-registry";
 import type { StoreName } from "@/data/stores";
 
 /** Block 1: one required screen before the app. */
-export function PreSurvey() {
+export function PreSurvey({ onDone, onSkip }: { onDone: () => void; onSkip: (how: "matched" | "not_matched") => void }) {
   const update = useExp((s) => s.update);
   const session = useExp((s) => s.session)!;
   const setApp = useApp((s) => s.set);
-  const navigate = useNavigate();
-  const [store, setStore] = useState<string | null>(session.store);
+  const [picked, setPicked] = useState<StoreName[]>(session.store ? [session.store as StoreName] : []);
   const [fb, setFb] = useState<string | null>(session.b1_fallback_dinners);
   const [pains, setPains] = useState<string[]>(session.b1_pains);
   const [work, setWork] = useState<string[]>(session.b1_workarounds);
@@ -27,32 +26,47 @@ export function PreSurvey() {
   }, [session.b1_pains_order.length, update]);
   const painOrder = session.b1_pains_order.length ? session.b1_pains_order : [...painShuffled, PAIN_NONE];
 
+  const [checking, setChecking] = useState(false);
+  /** "I already did the survey": a matching device or account skips it; otherwise we take their word and mark it. */
+  const alreadyDone = async () => {
+    setChecking(true);
+    const found = await surveyDone().catch(() => false);
+    if (!found) void surveyRegister(session.session_id, "self_reported_not_matched").catch(() => {});
+    setChecking(false);
+    onSkip(found ? "matched" : "not_matched");
+  };
+
   const finish = () => {
     if (!check([
-      { id: "store", ok: !!store, msg: "Pick your store to continue" },
+      { id: "store", ok: picked.length > 0, msg: "Pick at least one store to continue" },
       { id: "fb", ok: !!fb },
       { id: "pains", ok: pains.length > 0 },
       { id: "work", ok: work.length > 0 },
     ])) return;
-    update({ store, b1_fallback_dinners: fb, b1_pains: pains, b1_workarounds: work, survey_pre_completed: true }, true);
-    if (session.ref && session.utm_source === "whatsapp_share") useExp.getState().track("referral_activated");
-    setApp({ setupDone: true, store: store as StoreName, ...(session.shared_plan_id ? {} : { mode: session.ab_plan_variant === "A_weekly_prep" ? "prep" : "daily" }) });
-    useExp.getState().setTour(1);
-    navigate({ to: "/plan" });
+    update({ store: picked[0]!, b1_fallback_dinners: fb, b1_pains: pains, b1_workarounds: work }, true);
+    setApp({ stores: picked });
+    void surveyRegister(session.session_id, "completed").catch(() => {});
+    onDone();
   };
 
   return (
-    <div className="mx-auto my-8 max-w-2xl rounded-sheet bg-sheet p-6 sm:p-8">
-      <SobraLogo />
+    <>
+    {/* Always in reach: someone who did the survey before should not have to scroll for this. */}
+    <div className="fixed inset-x-4 bottom-20 z-30 flex justify-center sm:inset-x-auto sm:bottom-6 sm:right-6 md:bottom-6">
+      <Button className="min-h-12 w-full max-w-sm px-5 shadow-float sm:w-auto" disabled={checking} onClick={alreadyDone}>{checking ? "Checking…" : "I already did the survey"}</Button>
+    </div>
+    <div className="mx-auto my-8 max-w-2xl rounded-sheet bg-sheet p-6 pb-24 sm:p-8 sm:pb-8">
+      <PraticoLogo />
       <h1 className="mt-6 text-[26px] font-bold">Let's build your week</h1>
-      <p className="mt-2 text-muted-foreground">Pick your store so we can price your dinners. Then 3 quick questions.</p>
+      <p className="mt-2 text-muted-foreground">Pratico plans your week's dinners around what's on promotion at your Lisbon supermarkets and what's already in your fridge. Pick meals you'll actually enjoy, get a shopping list priced from this week's deals, and waste less food. Free to try, no account needed.</p>
+
 
       <div className="mt-6 space-y-6">
-        <Question id="store" title="Pick your store" hint="We need this for the plan" error={errors["store"]}>
+        <Question id="store" title="Which supermarkets do you shop at?" hint="Pick one or more. We price each item at the cheapest of them." error={errors["store"]}>
           <div className="flex flex-wrap gap-2">
             {storeOptions.map((s) => (
-              <button key={s} type="button" aria-label={s} aria-pressed={store === s} onClick={() => { setStore(s); clear("store"); }}
-                className={cn("press min-h-11 rounded-full p-1 ring-2", store === s ? "ring-ink" : "ring-transparent hover:ring-rule")}>
+              <button key={s} type="button" aria-label={s} aria-pressed={picked.includes(s)} onClick={() => { setPicked(picked.includes(s) ? picked.filter((x) => x !== s) : [...picked, s]); clear("store"); }}
+                className={cn("press min-h-11 rounded-full p-1 ring-2", picked.includes(s) ? "ring-ink" : "ring-transparent hover:ring-rule")}>
                 <StoreBadge name={s} className="h-9 px-3" />
               </button>
             ))}
@@ -72,8 +86,9 @@ export function PreSurvey() {
       </div>
 
       <div className="mt-8 border-t border-rule pt-6">
-        <Button className="w-full sm:w-auto" onClick={finish}>Show my plan</Button>
+        <Button className="w-full sm:w-auto" onClick={finish}>Continue</Button>
       </div>
     </div>
+    </>
   );
 }

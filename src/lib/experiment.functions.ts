@@ -10,7 +10,7 @@ export const sessionSchema = z.object({
   session_id: z.string().uuid(), created_at: z.string().max(40), my_ref: z.string().max(20), ref: z.string().max(60).nullable(),
   utm_source: z.string().max(60), utm_content: z.string().max(60).nullable(), shared_plan_id: z.string().uuid().nullable(), visits: n,
   ab_plan_variant: z.enum(planVariants), ab_cta_variant: z.enum(ctaVariants), store: t,
-  survey_pre_completed: b, b1_fallback_dinners: t, b1_pains: arr, b1_pains_order: arr, b1_workarounds: arr,
+  survey_pre_completed: b, b1_fallback_dinners: t, b1_pains: arr, b1_pains_order: arr, b1_workarounds: arr, b1_skip: z.enum(["matched", "not_matched"]).nullable(),
   opened_weekly: b, opened_daily: b, b2_mode_pref: t, b2_mode_reason: t, b2_prep_blockers: arr,
   survey_post_completed: b, b3_receipt: t, b3_receipt_blockers: arr, b3_keep_one: t, b3_deal_brand: t, b3_pmf: t, b3_stoppers: arr, b3_stoppers_other: t,
   cta_clicked: b, cta_contact: z.string().max(200).nullable(), raffle_email: z.string().max(200).nullable(), ig_follow_clicked: b,

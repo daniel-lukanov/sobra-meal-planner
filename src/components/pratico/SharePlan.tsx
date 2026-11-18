@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Minus, Plus } from "lucide-react";
-import { eur, useApp } from "@/lib/store";
+import { eur, storesLabel, useApp } from "@/lib/store";
 import { useExp } from "@/lib/experiment";
 import { createSharedPlan } from "@/lib/experiment.functions";
 import { dailyPicks } from "@/data/plan";
@@ -12,7 +12,8 @@ import { Button } from "./ui";
 
 /** Share the current plan with flatmates on WhatsApp, or copy it. */
 export function SharePlan() {
-  const { store, mode, chosen, people, pick, set } = useApp();
+  const { stores, mode, chosen, people, pick, set } = useApp();
+  const store = storesLabel(stores);
   const create = useServerFn(createSharedPlan);
   const [copied, setCopied] = useState(false);
   const [fallback, setFallback] = useState<string | null>(null);
@@ -29,7 +30,7 @@ export function SharePlan() {
     const s = useExp.getState().session;
     let link: string | null = null;
     try {
-      const r = await create({ data: { sharer_session_id: s?.session_id ?? null, store, mode, people, total, plan: { chosen, dinners, items } } });
+      const r = await create({ data: { sharer_session_id: s?.session_id ?? null, store: stores[0] ?? "Pingo Doce", mode, people, total, plan: { chosen, dinners, items } } });
       if (r.ok) link = `${window.location.origin}/p/${r.id}?ref=${s?.my_ref ?? "direct"}&utm_source=whatsapp_share`;
     } catch { /* share without a link rather than a broken one */ }
     return shareText({ store, dinners, total, people, items, link });

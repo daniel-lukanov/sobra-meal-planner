@@ -11,7 +11,11 @@ export type CatLine = { recipe_id: string; ingredient_id: string; quantity: numb
 export type Catalog = { ingredients: CatIngredient[]; recipes: CatRecipe[]; lines: CatLine[]; prices: PriceRow[] };
 
 /** `covered`: the fridge already holds everything this ingredient needs, so there is nothing to buy. */
-export type ListLine = { id: string; name: string; price: number | null; aisle: string; dinners: number; packs: number; covered: boolean; need: number; have: number; unit: string };
+/** One chain id or several: each ingredient is then priced at the cheapest of them. */
+export type Chains = string | string[];
+const chainSet = (c: Chains) => new Set(Array.isArray(c) ? c : [c]);
+
+export type ListLine = { chain: string | null; id: string; name: string; price: number | null; aisle: string; dinners: number; packs: number; covered: boolean; need: number; have: number; unit: string };
 /** What the fridge holds, by ingredient id: an amount in the ingredient's base unit, or null when the amount is not known (counts as enough). */
 export type Have = Map<string, number | null>;
 
@@ -21,12 +25,12 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 const usableOf = (r: PriceRow): number | null => (r.effective_price && r.price_per_base_unit ? r.effective_price / r.price_per_base_unit : null);
 
 /** Products of an ingredient at one chain; children count for their parent (chicken thighs for chicken), in the parent's unit only. */
-function productsFor(cat: Catalog, ing: CatIngredient, chainId: string): PriceRow[] {
+function productsFor(cat: Catalog, ing: CatIngredient, chainId: Chains): PriceRow[] {
   const ids = new Set([ing.id, ...cat.ingredients.filter((i) => i.parent_id === ing.id).map((i) => i.id)]);
-  return cat.prices.filter((p) => p.chain_id === chainId && p.ingredient_id && ids.has(p.ingredient_id) && p.pack_unit === ing.base_unit && p.effective_price != null && usableOf(p));
+  return cat.prices.filter((p) => chainSet(chainId).has(p.chain_id as string) && p.ingredient_id && ids.has(p.ingredient_id) && p.pack_unit === ing.base_unit && p.effective_price != null && usableOf(p));
 }
 
-export function cheapestUnitPrice(cat: Catalog, ing: CatIngredient, chainId: string): number | null {
+export function cheapestUnitPrice(cat: Catalog, ing: CatIngredient, chainId: Chains): number | null {
   let best: number | null = null;
   for (const p of productsFor(cat, ing, chainId)) if (p.price_per_base_unit != null && (best === null || p.price_per_base_unit < best)) best = p.price_per_base_unit;
   return best;
@@ -37,7 +41,7 @@ const linesOf = (cat: Catalog, recipeId: string) => cat.lines.filter((l) => l.re
 const ingById = (cat: Catalog, id: string) => cat.ingredients.find((i) => i.id === id);
 
 /** Cost of one dinner for `people`, or null when some ingredient has no price at this chain. */
-export function recipeCost(cat: Catalog, title: string, chainId: string, people: number): number | null {
+export function recipeCost(cat: Catalog, title: string, chainId: Chains, people: number): number | null {
   const r = recipeByTitle(cat, title);
   if (!r) return null;
   const scale = people / Math.max(1, r.servings);
@@ -53,7 +57,7 @@ export function recipeCost(cat: Catalog, title: string, chainId: string, people:
 }
 
 /** The cheapest way to buy at least `need` of an ingredient: whole packs of one product. */
-export function cheapestPacks(cat: Catalog, ing: CatIngredient, chainId: string, need: number): { row: PriceRow; packs: number; cost: number } | null {
+export function cheapestPacks(cat: Catalog, ing: CatIngredient, chainId: Chains, need: number): { row: PriceRow; packs: number; cost: number } | null {
   let best: { row: PriceRow; packs: number; cost: number } | null = null;
   for (const row of productsFor(cat, ing, chainId)) {
     const usable = usableOf(row);
@@ -78,7 +82,7 @@ function haveOf(have: Have, ing: CatIngredient): number {
 }
 
 /** Shopping list for the dinners (by recipe title), without pantry staples. Ingredients without a price stay on the list with no price. */
-export function buildShoppingList(cat: Catalog, titles: string[], chainId: string, people: number, have: Have = new Map()): ListLine[] {
+export function buildShoppingList(cat: Catalog, titles: string[], chainId: Chains, people: number, have: Have = new Map()): ListLine[] {
   const need = new Map<string, number>(), dinners = new Map<string, number>();
   for (const t of titles) {
     const r = recipeByTitle(cat, t);
@@ -97,11 +101,11 @@ export function buildShoppingList(cat: Catalog, titles: string[], chainId: strin
     const aisle = AISLE[ing.category] ?? "Pantry";
     const haveQty = haveOf(have, ing);
     const left = qty - haveQty;
-    if (left <= 1e-9) { out.push({ id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0, covered: true, need: qty, have: haveQty, unit: ing.base_unit }); continue; }
+    if (left <= 1e-9) { out.push({ chain: null, id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0, covered: true, need: qty, have: haveQty, unit: ing.base_unit }); continue; }
     const pick = cheapestPacks(cat, ing, chainId, left);
-    if (!pick) { out.push({ id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0, covered: false, need: qty, have: haveQty, unit: ing.base_unit }); continue; }
+    if (!pick) { out.push({ chain: null, id: ing.slug, name: ing.name, price: null, aisle, dinners: dinners.get(id) ?? 0, packs: 0, covered: false, need: qty, have: haveQty, unit: ing.base_unit }); continue; }
     const label = `${pick.row.name_en ?? pick.row.name ?? ing.name} ${formatPack(Number(pick.row.pack_qty), pick.row.pack_unit ?? ing.base_unit)}`;
-    out.push({ id: ing.slug, name: pick.packs > 1 ? `${label} × ${pick.packs}` : label, price: pick.cost, aisle, dinners: dinners.get(id) ?? 0, packs: pick.packs, covered: false, need: qty, have: haveQty, unit: ing.base_unit });
+    out.push({ chain: pick.row.chain_id ?? null, id: ing.slug, name: pick.packs > 1 ? `${label} × ${pick.packs}` : label, price: pick.cost, aisle, dinners: dinners.get(id) ?? 0, packs: pick.packs, covered: false, need: qty, have: haveQty, unit: ing.base_unit });
   }
   const order = Object.values(AISLE);
   return out.sort((a, b) => order.indexOf(a.aisle) - order.indexOf(b.aisle) || a.name.localeCompare(b.name));
@@ -121,4 +125,4 @@ export function weekNeed(cat: Catalog, ingredientId: string, titles: string[], p
 }
 
 /** True when every dinner can be priced at this chain. */
-export const allPriced = (cat: Catalog, titles: string[], chainId: string, people: number) => titles.every((t) => recipeCost(cat, t, chainId, people) !== null);
+export const allPriced = (cat: Catalog, titles: string[], chainId: Chains, people: number) => titles.every((t) => recipeCost(cat, t, chainId, people) !== null);

@@ -3,11 +3,14 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { useExp, type TourStep } from "@/lib/experiment";
 import { Button } from "./ui";
 
-const steps: Record<TourStep, { to: "/plan" | "/deals" | "/fridge" | null; text: string }> = {
-  1: { to: "/plan", text: "This is your week. Switch between Weekly prep and Daily pick to compare. If you'd cook this, tap Accept this week." },
-  2: { to: "/deals", text: "Every deal is checked against the regular price. Price traps are marked. Tap Add to plan on a deal you'd buy." },
+const LAST: TourStep = 6;
+const steps: Record<TourStep, { to: "/" | "/deals" | "/fridge" | "/list" | "/household" | null; text: string }> = {
+  1: { to: "/", text: "This is your week. Start cooking any day, swap or remove dinners, and mark what you already have. If you would cook this, tap Accept this week." },
+  2: { to: "/deals", text: "Every deal is checked against the regular price. Price traps are marked. Tap Use in a dinner on a deal to see the recipes it fits." },
   3: { to: "/fridge", text: "After shopping you could snap your receipt here and pratico fills your fridge. Try it with the sample receipt or skip." },
-  4: { to: null, text: "That's the tour. Look around as long as you like. When you're done, tap Give feedback." },
+  4: { to: "/list", text: "Your shopping list holds only what your dinners need. What you already have is crossed out, and with several stores each item shows where it is cheapest." },
+  5: { to: "/household", text: "Cook and shop together: create an account and invite the people you live with. You share one fridge, one plan and the same ticks on the list." },
+  6: { to: null, text: "That's the tour. Look around as long as you like. When you're done, tap Give feedback." },
 };
 
 /** Small coachmark next to the feature. No overlay and nothing is locked. */
@@ -19,9 +22,9 @@ export function GuidedTour() {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const cur = step ? steps[step] : null;
 
-  useEffect(() => { if (cur?.to && !pathname.startsWith(cur.to)) navigate({ to: cur.to }); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (cur?.to && (cur.to === "/" ? pathname !== "/" : !pathname.startsWith(cur.to))) navigate({ to: cur.to }); }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
-    if (!step || step === 4) { setPos(null); return; }
+    if (!step || step === LAST) { setPos(null); return; }
     let el: HTMLElement | null = null;
     const place = () => {
       el = document.querySelector<HTMLElement>(`[data-tour="${step}"]`);
@@ -37,16 +40,16 @@ export function GuidedTour() {
   }, [step, pathname]);
 
   if (!step || !cur) return null;
-  const next = () => (step === 4 ? endTour("completed") : setTour((step + 1) as TourStep));
+  const next = () => (step === LAST ? endTour("completed") : setTour((step + 1) as TourStep));
   const style = pos ? { position: "absolute" as const, top: pos.top, left: pos.left } : undefined;
   return (
-    <div role="dialog" aria-label={`Tour, step ${Math.min(step, 3)} of 3`} style={style}
+    <div role="dialog" aria-label={`Tour, step ${Math.min(step, LAST - 1)} of ${LAST - 1}`} style={style}
       className={pos ? "z-30 w-[min(340px,calc(100vw-32px))] border border-ink bg-ground p-4 shadow-float" : "fixed inset-x-4 bottom-20 z-30 mx-auto max-w-sm border border-ink bg-ground p-4 shadow-float md:bottom-6"}>
-      {step < 4 && <p className="eyebrow">Step {step} of 3</p>}
+      {step < LAST && <p className="eyebrow">Step {step} of {LAST - 1}</p>}
       <p className="mt-1 text-[14.5px]">{cur.text}</p>
       <div className="mt-3 flex items-center gap-3">
-        <Button className="min-h-10" onClick={next}>{step === 4 ? "Got it" : "Next"}</Button>
-        {step < 4 && <button type="button" onClick={() => endTour("skipped")} className="min-h-10 text-[13.5px] font-medium text-muted-foreground underline underline-offset-4 hover:text-ink">Skip tour</button>}
+        <Button className="min-h-10" onClick={next}>{step === LAST ? "Got it" : "Next"}</Button>
+        {step < LAST && <button type="button" onClick={() => endTour("skipped")} className="min-h-10 text-[13.5px] font-medium text-muted-foreground underline underline-offset-4 hover:text-ink">Skip tour</button>}
       </div>
     </div>
   );

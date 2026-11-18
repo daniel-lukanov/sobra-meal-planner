@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
-import { sobraDb } from "@/integrations/sobra-db/client";
+import { praticoDb } from "@/integrations/pratico-db/client";
 
 const AUTH_DOMAIN = "users.dream-giants.com";
 export const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
@@ -31,9 +31,9 @@ export async function signUp(f: { username: string; email: string; password: str
   const bad = checkSignUp(f);
   if (bad) return bad;
   const username = f.username.trim().toLowerCase();
-  const free = await sobraDb.rpc("username_available", { name: username });
+  const free = await praticoDb.rpc("username_available", { name: username });
   if (free.data === false) return "That username is taken. Try another one.";
-  const { data, error } = await sobraDb.auth.signUp({
+  const { data, error } = await praticoDb.auth.signUp({
     email: authEmail(username), password: f.password,
     options: { data: { username, contact_email: f.email.trim() } },
   });
@@ -43,19 +43,19 @@ export async function signUp(f: { username: string; email: string; password: str
 }
 
 export async function signIn(username: string, password: string): Promise<string | null> {
-  const { error } = await sobraDb.auth.signInWithPassword({ email: authEmail(username), password });
+  const { error } = await praticoDb.auth.signInWithPassword({ email: authEmail(username), password });
   return error ? friendly(error.message) : null;
 }
 
-export const signOut = () => sobraDb.auth.signOut();
+export const signOut = () => praticoDb.auth.signOut();
 
 /** undefined while loading, null when signed out. */
 export function useSession(): Session | null | undefined {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   useEffect(() => {
     let live = true;
-    void sobraDb.auth.getSession().then(({ data }) => { if (live) setSession(data.session); });
-    const { data: sub } = sobraDb.auth.onAuthStateChange((_e, s) => setSession(s));
+    void praticoDb.auth.getSession().then(({ data }) => { if (live) setSession(data.session); });
+    const { data: sub } = praticoDb.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => { live = false; sub.subscription.unsubscribe(); };
   }, []);
   return session;
@@ -71,11 +71,11 @@ export function useHousehold(userId: string | undefined) {
     enabled: !!userId,
     staleTime: 30_000,
     queryFn: async (): Promise<Household | null> => {
-      const mine = await sobraDb.from("household_member").select("household_id, household(id, name, invite_code)").eq("profile_id", userId!).limit(1).maybeSingle();
+      const mine = await praticoDb.from("household_member").select("household_id, household(id, name, invite_code)").eq("profile_id", userId!).limit(1).maybeSingle();
       if (mine.error) throw mine.error;
       const h = mine.data?.household;
       if (!h) return null;
-      const people = await sobraDb.from("household_member").select("profile_id, role, profile(display_name, username)").eq("household_id", h.id).order("joined_at");
+      const people = await praticoDb.from("household_member").select("profile_id, role, profile(display_name, username)").eq("household_id", h.id).order("joined_at");
       if (people.error) throw people.error;
       return {
         id: h.id, name: h.name, inviteCode: h.invite_code,
@@ -86,7 +86,7 @@ export function useHousehold(userId: string | undefined) {
 }
 
 export async function invitePreview(code: string): Promise<{ name: string; members: number } | null> {
-  const { data, error } = await sobraDb.rpc("household_invite_preview", { code });
+  const { data, error } = await praticoDb.rpc("household_invite_preview", { code });
   return error ? null : data[0] ?? null;
 }
 
@@ -94,8 +94,8 @@ export function useHouseholdActions() {
   const qc = useQueryClient();
   const done = () => qc.invalidateQueries({ queryKey: ["household"] });
   return {
-    join: async (code: string): Promise<string | null> => { const { error } = await sobraDb.rpc("join_household", { code }); await done(); return error ? friendly(error.message) : null; },
-    leave: async (): Promise<string | null> => { const { error } = await sobraDb.rpc("leave_household"); await done(); return error ? friendly(error.message) : null; },
+    join: async (code: string): Promise<string | null> => { const { error } = await praticoDb.rpc("join_household", { code }); await done(); return error ? friendly(error.message) : null; },
+    leave: async (): Promise<string | null> => { const { error } = await praticoDb.rpc("leave_household"); await done(); return error ? friendly(error.message) : null; },
   };
 }
 

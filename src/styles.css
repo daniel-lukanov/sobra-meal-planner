@@ -209,7 +209,7 @@
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @keyframes slide-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 
-[data-sonner-toast][data-styled="true"].sobra-toast {
+[data-sonner-toast][data-styled="true"].pratico-toast {
   background: var(--ink);
   color: var(--sheet);
   border: 0;

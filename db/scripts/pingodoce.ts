@@ -1,4 +1,4 @@
-// Pingo Doce scraper + importer for the Sobra database. Run with Bun:
+// Pingo Doce scraper + importer for the pratico database. Run with Bun:
 //   bun db/scripts/pingodoce.ts                       dry run: fetch category pages, parse, print a summary (writes nothing)
 //   bun db/scripts/pingodoce.ts --query arroz         only one ingredient rule
 //   bun db/scripts/pingodoce.ts --write               also save to the database (needs db/.env)
@@ -33,6 +33,9 @@ const SHOP: Record<string, { paths: string[]; include?: RegExp }> = {
   limão: { paths: ["frutas-e-vegetais/frutas/laranjas-tangerinas-e-limoes"] },
   "molho de soja": { paths: ["mercearia/temperos-e-molhos/outros-molhos-e-temperos"] },
   azeite: { paths: ["mercearia/azeite-oleo-e-vinagre/azeite"] },
+  "carne picada de vaca": { paths: ["talho/vitela-vitelao-e-bovino", "talho/vitela-vitelao-e-bovino/novilho-e-bovino", "congelados/peixe-marisco-e-carne/carne-congelada"] },
+  "lombo de porco": { paths: ["talho/porco"] },
+  pescada: { paths: ["peixaria/peixe/pescada", "congelados/peixe-marisco-e-carne/peixe-congelado"] },
 };
 
 // ---------- parsing ----------

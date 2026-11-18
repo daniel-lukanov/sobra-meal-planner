@@ -323,9 +323,15 @@ export type Database = {
         ]
       }
       household_plan_state: {
-        Row: { checked: Json; chosen: Json; accepted: boolean; household_id: string; updated_at: string; updated_by: string | null }
-        Insert: { checked?: Json; chosen?: Json; accepted?: boolean; household_id: string; updated_at?: string; updated_by?: string | null }
-        Update: { checked?: Json; chosen?: Json; accepted?: boolean; household_id?: string; updated_at?: string; updated_by?: string | null }
+        Row: { checked: Json; chosen: Json; accepted: boolean; household_id: string; updated_at: string; updated_by: string | null; stores: string[]; have: string[] }
+        Insert: { checked?: Json; chosen?: Json; accepted?: boolean; household_id: string; updated_at?: string; updated_by?: string | null; stores?: string[]; have?: string[] }
+        Update: { checked?: Json; chosen?: Json; accepted?: boolean; household_id?: string; updated_at?: string; updated_by?: string | null; stores?: string[]; have?: string[] }
+        Relationships: []
+      }
+      profile_prefs: {
+        Row: { profile_id: string; lifestyle: string; proteins: string[]; allergens: string[]; goals: string[]; cooking_mode: string; meals: string[]; updated_at: string }
+        Insert: { profile_id: string; lifestyle?: string; proteins?: string[]; allergens?: string[]; goals?: string[]; cooking_mode?: string; meals?: string[]; updated_at?: string }
+        Update: { profile_id?: string; lifestyle?: string; proteins?: string[]; allergens?: string[]; goals?: string[]; cooking_mode?: string; meals?: string[]; updated_at?: string }
         Relationships: []
       }
       household_member: {
@@ -1148,6 +1154,7 @@ export type Database = {
       recipe: {
         Row: {
           created_at: string
+          cuisine: string | null
           fingerprint: string | null
           how: string | null
           id: string
@@ -1165,6 +1172,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cuisine?: string | null
           fingerprint?: string | null
           how?: string | null
           id?: string
@@ -1182,6 +1190,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cuisine?: string | null
           fingerprint?: string | null
           how?: string | null
           id?: string
@@ -1703,6 +1712,8 @@ export type Database = {
       join_household: { Args: { code: string }; Returns: string }
       leave_household: { Args: Record<PropertyKey, never>; Returns: string }
       username_available: { Args: { name: string }; Returns: boolean }
+      survey_check: { Args: { p_device: string; p_survey?: string; p_version?: number }; Returns: boolean }
+      survey_register: { Args: { p_device: string; p_session: string; p_status: string; p_survey?: string; p_version?: number }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

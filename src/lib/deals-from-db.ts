@@ -1,7 +1,7 @@
 // Deals from our own database (view product_price_today), shaped like the sample deals the screen already uses.
 // A deal counts as real only when it beats the cheapest REGULAR price for the same ingredient, compared per usable gram,
 // millilitre or piece across every product of the same kind and chain we know (see db/README.md, net weight).
-import type { Database } from "@/integrations/sobra-db/types";
+import type { Database } from "@/integrations/pratico-db/types";
 import type { Deal } from "@/data/deals";
 import type { IngredientId } from "@/data/ingredients";
 import type { StoreName } from "@/data/stores";
@@ -9,6 +9,8 @@ import type { StoreName } from "@/data/stores";
 export type PriceRow = Database["public"]["Views"]["product_price_today"]["Row"];
 export type IngredientRef = { id: string; slug: string };
 
+/** Chain id back to store name. */
+export const STORE_OF = (chain: string | null) => (Object.entries(CHAIN_OF).find(([, c]) => c === chain)?.[0] as StoreName | undefined);
 export const CHAIN_OF: Record<StoreName, string> = {
   "Pingo Doce": "pingo-doce", Continente: "continente", Lidl: "lidl", Aldi: "aldi", Auchan: "auchan",
 };
@@ -65,7 +67,7 @@ export function buildLiveDeals(rows: PriceRow[], ingredients: IngredientRef[]): 
       const best = cheapestRegularPerUnit.get(groupKey(r.ingredient_id, r.name));
       const slug = slugOf.get(r.ingredient_id) ?? "";
       deals.push({
-        ...(r.product_id ? { id: r.product_id } : {}),
+        ...(r.product_id ? { id: r.product_id } : {}), ...(slug ? { slug } : {}),
         name: `${r.name_en ?? r.name} ${formatPack(Number(r.pack_qty), r.pack_unit ?? "g")}`,
         ingredient: (KNOWN as string[]).includes(slug) ? (slug as IngredientId) : null,
         price: r.promo_price, was: r.regular_price,

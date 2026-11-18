@@ -2,9 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { invitePreview, useHouseholdActions, useSession } from "@/lib/account";
-import { AccountForm } from "@/components/sobra/AccountForm";
-import { SobraLogo } from "@/components/sobra/Brand";
-import { Button } from "@/components/sobra/ui";
+import { AccountForm } from "@/components/pratico/AccountForm";
+import { PraticoLogo } from "@/components/pratico/Brand";
+import { Button } from "@/components/pratico/ui";
 
 export const Route = createFileRoute("/join/$code")({
   head: () => ({ meta: [{ title: "Join a household · pratico" }, { name: "description", content: "You were invited to share a fridge and a weekly plan." }] }),
@@ -21,14 +21,14 @@ function Join() {
   const preview = useQuery({ queryKey: ["invite", code], queryFn: () => invitePreview(code), staleTime: 60_000 });
 
   const shell = (children: React.ReactNode) => (
-    <div className="mx-auto my-10 max-w-lg rounded-sheet bg-sheet p-6"><SobraLogo />{children}</div>
+    <div className="mx-auto my-10 max-w-lg rounded-sheet bg-sheet p-6"><PraticoLogo />{children}</div>
   );
   if (preview.isLoading || session === undefined) return shell(<p className="mt-6 text-muted-foreground">One moment</p>);
   if (!preview.data) {
     return shell(<>
       <h1 className="mt-6 text-[24px] font-bold">This invite link does not work</h1>
       <p className="mt-2 text-muted-foreground">Ask the person who sent it for a new link.</p>
-      <Button className="mt-5" onClick={() => navigate({ to: "/plan" })}>Build my own week</Button>
+      <Button className="mt-5" onClick={() => navigate({ to: "/" })}>Build my own week</Button>
     </>);
   }
   const { name, members } = preview.data;

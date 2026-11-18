@@ -7,13 +7,13 @@ import { addSpend, adminDeleteSessions, adminSaveSession, deleteSpend, getInsigh
 import type { ExperimentSession } from "@/lib/experiment-types";
 import { GHOST_KEY, useExp } from "@/lib/experiment";
 import { Switch } from "@/components/ui/switch";
-import { SessionExplorer } from "@/components/sobra/SessionExplorer";
+import { SessionExplorer } from "@/components/pratico/SessionExplorer";
 import {
   dealBrandOptions, fallbackOptions, keepOneOptions, modeOptions, painOptions, pmfOptions, prepBlockerOptions, receiptBlockerOptions, receiptOptions, stopperOptions, workaroundOptions,
 } from "@/data/survey";
 import { activation, behaviour, costPerTester, ctaTable, distribution, funnel, groupBy, isBounce, pct, planTable, plansPerWeek, referralEntries, toCSV } from "@/lib/insights";
-import { Button, UnderlineTabs } from "@/components/sobra/ui";
-import { SobraLogo } from "@/components/sobra/Brand";
+import { Button, UnderlineTabs } from "@/components/pratico/ui";
+import { PraticoLogo } from "@/components/pratico/Brand";
 
 export const Route = createFileRoute("/insights")({
   head: () => ({
@@ -65,7 +65,7 @@ function Insights() {
     return (
       <div className="mx-auto mt-10 max-w-[420px]">
         <form className="card p-6" onSubmit={(e) => { e.preventDefault(); if (!pass) { setError(true); return; } void unlock(pass); }}>
-          <SobraLogo />
+          <PraticoLogo />
           <h1 className="mt-6 flex items-center gap-2 text-[24px] font-bold"><Lock className="size-5 text-muted-foreground" aria-hidden />Founder insights</h1>
           <p className="mt-1 text-[14px] text-muted-foreground">Enter the team passcode to see the study results.</p>
           <label htmlFor="pass" className="sr-only">Passcode</label>

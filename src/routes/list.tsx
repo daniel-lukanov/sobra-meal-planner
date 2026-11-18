@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Beef, Carrot, Check, Egg, Package, type LucideIcon } from "lucide-react";
 import { useState } from "react";
-import { eur, useApp } from "@/lib/store";
+import { eur, storesLabel, useApp } from "@/lib/store";
+import { StoreBadge } from "@/components/pratico/Brand";
+import type { StoreName } from "@/data/stores";
 import { pageHead } from "@/lib/head";
-import { Button, PageHeader } from "@/components/sobra/ui";
+import { Button, PageHeader } from "@/components/pratico/ui";
 import { useExp } from "@/lib/experiment";
 import { COMING_SOON, listTotal } from "@/lib/week";
 import { useWeek } from "@/lib/use-week";
@@ -18,17 +20,21 @@ export const Route = createFileRoute("/list")({
 const aisleIcon: Record<string, LucideIcon> = { "Fruit and veg": Carrot, "Meat and fish": Beef, "Eggs and dairy": Egg, Pantry: Package };
 
 function List() {
-  const { store, checked, chosen, set } = useApp();
+  const { stores, checked, chosen, set } = useApp();
+  const store = storesLabel(stores);
   const [delivery, setDelivery] = useState(false);
   const planning = useLivePlan();
   const { cards } = useWeek();
   const items = planning.items(cards);
-  const aisles = [...new Set(items.map((i) => i.aisle))];
+  // One store: sections by aisle. Several: sections by the store that sells each item cheapest.
+  const byStore = stores.length > 1;
+  const groups = byStore ? [...new Set(items.map((i) => i.store ?? "Other"))] : [...new Set(items.map((i) => i.aisle))];
+  const groupOf = (i: (typeof items)[number]) => (byStore ? (i.store ?? "Other") : i.aisle);
   const toBuy = items.filter((i) => !i.inFridge);
   return (
     <>
       <PageHeader small={`Prices from ${store}`} title="Your shopping list" sub="Only what your dinners need. Things already in your fridge are crossed out." />
-      <section aria-label="List total" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sheet bg-sheet p-5">
+      <section aria-label="List total" data-tour="4" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-sheet bg-sheet p-5">
         <div className="num">
           <p className="text-[26px] font-bold leading-none">{eur(listTotal(items))}</p>
           <p className="mt-1 text-[13.5px] text-muted-foreground">{toBuy.length} items to buy. {planning.listNote(cards)}</p>
@@ -39,15 +45,15 @@ function List() {
         </div>
       </section>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        {aisles.map((aisle) => {
+        {groups.map((aisle) => {
           const Icon = aisleIcon[aisle] ?? Package;
           return (
             <section key={aisle} aria-labelledby={`a-${aisle}`} className="card p-5">
               <h2 id={`a-${aisle}`} className="mb-3 flex items-center gap-2.5 text-[18px]">
-                <span className="flex size-9 items-center justify-center rounded-[8px] bg-basil-tint text-basil"><Icon className="size-[18px]" strokeWidth={1.7} aria-hidden /></span>{aisle}
+                <span className="flex size-9 items-center justify-center rounded-[8px] bg-basil-tint text-basil"><Icon className="size-[18px]" strokeWidth={1.7} aria-hidden /></span>{byStore && aisle !== "Other" ? <StoreBadge name={aisle as StoreName} /> : (aisle === "Other" ? "In your fridge or not priced yet" : aisle)}
               </h2>
               <ul>
-                {items.filter((i) => i.aisle === aisle).map((it) => {
+                {items.filter((i) => groupOf(i) === aisle).map((it) => {
                   const on = it.inFridge || !!checked[it.id];
                   return (
                     <li key={it.id} className="mb-2 rounded-[8px] bg-row">
@@ -61,7 +67,7 @@ function List() {
                           <span className={cn("block text-[15px] font-medium", on && "text-muted-foreground line-through")}>{it.name}</span>
                           <span className="block text-[12.5px] text-muted-foreground">for {it.dinners} {it.dinners === 1 ? "dinner" : "dinners"}{it.note ? `. ${it.note}` : ""}</span>
                         </span>
-                        <span className="num text-[14.5px] text-muted-foreground">{it.inFridge ? "in fridge" : eur(it.price ?? 0)}</span>
+                        <span className="num text-[14.5px] text-muted-foreground">{it.inFridge ? "at home" : eur(it.price ?? 0)}</span>
                       </label>
                     </li>
                   );

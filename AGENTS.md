@@ -37,5 +37,5 @@ use the editor.
 - Plan, Swap, shopping list and share text are derived from `chosen` meals via pure functions in `src/lib/week.ts`, so all screens stay in sync.
 - `/insights` reads (`getInsights`), edits/deletes and spend-log writes all check the `INSIGHTS_PASSCODE` secret server-side; the table keeps no browser RLS policies so nobody without the passcode can read, change or delete answers.
 - The 3-step tour places its coachmark under the element with `data-tour="N"`; it never overlays or locks the page.
-- Routing uses TanStack Router file routes (the brief's "React Router" is mapped onto it); the sticky top navbar and mobile tab bar live in `src/components/sobra/Shell.tsx`.
+- Routing uses TanStack Router file routes (the brief's "React Router" is mapped onto it); the sticky top navbar and mobile tab bar live in `src/components/pratico/Shell.tsx`.
 - Colours are tokens in `src/styles.css` and light and dark palettes are both defined there via prefers-color-scheme, so never hardcode colours in components.

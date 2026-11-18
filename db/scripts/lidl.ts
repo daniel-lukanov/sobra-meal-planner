@@ -1,4 +1,4 @@
-// Lidl Portugal scraper + importer for the Sobra database. Run with Bun:
+// Lidl Portugal scraper + importer for the pratico database. Run with Bun:
 //   bun db/scripts/lidl.ts                       dry run: fetch the product hub pages, parse, print a summary (writes nothing)
 //   bun db/scripts/lidl.ts --query arroz         only one ingredient rule
 //   bun db/scripts/lidl.ts --write               also save to the database (needs db/.env)
@@ -18,7 +18,7 @@ const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (
 // shared name filter (applied to the title without the brand). include: replaces the shared name filter where Lidl names differ.
 const HUB = {
   produce: "frutas-e-legumes/h10071012", pantry: "despensa/h10096095", oils: "oleos-molhos-e-condimentos/h10096110",
-  dairy: "queijos-laticinios-e-ovos/h10095761", meat: "carne-e-aves/h10095752", frozen: "alimentos-congelados-alimentos-congelados/h10071049",
+  dairy: "queijos-laticinios-e-ovos/h10095761", meat: "carne-e-aves/h10095752", frozen: "alimentos-congelados-alimentos-congelados/h10071049", fish: "peixe-e-marisco/h10071050",
 };
 const SHOP: Record<string, { hubs: string[]; include?: RegExp }> = {
   batata: { hubs: [HUB.produce] }, cebola: { hubs: [HUB.produce] }, cenoura: { hubs: [HUB.produce] }, pimento: { hubs: [HUB.produce] },
@@ -29,6 +29,7 @@ const SHOP: Record<string, { hubs: string[]; include?: RegExp }> = {
   arroz: { hubs: [HUB.pantry] }, esparguete: { hubs: [HUB.pantry] }, atum: { hubs: [HUB.pantry] },
   "grão de bico": { hubs: [HUB.pantry], include: /^gr[ãa]o( de)? bico/i }, "leite de coco": { hubs: [HUB.pantry] },
   "molho de soja": { hubs: [HUB.oils, HUB.pantry] }, azeite: { hubs: [HUB.oils] },
+  "carne picada de vaca": { hubs: [HUB.meat, HUB.frozen] }, "lombo de porco": { hubs: [HUB.meat] }, pescada: { hubs: [HUB.fish, HUB.frozen] },
 };
 
 // ---------- parsing ----------

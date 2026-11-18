@@ -1,4 +1,4 @@
-// Continente scraper + importer for the Sobra database. Run with Bun:
+// Continente scraper + importer for the pratico database. Run with Bun:
 //   bun db/scripts/continente.ts                       dry run: fetch, parse, print a summary (writes nothing)
 //   bun db/scripts/continente.ts --query arroz --pages 1
 //   bun db/scripts/continente.ts --write               also save to the database (needs db/.env)
@@ -33,6 +33,15 @@ export const RULES: Rule[] = [
   { query: "limão", ingredient: "lemon", category: /Frutas\/Limão e Lima$/, include: /^lim[ãa]o/i },
   { query: "molho de soja", ingredient: "soy-sauce", category: /Molhos, Temperos e Sal\/Molhos$/, include: /^molho de soja/i, exclude: /(ponzu|yakitori|tempura|teriyaki)/i },
   { query: "azeite", ingredient: "olive-oil", category: /Azeite, Óleo e Vinagre\/Azeite$/, include: /^azeite/i, exclude: /(spray|sabor|aromatizado)/i },
+  // Beef, pork and hake: names must say the animal or the cut, so "carne picada" without it (often mixed meat) is left out. The
+  // category is only a coarse check (meat counter or frozen); the name filter does the work.
+  { query: "carne picada de vaca", ingredient: "beef-mince", category: /(Talho|Carne|Congelados)/i, include: /^(preparado de )?carne picada.*(vaca|bovin|novilho|vitel)/i,
+    exclude: /(porco|su[ií]no|peru|frango|mista|vegetal|soja|ra[cç][aã]o|gato|c[aã]o\b)/i },
+  { query: "lombo de porco", ingredient: "pork-loin", category: /(Talho|Carne|Porco|Congelados)/i, include: /^(lombo|lombinhos?|bifes? de lombo|bifanas? (de|da) (lombo|porco|perna)|bifes? de porco)/i,
+    exclude: /(panad|fumad|assad|cozid|fiambre|enlat|conserv|curad|queijo|rechead|espet|preto|ib[eé]ric|4 pimentas|tempera|marinad|farinheira|cogumelo|trufa|castanha|bacon|ameixa|rolo)/i },
+  { query: "pescada", ingredient: "hake", category: /(Peix|Congelados)/i, include: /^(pescada|filetes? de pescada|lombos? de pescada|postas? (de )?pescada)/i,
+    exclude: /(panad|empanad|farinha|douradinh|barrinh|hamb|cozid|lim[ãa]o|molho|conserv|salad|marinad|pat[eé]|gluten)/i,
+    usable: [[/(pescada m[eé]dia|inteir|pequena|grande|para fritar \d)/i, 0.55], [/posta/i, 0.85]] }, // whole fish and bone-in steaks: edible share is a placeholder
 ];
 
 // Unit each ingredient is priced in (matches ingredient.base_unit in the database). grams_per_piece lets a product sold by
