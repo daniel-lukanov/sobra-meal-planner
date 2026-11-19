@@ -10,6 +10,7 @@ export const eventNames = [
   // savings check (v3)
   "path_chosen", "receipt_photo_taken", "receipt_parse_failed", "receipt_confirmed", "receipt_lines_edited", "result_shown", "show_all_clicked",
   "list_cta_clicked", "second_list_blocked", "fake_door_loyalty", "fake_door_dinners", "fake_door_delivery", "contact_left", "result_copied", "language_changed",
+  "survey_prompt_shown", "survey_prompt_accepted", "survey_prompt_dismissed",
 ] as const;
 export type EventName = (typeof eventNames)[number];
 export type StudyEvent = { e: EventName; at: string; in_tour: boolean; first_session: boolean };

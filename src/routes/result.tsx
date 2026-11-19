@@ -1,10 +1,11 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/pratico/ui";
 import { StoreLogo } from "@/components/pratico/Brand";
 import { BackLink, PriceNote, Progress } from "@/components/savings/bits";
 import { Photo } from "@/components/savings/Photo";
 import { ShareRow } from "@/components/savings/Share";
+import { SurveyPrompt } from "@/components/savings/SurveyPrompt";
 import { useExp } from "@/lib/experiment";
 import { useT, type Key } from "@/lib/i18n";
 import { weekKey } from "@/lib/savings/engine";
@@ -119,10 +120,8 @@ function ResultScreen() {
             {door === d && <p role="status" className="text-[13.5px] text-muted-foreground">{t("res.fd.thanks")}</p>}</li>
         ))}
       </ul>
-      <div className="mt-3 flex items-center justify-between">
-        <BackLink to={manual ? "/manual" : "/check"} label={t("common.back")} />
-        <Link to="/finish" className="py-2 text-[14px] font-medium text-muted-foreground hover:text-ink">{t("fin.title")}</Link>
-      </div>
+      <div className="mt-3"><BackLink to={manual ? "/manual" : "/check"} label={t("common.back")} /></div>
+      <SurveyPrompt />
     </div>
   );
 }

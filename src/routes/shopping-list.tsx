@@ -5,6 +5,7 @@ import { StoreBadge } from "@/components/pratico/Brand";
 import { PriceNote } from "@/components/savings/bits";
 import { CtaCard } from "@/components/savings/CtaCard";
 import { Photo } from "@/components/savings/Photo";
+import { SurveyPrompt } from "@/components/savings/SurveyPrompt";
 import { useT, type Key } from "@/lib/i18n";
 import { shoppingList } from "@/lib/savings/engine";
 import { useSavings } from "@/lib/savings/store";
@@ -57,6 +58,7 @@ function ListScreen() {
       ))}
       <Button className="mt-8 w-full" onClick={() => void navigate({ to: "/finish" })}>{t("fin.continue")}</Button>
       <Link to="/result" className="mt-2 inline-block py-2 text-[14px] font-medium text-muted-foreground hover:text-ink">← {t("list.back")}</Link>
+      <SurveyPrompt delayMs={1500} />
     </div>
   );
 }

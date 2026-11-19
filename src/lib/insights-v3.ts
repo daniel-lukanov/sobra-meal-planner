@@ -69,6 +69,7 @@ export function behaviour3(rows: R[]) {
     avgSaving: shown.length ? Math.round((shown.reduce((a, r) => a + (r.result_saving ?? 0), 0) / shown.length) * 100) / 100 : null,
     doorLoyalty: ev("fake_door_loyalty"), doorDinners: ev("fake_door_dinners"), doorDelivery: ev("fake_door_delivery"),
     shares: rows.reduce((a, r) => a + r.whatsapp_share_clicked, 0), copies: ev("result_copied"), igFollows: rows.filter((r) => r.ig_follow_clicked).length,
+    promptShown: rows.filter((r) => has(r, "survey_prompt_shown")).length, promptAccepted: rows.filter((r) => has(r, "survey_prompt_accepted")).length,
     listClicks: ev("list_cta_clicked"), secondListBlocked: ev("second_list_blocked"),
   };
 }

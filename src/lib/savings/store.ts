@@ -17,10 +17,12 @@ type S = {
   /** Not persisted: the last photo could not be read / the list just opened is the second one this week. */
   failed: boolean;
   listBlocked: boolean;
+  /** The survey pop-over was closed with Later; from then on a bar at the bottom invites them instead. */
+  promptDismissed: boolean;
   set: (p: Partial<Omit<S, "set" | "reset" | "hydrated">>) => void;
   reset: () => void;
 };
-const blank = { path: null, store: null, lines: [], picks: [], usualStore: null, receiptMeta: null, failed: false, listBlocked: false };
+const blank = { path: null, store: null, lines: [], picks: [], usualStore: null, receiptMeta: null, failed: false, listBlocked: false, promptDismissed: false };
 
 export const useSavings = create<S>()(
   persist(
@@ -28,7 +30,7 @@ export const useSavings = create<S>()(
     {
       name: "pratico-savings-v1",
       skipHydration: true,
-      partialize: ({ path, store, lines, picks, usualStore, receiptMeta }) => ({ path, store, lines, picks, usualStore, receiptMeta }),
+      partialize: ({ path, store, lines, picks, usualStore, receiptMeta, promptDismissed }) => ({ path, store, lines, picks, usualStore, receiptMeta, promptDismissed }),
       onRehydrateStorage: () => () => useSavings.setState({ hydrated: true }),
     },
   ),

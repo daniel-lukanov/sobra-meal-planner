@@ -221,6 +221,7 @@ function Overview({ rows, spend, setSpend, passcode }: { rows: ExperimentSession
           <Kpi label="Instagram follow taps" value={`${bh.igFollows}`} />
           <Kpi label="Shopping list taps" value={`${bh.listClicks}`} sub={`${bh.secondListBlocked} blocked as second list`} />
           <Kpi label="Referral sign-ups" value={`${refs.signups}`} />
+          <Kpi label="Survey pop-over" value={`${bh.promptAccepted} / ${bh.promptShown}`} sub="started the survey / saw the pop-over" />
         </div>
       </Section>
     </div>
